@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-01T16:35:10.162Z"
+last_updated: "2026-03-01T20:40:13Z"
 progress:
-  total_phases: 1
+  total_phases: 5
   completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 5
+  completed_plans: 5
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** Vendors close bookings through WhatsApp without building or managing any chatbot infrastructure -- install once via Bokun, configure channel, it works.
-**Current focus:** Phase 1: Observability & Hardening
+**Current focus:** Phase 2: Production Deployment
 
 ## Current Position
 
-Phase: 1 of 5 (Observability & Hardening) -- COMPLETE
-Plan: 4 of 4 in current phase (all plans complete)
-Status: Phase 1 complete, ready for Phase 2
-Last activity: 2026-03-01 -- Completed 01-04 (health endpoint enrichment, audit events, INFRA compliance)
+Phase: 2 of 5 (Production Deployment) -- IN PROGRESS
+Plan: 1 of 4 in current phase (02-01 complete)
+Status: Phase 2 Plan 1 complete (render.yaml Blueprint + env.example documentation)
+Last activity: 2026-03-01 -- Completed 02-01 (render.yaml, .env.example, frontend/.env.example)
 
-Progress: [████░░░░░░] 40%
+Progress: [████░░░░░░] 44%
 
 ## Performance Metrics
 
@@ -41,14 +41,16 @@ Progress: [████░░░░░░] 40%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-observability-hardening | 4 | ~11 min | ~2.8 min |
+| 02-production-deployment | 1 | ~2 min | ~2 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (~2min), 01-02 (~2min), 01-03 (~3min), 01-04 (~4min)
+- Last 5 plans: 01-01 (~2min), 01-02 (~2min), 01-03 (~3min), 01-04 (~4min), 02-01 (~2min)
 - Trend: Stable
 
 *Updated after each plan completion*
 | Phase 01-observability-hardening P03 | 3 | 2 tasks | 4 files |
 | Phase 01-observability-hardening P04 | 4 | 2 tasks | 6 files |
+| Phase 02-production-deployment P01 | 1 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -71,6 +73,12 @@ Recent decisions affecting current work:
 - [Phase 01-observability-hardening]: 01-04: Health endpoint returns HTTP 200 always (even degraded) -- monitoring should treat non-200 as hard down, not dependency degradation
 - [Phase 01-observability-hardening]: 01-04: booking_started deferred -- draft creation happens inside Convex mutation, not Node.js handler; out of scope without mutation refactor
 - [Phase 01-observability-hardening]: 01-04: bot_toggled event type reserved in schema but no write site until Phase 4 (bot toggle UI)
+- [Phase 02-production-deployment]: 02-01: sync:false only valid at service-level envVars; inside envVarGroups blocks Render silently drops them -- use per-service envVars for all secrets
+- [Phase 02-production-deployment]: 02-01: preDeployCommand requires plan: starter (paid); Free tier silently skips it -- backend must use Starter
+- [Phase 02-production-deployment]: 02-01: startCommand uses npm start (not raw node command) to preserve Sentry preload flag from package.json
+- [Phase 02-production-deployment]: 02-01: Frankfurt region for both services -- primary users in Spain/EU, Frankfurt is closest Render EU region
+- [Phase 02-production-deployment]: 02-01: Stripe placeholder vars included now in render.yaml and .env.example to avoid future IaC edits in Phase 3
+- [Phase 02-production-deployment]: 02-01: WHATSAPP_APP_SECRET is canonical name; META_APP_SECRET documented as accepted alias
 
 ### Pending Todos
 
@@ -83,5 +91,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 01-04-PLAN.md (health endpoint enrichment, audit events, INFRA-01/02/04 compliance)
+Stopped at: Completed 02-01-PLAN.md (render.yaml Blueprint, .env.example documentation, frontend/.env.example)
 Resume file: None

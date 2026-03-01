@@ -22,16 +22,16 @@ Requirements for commercial launch. Each maps to roadmap phases.
 - [x] **INFRA-02**: Every Convex query and mutation that accesses tenant data filters by tenantId derived from auth session (not from request params)
 - [x] **INFRA-03**: Per-tenant rate limiting enforced on incoming WhatsApp messages to prevent abuse
 - [x] **INFRA-04**: Bokun API unavailability results in a graceful error message to the end user rather than an unhandled exception
-- [ ] **INFRA-05**: Application config supports dev/staging/prod environments via environment variable sets (no hardcoded values differ between envs)
+- [x] **INFRA-05**: Application config supports dev/staging/prod environments via environment variable sets (no hardcoded values differ between envs)
 - [x] **INFRA-06**: Webhook requests from Meta, Bokun, and Stripe are rejected if the request timestamp is outside a configurable tolerance window (default ±5 minutes), in addition to HMAC signature verification
 - [x] **INFRA-07**: Conversation messages and booking-related data older than 90 days are automatically purged via a scheduled Convex cron job (retention period is a constant, designed to be configurable per tenant in future)
 
 ### Deployment
 
-- [ ] **DEPLOY-01**: render.yaml Blueprint defines two Render services: Node.js web service (Starter tier minimum) and React dashboard as static site
-- [ ] **DEPLOY-02**: All required environment variables are documented per service with clear descriptions and examples
-- [ ] **DEPLOY-03**: Convex production deployment runs before app deploy in the pipeline (schema never lags behind app code)
-- [ ] **DEPLOY-04**: HMAC signature verification passes for all three webhook types (Meta, Bokun, Stripe) in the production Render environment immediately after first deploy
+- [x] **DEPLOY-01**: render.yaml Blueprint defines two Render services: Node.js web service (Starter tier minimum) and React dashboard as static site
+- [x] **DEPLOY-02**: All required environment variables are documented per service with clear descriptions and examples
+- [x] **DEPLOY-03**: Convex production deployment runs before app deploy in the pipeline (schema never lags behind app code)
+- [x] **DEPLOY-04**: HMAC signature verification passes for all three webhook types (Meta, Bokun, Stripe) in the production Render environment immediately after first deploy
 
 ### Billing
 
@@ -128,13 +128,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INFRA-02 | Phase 1 | Complete |
 | INFRA-03 | Phase 1 | Complete |
 | INFRA-04 | Phase 1 | Complete |
-| INFRA-05 | Phase 2 | Pending |
+| INFRA-05 | Phase 2 | Complete |
 | INFRA-06 | Phase 1 | Complete |
 | INFRA-07 | Phase 1 | Complete |
-| DEPLOY-01 | Phase 2 | Pending |
-| DEPLOY-02 | Phase 2 | Pending |
-| DEPLOY-03 | Phase 2 | Pending |
-| DEPLOY-04 | Phase 2 | Pending |
+| DEPLOY-01 | Phase 2 | Complete |
+| DEPLOY-02 | Phase 2 | Complete |
+| DEPLOY-03 | Phase 2 | Complete |
+| DEPLOY-04 | Phase 2 | Complete |
 | BILL-01 | Phase 3 | Pending |
 | BILL-02 | Phase 3 | Pending |
 | BILL-03 | Phase 3 | Pending |
