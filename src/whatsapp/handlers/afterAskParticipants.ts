@@ -1,0 +1,108 @@
+import { getConvexClient } from "../../convex/client.ts";
+import { bokunGetActivityQuestionsForTenant } from "../../bokun/gateway.ts";
+import { rootLogger } from "../../lib/logger.ts";
+
+export type HandleAfterAskParticipantsArgs = {
+  tenantId: string;
+  waUserId: string;
+  text: string;
+};
+
+export type HandleAfterAskParticipantsResult = {
+  text: string;
+};
+
+type BookingDraftRef = {
+  _id: string;
+  activityId?: string;
+} | null;
+
+function parseParticipants(text: string): number | null {
+  const match = text.match(/(\d+)/);
+  if (!match) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(match[1], 10);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    return null;
+  }
+
+  return parsed;
+}
+
+export async function handleAfterAskParticipants(
+  args: HandleAfterAskParticipantsArgs
+): Promise<HandleAfterAskParticipantsResult> {
+  const participants = parseParticipants(String(args.text ?? "").trim());
+  if (participants === null) {
+    return {
+      text: "Digite um número de participantes (ex: 2).",
+    };
+  }
+
+  const convex = getConvexClient();
+  const draft = (await convex.query(
+    "bookingDrafts:getBookingDraftByWaUserId" as any,
+    {
+      tenantId: args.tenantId,
+      waUserId: args.waUserId,
+    } as any
+  )) as BookingDraftRef;
+
+  if (!draft?._id) {
+    return {
+      text: "Não encontrei uma reserva em andamento. Me diga atividade e data para continuar.",
+    };
+  }
+
+  // Set participants
+  await convex.mutation(
+    "bookingDrafts:setParticipants" as any,
+    {
+      bookingDraftId: draft._id,
+      participants,
+    } as any
+  );
+
+  // Fetch booking questions from Bokun
+  if (draft.activityId) {
+    try {
+      const questions = await bokunGetActivityQuestionsForTenant({
+        tenantId: args.tenantId,
+        activityId: draft.activityId,
+      });
+
+      if (questions.length > 0) {
+        // Store questions in draft
+        await convex.mutation(
+          "bookingDrafts:setBookingQuestions" as any,
+          {
+            bookingDraftId: draft._id,
+            questions: JSON.stringify(questions),
+          } as any
+        );
+
+        // Set nextStep to ask_booking_questions
+        await convex.mutation(
+          "bookingDrafts:setNextStep" as any,
+          {
+            bookingDraftId: draft._id,
+            nextStep: "ask_booking_questions",
+          } as any
+        );
+
+        // Return empty text — orchestrator will handle next step
+        return { text: "" };
+      }
+    } catch (error) {
+      // If fetching questions fails, log but continue to confirm
+      rootLogger.error({ handler: "afterAskParticipants", tenantId: args.tenantId, waUserId: args.waUserId, err: error instanceof Error ? error.message : String(error) }, "Failed to fetch booking questions");
+    }
+  }
+
+  // No questions or fetch failed — go straight to confirm
+  return {
+    text: "Perfeito. Confirma a reserva? (sim/não)",
+  };
+}
