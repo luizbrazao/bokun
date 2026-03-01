@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 4 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Pino logger singleton + replace all console.log/error/warn in src/ (OBS-01, OBS-05)
+- [x] 01-01-PLAN.md — Pino logger singleton + replace all console.log/error/warn in src/ (OBS-01, OBS-05)
 - [ ] 01-02-PLAN.md — Convex audit_log table + 90-day cleanup cron + schema indexes (OBS-04, INFRA-07)
 - [ ] 01-03-PLAN.md — Sentry error tracking + rate limiter + webhook timestamp replay protection (OBS-02, INFRA-03, INFRA-06)
 - [ ] 01-04-PLAN.md — Health endpoint enrichment + audit event wiring + INFRA-01/02/04 compliance (OBS-03, INFRA-01, INFRA-02, INFRA-04)
@@ -105,7 +105,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Observability & Hardening | 1/4 | In Progress|  |
+| 1. Observability & Hardening | 2/4 | In Progress|  |
 | 2. Production Deployment | 0/0 | Not started | - |
 | 3. Stripe Billing & Subscription Enforcement | 0/0 | Not started | - |
 | 4. Dashboard, Landing Page & Profile | 0/0 | Not started | - |

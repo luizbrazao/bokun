@@ -44,6 +44,9 @@ Recent decisions affecting current work:
 
 - Roadmap: 5-phase dependency chain (observability -> deploy -> billing -> dashboard -> gating+testing) based on research recommendation
 - Roadmap: BILL-05 (subscription gating) placed in Phase 5 with testing, not Phase 3 with billing -- gating should only enforce after billing is confirmed working end-to-end
+- 01-01: providerMessageId: msg.messageId (WhatsApp message ID from Meta webhook) included in per-message createRequestLogger bindings
+- 01-01: Convex console.log calls intentionally untouched -- Convex runtime surfaces them in dashboard natively
+- 01-01: webhookDebug/tgDebug helpers retained (gated on WHATSAPP_WEBHOOK_DEBUG=1) but delegate to rootLogger.debug
 - 01-02: audit_log.meta stored as JSON string (not structured object) -- keeps schema flexible for varied event types without migrations
 - 01-02: 90-day retention for conversation data, 365-day for audit_log -- supports full year of dashboard analytics
 - 01-02: Monthly cron for audit log cleanup (lower frequency sufficient given 365-day retention)
@@ -59,5 +62,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 01-02-PLAN.md (audit log infrastructure + cleanup crons)
+Stopped at: Completed 01-01-PLAN.md (pino structured logging foundation)
 Resume file: None

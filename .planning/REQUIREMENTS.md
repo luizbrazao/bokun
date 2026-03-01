@@ -9,11 +9,11 @@ Requirements for commercial launch. Each maps to roadmap phases.
 
 ### Observability
 
-- [ ] **OBS-01**: System writes structured JSON logs using Pino with tenantId and messageId as correlation fields on every log line
+- [x] **OBS-01**: System writes structured JSON logs using Pino with tenantId and messageId as correlation fields on every log line
 - [ ] **OBS-02**: Sentry error tracking captures unhandled exceptions and forwards to Sentry project
 - [ ] **OBS-03**: GET /health endpoint returns service status and version, integrated with Render health check monitoring
 - [x] **OBS-04**: Audit log entries are written for booking confirmation and cancellation events (confirmationCode, tenantId, waUserId, timestamp)
-- [ ] **OBS-05**: All console.log statements replaced with Pino structured equivalents
+- [x] **OBS-05**: All console.log statements replaced with Pino structured equivalents
 - [ ] **OBS-06**: Failed webhook events (WhatsApp, Bokun, Stripe) are persisted to Convex with error details; admin dashboard provides a simple view and manual retry capability
 
 ### Infrastructure & Reliability
@@ -118,11 +118,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| OBS-01 | Phase 1 | Pending |
+| OBS-01 | Phase 1 | Complete |
 | OBS-02 | Phase 1 | Pending |
 | OBS-03 | Phase 1 | Pending |
 | OBS-04 | Phase 1 | Complete |
-| OBS-05 | Phase 1 | Pending |
+| OBS-05 | Phase 1 | Complete |
 | OBS-06 | Phase 4 | Pending |
 | INFRA-01 | Phase 1 | Pending |
 | INFRA-02 | Phase 1 | Pending |
