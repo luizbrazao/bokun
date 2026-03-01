@@ -123,6 +123,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | OBS-03 | Phase 1 | Pending |
 | OBS-04 | Phase 1 | Pending |
 | OBS-05 | Phase 1 | Pending |
+| OBS-06 | Phase 4 | Pending |
 | INFRA-01 | Phase 1 | Pending |
 | INFRA-02 | Phase 1 | Pending |
 | INFRA-03 | Phase 1 | Pending |
@@ -130,7 +131,6 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INFRA-05 | Phase 2 | Pending |
 | INFRA-06 | Phase 1 | Pending |
 | INFRA-07 | Phase 1 | Pending |
-| OBS-06 | Phase 4 | Pending |
 | DEPLOY-01 | Phase 2 | Pending |
 | DEPLOY-02 | Phase 2 | Pending |
 | DEPLOY-03 | Phase 2 | Pending |
@@ -158,10 +158,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TEST-04 | Phase 5 | Pending |
 
 **Coverage:**
-- v1 requirements: 36 total
-- Mapped to phases: 36
-- Unmapped: 0 ✓
+- v1 requirements: 38 total
+- Mapped to phases: 38
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-01*
-*Last updated: 2026-03-01 after adding security, failure visibility, and data governance requirements*
+*Last updated: 2026-03-01 after roadmap revision (BILL-05 moved to Phase 3 — billing and enforcement ship together)*
