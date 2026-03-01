@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-01T16:23:39.290Z"
+last_updated: "2026-03-01T16:29:00.000Z"
 progress:
   total_phases: 1
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -22,32 +22,33 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 
 ## Current Position
 
-Phase: 1 of 5 (Observability & Hardening)
-Plan: 3 of 5 in current phase
-Status: In progress
-Last activity: 2026-03-01 -- Completed 01-03 (Sentry, rate limiting, webhook replay protection)
+Phase: 1 of 5 (Observability & Hardening) -- COMPLETE
+Plan: 4 of 4 in current phase (all plans complete)
+Status: Phase 1 complete, ready for Phase 2
+Last activity: 2026-03-01 -- Completed 01-04 (health endpoint enrichment, audit events, INFRA compliance)
 
-Progress: [███░░░░░░░] 30%
+Progress: [████░░░░░░] 40%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: ~2 min
-- Total execution time: ~7 min
+- Total plans completed: 4
+- Average duration: ~2.5 min
+- Total execution time: ~11 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-observability-hardening | 3 | ~7 min | ~2.3 min |
+| 01-observability-hardening | 4 | ~11 min | ~2.8 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (~2min), 01-02 (~2min), 01-03 (~3min)
+- Last 5 plans: 01-01 (~2min), 01-02 (~2min), 01-03 (~3min), 01-04 (~4min)
 - Trend: Stable
 
 *Updated after each plan completion*
 | Phase 01-observability-hardening P03 | 3 | 2 tasks | 4 files |
+| Phase 01-observability-hardening P04 | 4 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -67,6 +68,9 @@ Recent decisions affecting current work:
 - [Phase 01-observability-hardening]: 01-03: Bokun does not send a timestamp header; replay protection for Bokun webhooks relies solely on HMAC signature check -- accepted gap
 - [Phase 01-observability-hardening]: 01-03: Sentry tracesSampleRate omitted -- errors-only, no performance tracing (cost control)
 - [Phase 01-observability-hardening]: 01-03: REPLAY_TOLERANCE_MS = 5 minutes; returns HTTP 200 not 403 to prevent Meta/Bokun retry storms
+- [Phase 01-observability-hardening]: 01-04: Health endpoint returns HTTP 200 always (even degraded) -- monitoring should treat non-200 as hard down, not dependency degradation
+- [Phase 01-observability-hardening]: 01-04: booking_started deferred -- draft creation happens inside Convex mutation, not Node.js handler; out of scope without mutation refactor
+- [Phase 01-observability-hardening]: 01-04: bot_toggled event type reserved in schema but no write site until Phase 4 (bot toggle UI)
 
 ### Pending Todos
 
@@ -79,5 +83,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 01-03-PLAN.md (Sentry error tracking, rate limiting, webhook replay protection)
+Stopped at: Completed 01-04-PLAN.md (health endpoint enrichment, audit events, INFRA-01/02/04 compliance)
 Resume file: None

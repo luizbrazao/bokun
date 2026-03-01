@@ -11,17 +11,17 @@ Requirements for commercial launch. Each maps to roadmap phases.
 
 - [x] **OBS-01**: System writes structured JSON logs using Pino with tenantId and messageId as correlation fields on every log line
 - [x] **OBS-02**: Sentry error tracking captures unhandled exceptions and forwards to Sentry project
-- [ ] **OBS-03**: GET /health endpoint returns service status and version, integrated with Render health check monitoring
+- [x] **OBS-03**: GET /health endpoint returns service status and version, integrated with Render health check monitoring
 - [x] **OBS-04**: Audit log entries are written for booking confirmation and cancellation events (confirmationCode, tenantId, waUserId, timestamp)
 - [x] **OBS-05**: All console.log statements replaced with Pino structured equivalents
 - [ ] **OBS-06**: Failed webhook events (WhatsApp, Bokun, Stripe) are persisted to Convex with error details; admin dashboard provides a simple view and manual retry capability
 
 ### Infrastructure & Reliability
 
-- [ ] **INFRA-01**: WhatsApp and Bokun webhook processing is idempotent — duplicate delivery of the same message/event produces no side effects (dedup verified in production)
-- [ ] **INFRA-02**: Every Convex query and mutation that accesses tenant data filters by tenantId derived from auth session (not from request params)
+- [x] **INFRA-01**: WhatsApp and Bokun webhook processing is idempotent — duplicate delivery of the same message/event produces no side effects (dedup verified in production)
+- [x] **INFRA-02**: Every Convex query and mutation that accesses tenant data filters by tenantId derived from auth session (not from request params)
 - [x] **INFRA-03**: Per-tenant rate limiting enforced on incoming WhatsApp messages to prevent abuse
-- [ ] **INFRA-04**: Bokun API unavailability results in a graceful error message to the end user rather than an unhandled exception
+- [x] **INFRA-04**: Bokun API unavailability results in a graceful error message to the end user rather than an unhandled exception
 - [ ] **INFRA-05**: Application config supports dev/staging/prod environments via environment variable sets (no hardcoded values differ between envs)
 - [x] **INFRA-06**: Webhook requests from Meta, Bokun, and Stripe are rejected if the request timestamp is outside a configurable tolerance window (default ±5 minutes), in addition to HMAC signature verification
 - [x] **INFRA-07**: Conversation messages and booking-related data older than 90 days are automatically purged via a scheduled Convex cron job (retention period is a constant, designed to be configurable per tenant in future)
@@ -120,14 +120,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | OBS-01 | Phase 1 | Complete |
 | OBS-02 | Phase 1 | Complete |
-| OBS-03 | Phase 1 | Pending |
+| OBS-03 | Phase 1 | Complete |
 | OBS-04 | Phase 1 | Complete |
 | OBS-05 | Phase 1 | Complete |
 | OBS-06 | Phase 4 | Pending |
-| INFRA-01 | Phase 1 | Pending |
-| INFRA-02 | Phase 1 | Pending |
+| INFRA-01 | Phase 1 | Complete |
+| INFRA-02 | Phase 1 | Complete |
 | INFRA-03 | Phase 1 | Complete |
-| INFRA-04 | Phase 1 | Pending |
+| INFRA-04 | Phase 1 | Complete |
 | INFRA-05 | Phase 2 | Pending |
 | INFRA-06 | Phase 1 | Complete |
 | INFRA-07 | Phase 1 | Complete |
