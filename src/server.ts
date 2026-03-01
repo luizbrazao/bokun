@@ -21,6 +21,10 @@ import { handleTelegramWebhookMessage } from "./telegram/webhook.ts";
 // Initialize Sentry once at startup (no-op if SENTRY_DSN not set)
 initSentry();
 
+// Health check baseline — set at module load time so uptime is measured from server start
+const SERVER_START_TIME = Date.now();
+const APP_VERSION = process.env.npm_package_version ?? "1.0.0";
+
 // Webhook timestamp replay protection — 5 minutes tolerance (industry standard)
 // IMPORTANT: Always return HTTP 200 on stale timestamps — returning 4xx causes retry storms from Meta/Bokun
 const REPLAY_TOLERANCE_MS = 5 * 60 * 1000;
@@ -832,9 +836,28 @@ async function handleBokunWebhookPost(req: IncomingMessage, res: ServerResponse)
 }
 
 async function handleHealthRoute(_req: IncomingMessage, res: ServerResponse): Promise<void> {
-  const baseUrl = process.env.BOKUN_BASE_URL ?? "";
-  const environment = baseUrl.includes("bokuntest") ? "test" : "production";
-  sendJson(res, 200, { ok: true, environment });
+  let convexStatus: "ok" | "error" = "ok";
+
+  try {
+    const convex = getConvexClient();
+    const pingResult = await Promise.race([
+      convex.query("ping:ping" as any, {} as any),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 3000)),
+    ]);
+    convexStatus = (pingResult as any)?.ok === true ? "ok" : "error";
+  } catch {
+    convexStatus = "error";
+  }
+
+  const status = convexStatus === "ok" ? "ok" : "degraded";
+  const uptimeSeconds = Math.floor((Date.now() - SERVER_START_TIME) / 1000);
+
+  sendJson(res, 200, {
+    status,
+    version: APP_VERSION,
+    uptime: uptimeSeconds,
+    convex: convexStatus,
+  });
 }
 
 async function handleOAuthAuthorizeRoute(_req: IncomingMessage, res: ServerResponse): Promise<void> {
