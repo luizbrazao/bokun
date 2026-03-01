@@ -34,7 +34,8 @@ services:
         value: https://api.bokun.io
       - key: OPENAI_MODEL
         value: gpt-4o-mini
-      # ── Secrets — values entered manually in Render Dashboard ─────────────
+
+      # ── Secrets — values entered manually in Render Dashboard ───────────
       # Convex
       - key: CONVEX_URL
         sync: false
@@ -42,11 +43,13 @@ services:
         sync: false
       - key: CONVEX_DEPLOY_KEY
         sync: false
+
       # WhatsApp (Meta Cloud API)
       - key: WHATSAPP_APP_SECRET
         sync: false
       - key: WHATSAPP_VERIFY_TOKEN
         sync: false
+
       # Bokun OAuth (Marketplace App)
       - key: BOKUN_APP_CLIENT_ID
         sync: false
@@ -54,36 +57,36 @@ services:
         sync: false
       - key: BOKUN_OAUTH_REDIRECT_URI
         sync: false
-      # Bokun HMAC Auth (API keys — used as fallback when OAuth token not available)
+
+      # Bokun HMAC Auth (API keys fallback)
       - key: BOKUN_ACCESS_KEY
         sync: false
       - key: BOKUN_SECRET_KEY
         sync: false
-      # OpenAI (global fallback — tenants configure their own keys in the dashboard)
+
+      # OpenAI (global fallback)
       - key: OPENAI_API_KEY
         sync: false
+
       # Observability
       - key: SENTRY_DSN
         sync: false
-      # Phase 3 placeholders (Stripe billing — not yet wired in app code)
+
+      # Phase 3 placeholders (Stripe billing)
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
 
   # ── React Dashboard (Static Site) ────────────────────────────────────────
-  - type: web
+  - type: static
     name: bokun-bot-dashboard
-    runtime: static
-    plan: free
-    region: frankfurt
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     autoDeploy: true
     routes:
       # Catch-all rewrite so React Router works on direct URL access.
-      # Without this, any route other than "/" returns 404 from the static server.
       - type: rewrite
         source: /*
         destination: /index.html
