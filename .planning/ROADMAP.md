@@ -30,11 +30,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. GET /health returns service status and version, and booking confirmation/cancellation events are recorded in an audit log
   4. A duplicate WhatsApp or Bokun webhook delivery produces no side effects, webhook requests with timestamps outside the tolerance window are rejected, and per-tenant rate limiting prevents message flooding
   5. Conversation and booking data older than 90 days is automatically purged by the scheduled cleanup job
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md — Pino logger singleton + replace all console.log/error/warn in src/ (OBS-01, OBS-05)
+- [ ] 01-02-PLAN.md — Convex audit_log table + 90-day cleanup cron + schema indexes (OBS-04, INFRA-07)
+- [ ] 01-03-PLAN.md — Sentry error tracking + rate limiter + webhook timestamp replay protection (OBS-02, INFRA-03, INFRA-06)
+- [ ] 01-04-PLAN.md — Health endpoint enrichment + audit event wiring + INFRA-01/02/04 compliance (OBS-03, INFRA-01, INFRA-02, INFRA-04)
 
 ### Phase 2: Production Deployment
 **Goal**: The application runs on Render.com with validated webhook processing and environment-driven configuration
@@ -103,7 +105,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Observability & Hardening | 0/0 | Not started | - |
+| 1. Observability & Hardening | 0/4 | Not started | - |
 | 2. Production Deployment | 0/0 | Not started | - |
 | 3. Stripe Billing & Subscription Enforcement | 0/0 | Not started | - |
 | 4. Dashboard, Landing Page & Profile | 0/0 | Not started | - |
