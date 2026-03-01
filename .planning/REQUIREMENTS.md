@@ -12,7 +12,7 @@ Requirements for commercial launch. Each maps to roadmap phases.
 - [ ] **OBS-01**: System writes structured JSON logs using Pino with tenantId and messageId as correlation fields on every log line
 - [ ] **OBS-02**: Sentry error tracking captures unhandled exceptions and forwards to Sentry project
 - [ ] **OBS-03**: GET /health endpoint returns service status and version, integrated with Render health check monitoring
-- [ ] **OBS-04**: Audit log entries are written for booking confirmation and cancellation events (confirmationCode, tenantId, waUserId, timestamp)
+- [x] **OBS-04**: Audit log entries are written for booking confirmation and cancellation events (confirmationCode, tenantId, waUserId, timestamp)
 - [ ] **OBS-05**: All console.log statements replaced with Pino structured equivalents
 - [ ] **OBS-06**: Failed webhook events (WhatsApp, Bokun, Stripe) are persisted to Convex with error details; admin dashboard provides a simple view and manual retry capability
 
@@ -24,7 +24,7 @@ Requirements for commercial launch. Each maps to roadmap phases.
 - [ ] **INFRA-04**: Bokun API unavailability results in a graceful error message to the end user rather than an unhandled exception
 - [ ] **INFRA-05**: Application config supports dev/staging/prod environments via environment variable sets (no hardcoded values differ between envs)
 - [ ] **INFRA-06**: Webhook requests from Meta, Bokun, and Stripe are rejected if the request timestamp is outside a configurable tolerance window (default ±5 minutes), in addition to HMAC signature verification
-- [ ] **INFRA-07**: Conversation messages and booking-related data older than 90 days are automatically purged via a scheduled Convex cron job (retention period is a constant, designed to be configurable per tenant in future)
+- [x] **INFRA-07**: Conversation messages and booking-related data older than 90 days are automatically purged via a scheduled Convex cron job (retention period is a constant, designed to be configurable per tenant in future)
 
 ### Deployment
 
@@ -121,7 +121,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | OBS-01 | Phase 1 | Pending |
 | OBS-02 | Phase 1 | Pending |
 | OBS-03 | Phase 1 | Pending |
-| OBS-04 | Phase 1 | Pending |
+| OBS-04 | Phase 1 | Complete |
 | OBS-05 | Phase 1 | Pending |
 | OBS-06 | Phase 4 | Pending |
 | INFRA-01 | Phase 1 | Pending |
@@ -130,7 +130,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INFRA-04 | Phase 1 | Pending |
 | INFRA-05 | Phase 2 | Pending |
 | INFRA-06 | Phase 1 | Pending |
-| INFRA-07 | Phase 1 | Pending |
+| INFRA-07 | Phase 1 | Complete |
 | DEPLOY-01 | Phase 2 | Pending |
 | DEPLOY-02 | Phase 2 | Pending |
 | DEPLOY-03 | Phase 2 | Pending |
