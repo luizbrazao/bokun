@@ -18,7 +18,8 @@ Make the existing WhatsApp booking bot production-ready: structured logging, err
 - Destination: **stdout/stderr only** — Render.com captures this natively
 - Log levels: **error / warn / info / debug** — debug enabled via `LOG_LEVEL=debug` env var; production defaults to `info`
 - Granularity: **entry + exit + errors** per WhatsApp message — log when message arrives (tenantId, messageId, waUserId) and when response is sent; log all errors always; do NOT log every handler step
-- Every log line must include `tenantId` and `messageId` as structured JSON fields
+- Every log line must include: `tenantId`, `channel`, `requestId`, `correlationId`, and `event` (event name) as structured JSON fields
+- `providerMessageId` must be included when available
 - All existing `console.log` / `console.error` / `console.warn` calls must be replaced
 
 ### Rate Limiting
@@ -27,7 +28,7 @@ Make the existing WhatsApp booking bot production-ready: structured logging, err
   - When limit hit: send polite "Too many messages, please wait a moment" to the user and stop processing
   - State: **in-memory** (single Render.com instance assumption); structure must be easy to swap to Convex-backed limiter when scaling
   - Thresholds: configurable via env vars (`RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW_MS`); Claude sets conservative defaults
-  - This is a **UX/backpressure guardrail**, not a security control
+  - This is a **UX/backpressure guardrail only** — not a security control; must not be documented or used as one
 - **Internal backpressure**: if service is overloaded, return 200 to WhatsApp but defer/drop processing — no retry storms
 - **Webhook replay protection**: reject webhook requests with timestamps outside a **5-minute tolerance window** (industry standard)
 - Webhook idempotency (dedup table) remains the primary protection against duplicate deliveries
@@ -42,6 +43,7 @@ Make the existing WhatsApp booking bot production-ready: structured logging, err
   - Booking started (draft created)
   - Tenant onboarded (OAuth complete)
   - Bot toggled on/off
+  - Booking failed
 
 ### Sentry & Error Tracking
 - **Errors only** — no performance traces in v1
