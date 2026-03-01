@@ -2,6 +2,8 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { rootLogger, createRequestLogger } from "./lib/logger.ts";
+import { initSentry, captureError } from "./lib/sentry.ts";
+import { inboundMessageLimiter } from "./middleware/rateLimiter.ts";
 import { getConvexClient } from "./convex/client.ts";
 import { handleWhatsAppWebhookMessage } from "./whatsapp/webhook.ts";
 import { parseMetaWebhook, isStatusUpdate } from "./whatsapp/parseMetaWebhook.ts";
@@ -15,6 +17,19 @@ import {
 import { parseTelegramUpdate } from "./telegram/parseTelegramUpdate.ts";
 import { sendTelegramMessage } from "./telegram/botClient.ts";
 import { handleTelegramWebhookMessage } from "./telegram/webhook.ts";
+
+// Initialize Sentry once at startup (no-op if SENTRY_DSN not set)
+initSentry();
+
+// Webhook timestamp replay protection — 5 minutes tolerance (industry standard)
+// IMPORTANT: Always return HTTP 200 on stale timestamps — returning 4xx causes retry storms from Meta/Bokun
+const REPLAY_TOLERANCE_MS = 5 * 60 * 1000;
+
+function isReplayAttack(timestampSeconds: number | undefined): boolean {
+  if (timestampSeconds === undefined || !Number.isFinite(timestampSeconds)) return false;
+  const delta = Math.abs(Date.now() - timestampSeconds * 1000);
+  return delta > REPLAY_TOLERANCE_MS;
+}
 
 type JsonRecord = Record<string, unknown>;
 const WEBHOOK_DEBUG = process.env.WHATSAPP_WEBHOOK_DEBUG === "1";
@@ -480,6 +495,16 @@ async function handleTelegramWebhookPost(req: IncomingMessage, res: ServerRespon
     textPreview: parsed.text.slice(0, 120),
   });
 
+  // Rate limit check (per end-user, inbound Telegram — UX backpressure, not security)
+  const tgRateKey = tgUserId; // already "tg:chatId" — no additional prefix needed
+  const tgRateCheck = await inboundMessageLimiter.check(tgRateKey);
+  if (!tgRateCheck.allowed) {
+    rootLogger.warn({ tenantId: channel.tenantId, waUserId: tgUserId, handler: "telegram_webhook" }, "rate_limit_exceeded");
+    await sendTelegramMessage({ botToken: channel.botToken, chatId: parsed.chatId, text: "Por favor, aguarde um momento antes de enviar mais mensagens." });
+    sendJson(res, 200, { ok: true });
+    return;
+  }
+
   // Process with dedup (reuse same flow as WhatsApp)
   const processed = await processWebhookWithDedup(
     {
@@ -606,6 +631,32 @@ async function handleWebhookPost(req: IncomingMessage, res: ServerResponse): Pro
         event: "message_received",
       });
       reqLog.info({ waUserId: msg.from }, "message_received");
+
+      // Rate limit check (per end-user, inbound WhatsApp only — UX backpressure, not security)
+      const rateLimitKey = `wa:${msg.from}`;
+      const rateCheck = await inboundMessageLimiter.check(rateLimitKey);
+      if (!rateCheck.allowed) {
+        rootLogger.warn({ tenantId: channel.tenantId, waUserId: msg.from, handler: "whatsapp_webhook" }, "rate_limit_exceeded");
+        // Send polite reply to the user and return 200 to Meta (so Meta doesn't retry)
+        await sendWhatsAppMessage({
+          phoneNumberId: msg.phoneNumberId,
+          recipientPhone: msg.from,
+          text: "Por favor, aguarde um momento antes de enviar mais mensagens.",
+          accessToken: channel.accessToken,
+        });
+        results.push({ messageId: msg.messageId, handled: false, duplicate: false });
+        continue;
+      }
+
+      // Webhook replay protection — silently skip messages older than 5 minutes
+      // Return 200 (not 403) so Meta does not retry the stale message
+      const msgTimestamp = parseInt(msg.timestamp, 10);
+      if (isReplayAttack(msgTimestamp)) {
+        const delta = Math.abs(Date.now() - msgTimestamp * 1000);
+        rootLogger.warn({ tenantId: channel.tenantId, waUserId: msg.from, messageId: msg.messageId, deltaMs: delta }, "webhook_replay_skipped");
+        results.push({ messageId: msg.messageId, handled: false, duplicate: false });
+        continue; // skip processing, continue to next message in loop
+      }
 
       const processed = await processWebhookWithDedup(
         {
@@ -755,6 +806,26 @@ async function handleBokunWebhookPost(req: IncomingMessage, res: ServerResponse)
     return;
   }
 
+  // INFRA-06: Bokun webhook timestamp replay protection
+  // Bokun does not guarantee a timestamp header. Check common header names; if absent, skip the check.
+  // Known gap: if Bokun sends no timestamp header, replay protection relies solely on HMAC verification.
+  const bokunTimestampHeader =
+    req.headers["x-bokun-timestamp"] ??
+    req.headers["x-timestamp"] ??
+    undefined;
+
+  if (bokunTimestampHeader) {
+    const bokunTs = parseInt(String(bokunTimestampHeader), 10);
+    if (isReplayAttack(bokunTs)) {
+      const delta = Math.abs(Date.now() - bokunTs * 1000);
+      rootLogger.warn({ handler: "bokun_webhook", deltaMs: delta }, "bokun_webhook_replay_skipped");
+      sendJson(res, 200, { ok: true }); // return 200 so Bokun does not retry
+      return;
+    }
+  } else {
+    rootLogger.debug({ handler: "bokun_webhook" }, "bokun_no_timestamp_header_skip_check");
+  }
+
   // Bokun has 5-second timeout - respond quickly
   const result = await handleBokunWebhookEvent(webhookHeaders, body);
   sendJson(res, 200, { ok: result.ok, topic: result.topic });
@@ -821,53 +892,59 @@ async function handleOAuthCallbackRoute(req: IncomingMessage, res: ServerRespons
 
 export function createAppServer() {
   return createServer(async (req, res) => {
-    const method = req.method ?? "GET";
-    const url = new URL(req.url ?? "/", "http://localhost");
-    const pathname = url.pathname;
+    try {
+      const method = req.method ?? "GET";
+      const url = new URL(req.url ?? "/", "http://localhost");
+      const pathname = url.pathname;
 
-    if (pathname === "/whatsapp/webhook" && method === "POST") {
-      await handleWebhookPost(req, res);
-      return;
+      if (pathname === "/whatsapp/webhook" && method === "POST") {
+        await handleWebhookPost(req, res);
+        return;
+      }
+
+      if (pathname === "/whatsapp/webhook" && method === "GET") {
+        await handleWebhookVerify(req, res);
+        return;
+      }
+
+      // Telegram webhook: /telegram/webhook/{botUsername}
+      if (pathname.startsWith("/telegram/webhook/") && method === "POST") {
+        await handleTelegramWebhookPost(req, res, pathname);
+        return;
+      }
+
+      // Bokun webhook
+      if (pathname === "/bokun/webhook" && method === "POST") {
+        await handleBokunWebhookPost(req, res);
+        return;
+      }
+
+      // Health check
+      if (pathname === "/health" && method === "GET") {
+        await handleHealthRoute(req, res);
+        return;
+      }
+
+      // OAuth routes
+      if (pathname === "/oauth/authorize" && method === "GET") {
+        await handleOAuthAuthorizeRoute(req, res);
+        return;
+      }
+
+      if (pathname === "/oauth/callback" && method === "GET") {
+        await handleOAuthCallbackRoute(req, res);
+        return;
+      }
+
+      sendJson(res, 404, {
+        ok: false,
+        error: "Not found.",
+      });
+    } catch (error) {
+      rootLogger.error({ error }, "unhandled_request_error");
+      captureError(error, { tenantId: "unknown", handler: "http_server" });
+      sendJson(res, 500, { ok: false, error: "Internal server error." });
     }
-
-    if (pathname === "/whatsapp/webhook" && method === "GET") {
-      await handleWebhookVerify(req, res);
-      return;
-    }
-
-    // Telegram webhook: /telegram/webhook/{botUsername}
-    if (pathname.startsWith("/telegram/webhook/") && method === "POST") {
-      await handleTelegramWebhookPost(req, res, pathname);
-      return;
-    }
-
-    // Bokun webhook
-    if (pathname === "/bokun/webhook" && method === "POST") {
-      await handleBokunWebhookPost(req, res);
-      return;
-    }
-
-    // Health check
-    if (pathname === "/health" && method === "GET") {
-      await handleHealthRoute(req, res);
-      return;
-    }
-
-    // OAuth routes
-    if (pathname === "/oauth/authorize" && method === "GET") {
-      await handleOAuthAuthorizeRoute(req, res);
-      return;
-    }
-
-    if (pathname === "/oauth/callback" && method === "GET") {
-      await handleOAuthCallbackRoute(req, res);
-      return;
-    }
-
-    sendJson(res, 404, {
-      ok: false,
-      error: "Not found.",
-    });
   });
 }
 
