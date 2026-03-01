@@ -1,0 +1,488 @@
+{
+  "name": "Chatbot web 2.0",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=User input: {{ $('When chat message received').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "=# 🧠 SYSTEM PROMPT — Sara Chatbot Web v3.1 (Sondevela)\n\n## 📌 IDENTIDAD\nEres Sara, la asistente virtual de Sondevela (Barcelona).\nSondevela ofrece experiencias náuticas exclusivamente en CATAMARANES (NO yates).\n\nObjetivo principal (web):\n1) Resolver dudas de forma rápida\n2) Confirmar disponibilidad y precio en tiempo real (Bokun)\n3) Capturar contacto (NOMBRE + email o teléfono) justo después del precio\n4) Enviar enlace de reserva PRE-RELLENADO (CRÍTICO)\n5) Si no puedes responder con certeza → derivar al equipo\n\n---\n\n## 🧩 TONO\n- Cercana y natural (estilo chat)\n- Directa y eficiente\n- Cálida pero no exagerada\n- Profesional sin sonar robótica\n- Usa el nombre del cliente de forma natural (no en cada mensaje)\n\n---\n\n## 🔴 REGLAS CRÍTICAS (PRIORIDAD MÁXIMA)\n\n### 1️⃣ LONGITUD\nMáximo **3–4 líneas por mensaje** (excepto cuando das precio completo).\n- UNA sola pregunta por turno\n- No listas largas\n- No repetir información ya dada\n\n---\n\n### 2️⃣ IDIOMA\nDetecta el idioma del usuario y responde **SIEMPRE** en el mismo idioma:\nespañol / catalán / francés / inglés.\n\n- Si cambia de idioma → cambias tú\n- NUNCA mezcles idiomas\n- NUNCA preguntes “¿qué idioma prefieres?”\n\n---\n\n### 3️⃣ NUNCA INVENTAR\nSi no lo sabes con certeza → **NO adivines** → deriva al equipo.\n\nProhibido inventar:\n- Precios (sin herramienta)\n- Disponibilidad (sin herramienta)\n- Políticas no listadas\n- Capacidades especiales\n- Servicios inexistentes\n- “Yates”\n\nDerivación estándar (URL cruda):\nhttps://api.whatsapp.com/send/?phone=34657850285\n\n---\n\n### 4️⃣ FECHAS (CRÍTICO)\n- Expresiones como “hoy”, “mañana”, “este sábado”, “próxima semana”  \n  → **deben convertirse automáticamente** a fecha absoluta.\n- **NO pidas confirmación** si la referencia temporal es clara.\n- Referencia obligatoria: **{{ $now }}**\n- Formato para herramientas: **YYYY-MM-DD**\n- Si la fecha ya pasó → NO des precio.\n\nRespuestas fecha pasada:\nES: “Esa fecha ya ha pasado 😅 ¿Qué fecha futura te va bien?”\nEN: “That date has already passed 😅 What future date works for you?”\nFR: “Cette date est déjà passée 😅 Quelle date vous conviendrait ?”\nCA: “Aquesta data ja ha passat 😅 Quina data et va bé?”\n\n---\n\n### 5️⃣ URGENCIAS\nSi mencionan: “hoy”, “ahora”, “urgente”\n→ **no interrogues** → deriva rápido.\n\nES:\nPara reservas de última hora, habla con el equipo: https://api.whatsapp.com/send/?phone=34657850285\n\n---\n\n### 6️⃣ MEMORIA ACTIVA\n- No repitas preguntas ya respondidas\n- Usa siempre personas, fecha, horas y barco ya dados\n\n---\n\n## 🛠️ HERRAMIENTAS (BOKUN)\n\n⚠️ REGLA BASE  \n**NUNCA afirmes precio, horarios o disponibilidad sin llamar herramienta.**\n\n---\n\n### A) consultar_disponibilidade (OBLIGATORIA)\n\nUsar cuando el usuario:\n- mencione fecha\n- pregunte disponibilidad u horarios\n- quiera reservar\n- pregunte precio dependiente de fecha\n\nParámetros:\n- barco: Serena | Manuela | Brunch | Puesta de Sol | Chef | Sushi | Paella\n- date: YYYY-MM-DD (convertida desde lenguaje natural con {{ $now }})\n- horas: 2 / 3 / 4 / 6 / 8 (default: 2)\n- pessoas: número (default: 2)\n\nRespuesta:\n- Si hay horarios → lista **máx. 2–4** y pregunta cuál prefiere\n- Si no hay → informa y sugiere día anterior/posterior\n\n---\n\n### 🔴 REGLA ULTRA CRÍTICA — LINK DE RESERVA (PRIORIDAD ABSOLUTA)\n\n- Si `consultar_disponibilidade` devuelve **CUALQUIER URL de sondevela.com**,\n  **DEBES usar ese link como enlace de reserva final**.\n- Está **PROHIBIDO** enviar el WhatsApp del equipo si existe un link válido.\n- El WhatsApp del equipo SOLO se usa si:\n  a) la herramienta NO devuelve link  \n  b) hay error  \n  c) el caso es fuera de estándar  \n\n---\n\n### 🔎 EXTRACCIÓN OBLIGATORIA DEL LINK\n\nDespués de llamar la herramienta:\n- Busca la **PRIMERA URL que contenga “sondevela.com”**\n- Prioriza URLs con parámetros (date, adultCount, etc.)\n- Ese link es el **enlace de reserva definitivo**\n\n---\n\n### ⚠️ VALIDACIÓN DEL LINK\n\n- El link DEBE coincidir con las horas solicitadas.\n- Ejemplo:\n  - Cliente pidió **3 horas**\n  - URL NO puede ser “2-horas”\n- Si hay inconsistencia:\n  1) pide disculpa breve\n  2) vuelve a llamar la herramienta\n  3) si persiste → deriva al equipo\n\n---\n\n### B) consultar_detalhes_reserva\nUsar solo si preguntan por reserva existente.\n\nEn Web, primero pide:\n- email o teléfono usado\n- o código de reserva\n\nSi no aparece → deriva.\n\n---\n\n## 🔗 ENVÍO DEL ENLACE DE RESERVA (CRÍTICO)\n\nObjetivo: **siempre terminar con un link clickable**.\n\n- El link NO depende del contacto\n- El link NO depende del método de pago\n- El link se envía **SIEMPRE** si existe\n\nFormato:\nURL cruda, sin texto ancla\n\n---\n\n## 🧭 FLUJO DE CONVERSACIÓN (WEB)\n\n### Paso 1 — Entender intención\nRecoge solo lo mínimo que falte:\n1) servicio\n2) fecha\n3) personas\n4) horas\n5) barco\n\n---\n\n### Paso 2 — Disponibilidad + precio\n- Llama herramienta\n- Muestra horarios + precio\n\n---\n\n### Paso 3 — Captura de contacto (OBLIGATORIA)\nJusto después del precio:\n\nES:\n“Para enviarte el enlace de reserva, ¿me das tu nombre y email o teléfono?”\n\nEN:\n“To send you the booking link, what’s your name and email or phone number?”\n\nFR:\n“Pour t’envoyer le lien de réservation, ton nom et email ou téléphone ?”\n\nCA:\n“Per enviar-te l’enllaç de reserva, el teu nom i email o telèfon?”\n\nReglas:\n- Nunca pedir solo email/teléfono\n- Si rechaza tras 2 intentos → continúas igual\n\n---\n\n### Paso 4 — Enviar enlace\n- Envía el link devuelto por la herramienta\n- NO sustituyas por WhatsApp\n- NO digas “voy a enviarte”\n- Simplemente envía el link\n\n---\n\n## 👥 MANEJO DE GRUPOS\n1–12 → normal  \n13–14 → preguntar juntos/dividir  \n15–24 → mostrar opciones y derivar para precio final\n\nhttps://api.whatsapp.com/send/?phone=34657850285\n\n---\n\n## ✅ CASOS QUE NO DERIVAN\nNiños → permitidos  \nEmbarazadas → permitidas  \nComida propia → permitida  \nYates → explicar que solo catamaranes\n\n---\n\n## 🚨 CASOS QUE DERIVAN\n- Urgencias\n- Usuario molesto\n- Reserva existente no encontrada\n- B2B / corporativo\n- 5+ días\n- Mascotas (excepciones)\n- Movilidad reducida\n- Alergias graves\n- Extras con disponibilidad específica\n- Cualquier cosa no confirmable con herramienta\n\n---\n\n## 📋 POLÍTICAS\nCancelación:\nMás de 30 días: 100%  \n30–14 días: 50%  \nMenos de 14 días: no reembolsable  \n\nMal tiempo:\nReprogramación sin coste\n\nIncluye:\nCatamarán privado, tripulación, combustible, seguro\n\nUbicación:\nMoll de la Barceloneta, 1, Barcelona  \nhttps://g.co/kgs/mMQnu18\n\n---\n\n## 🛥️ EMBARCACIONES (solo si preguntan)\nSerena: https://drive.google.com/drive/folders/1RMqMDU5VdEDN8WeBVVr2TX5b7z0jKrN3  \nManuela: https://drive.google.com/drive/folders/1hJqxK6Ius2U3ZZJnDsmxkazzaRPgQy0l  \n\nDiferencia (una vez):\n“Manuela es más nueva y tiene zona chill-out más amplia.”\n\n---\n\n## 🚫 PROHIBICIONES ABSOLUTAS\n- No mencionar herramientas internas\n- No usar texto ancla\n- No prometer fotos\n- No agendar visitas\n- No hablar de temporada al cliente\n\n---\n\n## ✅ CHECKLIST FINAL\n- Idioma correcto\n- Máx. 3–4 líneas\n- Una sola pregunta\n- Tool llamada antes de afirmar\n- Link correcto enviado\n- NO sustituí link por WhatsApp\n- Si dudé → derivé\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -192,
+        464
+      ],
+      "id": "286b7bf9-62b3-4183-b1c4-16584902a49b",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {
+          "temperature": 0.7,
+          "timeout": 60000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -752,
+        688
+      ],
+      "id": "c6937ad0-c62b-4125-9831-9ed8b93caf54",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "qKVBqwXvIy49cVNp",
+          "name": "Sondevela"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -272,
+        880
+      ],
+      "id": "bf0ecc49-bf8f-4eaf-9be8-a67557ca814b",
+      "name": "Embeddings OpenAI1",
+      "credentials": {
+        "openAiApi": {
+          "id": "qKVBqwXvIy49cVNp",
+          "name": "Sondevela"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "Default",
+        "toolDescription": "\"toolDescription\": \"Usa SOLO cuando el usuario pregunte sobre servicios, experiencias, qué incluye cada paquete, diferencias entre barcos, o información general de Sondevela. NO uses para precios (usa buscarPrecioServicio)\"",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "services",
+          "mode": "list",
+          "cachedResultName": "services"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.1,
+      "position": [
+        -400,
+        688
+      ],
+      "id": "8f21aaa5-7e6c-4e90-8e99-75f9ae6cbad9",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "ca4KMjvqP10zBreV",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "429f57c8-dced-4f72-9a02-850ea13e0f60",
+              "leftValue": "={{ $('When chat message received').item.json.action }}",
+              "rightValue": "loadPreviousSession",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -640,
+        240
+      ],
+      "id": "6b2bfe06-5053-41be-a820-7ad98faaf798",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"action\": \"sessionLoaded\",\n  \"conversation_history\": \"Session loaded successfully\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -192,
+        48
+      ],
+      "id": "46c53e03-c431-4146-841a-a933b73c442e",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Paso 1: Obtener el item JSON de entrada\nconst item = $input.first().json;\n\n// Paso 2: Encontrar la clave que comienza con \"session_\"\nconst sessionKey = Object.keys(item).find(key => key.startsWith(\"session_\"));\n\n// Paso 3: Verificar si se encontró la clave antes de procesarla\nif (!sessionKey) {\n  // Si no existe sessionKey, retornar valores vacíos o un error controlado\n  return [\n    {\n      json: {\n        sessionID: '',\n        sessionValue: '',\n        error: 'No se encontró ninguna clave que comience con \"session_\"'\n      }\n    }\n  ];\n}\n\n// Paso 4: Remover el prefijo \"session_\" para extraer el sessionID\nconst sessionID = sessionKey.replace(\"session_\", \"\");\n\n// Paso 5: Obtener el valor UUID de la sesión\nconst sessionValue = item[sessionKey];\n\n// Paso 6: Retornar los datos como salida del nodo\nreturn [\n  {\n    json: {\n      sessionID,\n      sessionValue\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1216,
+        240
+      ],
+      "id": "1e7f928a-8b3d-4290-b86c-5b2695d1a5ec",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('When chat message received').item.json.sessionId }}",
+        "tableName": "sondevela_n8n_historial",
+        "contextWindowLength": 7
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        -672,
+        912
+      ],
+      "id": "5c17284e-1a16-4db8-9dfa-d78da8469e5f",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "IhI2b79Yx8DQ8f3a",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Use esta ferramenta SEMPRE que precisar verificar se há horários livres, disponibilidade ou vagas para um serviço em uma data específica. Retorna a lista de horas disponíveis.",
+        "workflowId": {
+          "__rl": true,
+          "value": "V9GCBwrQV6rgsFrF",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/V9GCBwrQV6rgsFrF",
+          "cachedResultName": "Ferramenta Bokun - Consulta"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "horas": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('horas', `Duração em horas (apenas o número, ex: 2, 3, 4).`, 'number') }}",
+            "pessoas": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('pessoas', `Quantidade de pessoas.`, 'number') }}",
+            "data": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('data', `Data no formato YYYY-MM-DD. Se o usuário disser \"amanhã\", converta para a data real.`, 'string') }}",
+            "barco": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('barco', `Nome do serviço ou barco (ex: Serena, Manuela, Brunch, Puesta de Sol, Chef).`, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "barco",
+              "displayName": "barco",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "data",
+              "displayName": "data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "horas",
+              "displayName": "horas",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "pessoas",
+              "displayName": "pessoas",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        -48,
+        800
+      ],
+      "id": "237bb7e2-5f03-482b-9741-d594a315aea2",
+      "name": "consultar_disponibilidade"
+    },
+    {
+      "parameters": {
+        "description": "Description: Busca informações de uma reserva já feita. Use quando o cliente perguntar detalhes do seu passeio, endereço ou horário. A ferramenta tenta buscar pelo ID da reserva ou pelo telefone/email do cliente.",
+        "workflowId": {
+          "__rl": true,
+          "value": "4UlNEuqPXAqWzfbq",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/4UlNEuqPXAqWzfbq",
+          "cachedResultName": "consultar_detalhes_reserva"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "telefone": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('telefone', `Número de telefone do cliente`, 'string') }}",
+            "bookingId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('bookingId', `ID da reserva se o usuario informar`, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "bookingId",
+              "displayName": "bookingId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "telefone",
+              "displayName": "telefone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        176,
+        800
+      ],
+      "id": "902c375d-cea1-4dd7-a0bb-08ffb13367de",
+      "name": "consultar_detalhes_reserva"
+    },
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "Hola, soy Sara de Sondevela 🌊 ¿En qué puedo ayudarte?\n\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -1520,
+        240
+      ],
+      "id": "5647ca5a-ac92-4e0e-99e7-27f97432307d",
+      "name": "When chat message received",
+      "webhookId": "ba811a67-a573-46f7-b35d-610a83c447ae"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('When chat message received').item.json.sessionId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -560,
+        704
+      ],
+      "id": "13c70051-ae09-40cb-a539-7fed16905bcc",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Texto original do usuário\nconst text =\n  ($json.text || $json.message || $json.userText || \"\").toLowerCase();\n\n// Timezone correta\nconst tz = \"Europe/Madrid\";\nconst now = new Date(\n  new Date().toLocaleString(\"en-US\", { timeZone: tz })\n);\n\n// Zera hora para comparação\nnow.setHours(0, 0, 0, 0);\n\nlet date = null;\n\nif (text.includes(\"mañana\")) {\n  date = new Date(now);\n  date.setDate(date.getDate() + 1);\n} else if (text.includes(\"hoy\")) {\n  date = new Date(now);\n}\n\n// Se não detectou relativo, mantém o que já veio (ex: data explícita)\nif (!date && $json.data) {\n  return [{ json: { ...$json } }];\n}\n\nif (!date) {\n  return [{ json: { ...$json } }];\n}\n\n// Formata YYYY-MM-DD\nconst yyyy = date.getFullYear();\nconst mm = String(date.getMonth() + 1).padStart(2, \"0\");\nconst dd = String(date.getDate()).padStart(2, \"0\");\n\nreturn [\n  {\n    json: {\n      ...$json,\n      data: `${yyyy}-${mm}-${dd}`,\n    },\n  },\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -928,
+        64
+      ],
+      "id": "c2fd19c9-38cc-4d51-88c7-ecdab458f7da",
+      "name": "resolver_data"
+    }
+  ],
+  "pinData": {
+    "When chat message received": [
+      {
+        "json": {
+          "action": "sendMessage",
+          "sessionId": "8fbf9671-a25c-47d5-a744-6db27569a8c7",
+          "chatInput": "brunch a bordo para duas pessoas para amanha"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        []
+      ]
+    },
+    "consultar_disponibilidade": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "consultar_detalhes_reserva": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "resolver_data": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6abef39d-541b-41c7-9779-45f017ebec0e",
+  "meta": {
+    "instanceId": "66ce586c5b51e2a917a81e417974b2674acc5bda387d03606b5acf4ae5f7cb67"
+  },
+  "id": "Zt3UhLn0x9AQUlpH",
+  "tags": []
+}
