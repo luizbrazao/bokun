@@ -47,10 +47,11 @@ Plans:
   2. All environment variables are documented per service, and switching between dev/staging/prod requires only changing the environment variable set (no code changes)
   3. Convex production deployment runs before app deploy, ensuring schema is never behind app code
   4. HMAC signature verification passes for Meta, Bokun, and Stripe webhooks immediately after deploy in the production Render environment
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: TBD
+- [ ] 02-01-PLAN.md — render.yaml Blueprint (both services) + .env.example files (backend + frontend) (DEPLOY-01, DEPLOY-02, DEPLOY-03, DEPLOY-04, INFRA-05)
+- [ ] 02-02-PLAN.md — Human checkpoint: Render setup, first deploy, HMAC webhook verification in production (DEPLOY-01, DEPLOY-02, DEPLOY-03, DEPLOY-04, INFRA-05)
 
 ### Phase 3: Stripe Billing & Subscription Enforcement
 **Goal**: Vendors can subscribe to a paid plan with a free trial, their subscription lifecycle is tracked reliably, and non-paying vendors are immediately blocked from bot service
@@ -106,7 +107,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Observability & Hardening | 3/4 | Complete    | 2026-03-01 |
-| 2. Production Deployment | 0/0 | Not started | - |
+| 2. Production Deployment | 0/2 | Not started | - |
 | 3. Stripe Billing & Subscription Enforcement | 0/0 | Not started | - |
 | 4. Dashboard, Landing Page & Profile | 0/0 | Not started | - |
 | 5. Automated Test Coverage | 0/0 | Not started | - |
