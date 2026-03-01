@@ -1,16 +1,9 @@
 # render.yaml
 # Render Blueprint — deploys both services from a single git push.
 # Docs: https://render.com/docs/blueprint-spec
-#
-# IMPORTANT — before triggering the first deploy:
-#   1. After Blueprint sync, fill in all "sync: false" values in the Render Dashboard.
-#   2. Set CONVEX_DEPLOY_KEY before any deploy fires (missing key causes Convex CLI to
-#      hang waiting for browser auth, timing out the deploy).
-#   3. Deploy manually for the first time only after all secrets are set.
 
 services:
-  # ── Node.js Backend (Web Service) ────────────────────────────────────────
-  # Starter plan is required — preDeployCommand does not run on Free tier.
+  # ── Node.js Backend (Web Service) ─────────────────────────────
   - type: web
     name: bokun-bot-api
     runtime: node
@@ -23,7 +16,6 @@ services:
     healthCheckPath: /health
     autoDeploy: true
     envVars:
-      # ── Non-secret config (safe to commit) ───────────────────────────────
       - key: NODE_ENV
         value: production
       - key: SENTRY_ENVIRONMENT
@@ -35,58 +27,45 @@ services:
       - key: OPENAI_MODEL
         value: gpt-4o-mini
 
-      # ── Secrets — values entered manually in Render Dashboard ───────────
-      # Convex
+      # Secrets
       - key: CONVEX_URL
         sync: false
       - key: CONVEX_SITE_URL
         sync: false
       - key: CONVEX_DEPLOY_KEY
         sync: false
-
-      # WhatsApp (Meta Cloud API)
       - key: WHATSAPP_APP_SECRET
         sync: false
       - key: WHATSAPP_VERIFY_TOKEN
         sync: false
-
-      # Bokun OAuth (Marketplace App)
       - key: BOKUN_APP_CLIENT_ID
         sync: false
       - key: BOKUN_APP_CLIENT_SECRET
         sync: false
       - key: BOKUN_OAUTH_REDIRECT_URI
         sync: false
-
-      # Bokun HMAC Auth (API keys fallback)
       - key: BOKUN_ACCESS_KEY
         sync: false
       - key: BOKUN_SECRET_KEY
         sync: false
-
-      # OpenAI (global fallback)
       - key: OPENAI_API_KEY
         sync: false
-
-      # Observability
       - key: SENTRY_DSN
         sync: false
-
-      # Phase 3 placeholders (Stripe billing)
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
 
-  # ── React Dashboard (Static Site) ────────────────────────────────────────
-  - type: static
+  # ── React Dashboard (Static Site) ─────────────────────────────
+  - type: web
     name: bokun-bot-dashboard
+    runtime: static
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     autoDeploy: true
     routes:
-      # Catch-all rewrite so React Router works on direct URL access.
       - type: rewrite
         source: /*
         destination: /index.html
