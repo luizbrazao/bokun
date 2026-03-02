@@ -65,10 +65,12 @@ Plans:
   5. Failed webhook events (WhatsApp, Bokun, Stripe) are stored in Convex with error reason and payload hash; basic retry/dead-letter mechanism in place
   6. Rate limiting is enforced on all inbound webhook endpoints (WhatsApp, Bokun, Stripe) with safe defaults and structured log entries on limit hits
   7. render.yaml and .env.example updated with any new Stripe vars; runbook notes added for webhook verification and troubleshooting
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 03-01: TBD
+- [ ] 03-01-PLAN.md — Convex schema (Stripe fields, stripe_event_dedup, failed_webhooks tables) + all Convex mutations (BILL-03, BILL-04, OBS-06)
+- [ ] 03-02-PLAN.md — Stripe webhook handler + serverWebhookLimiter + Bokun/Stripe rate limiting + dead-letter write sites in server.ts (BILL-03, BILL-04, OBS-06)
+- [ ] 03-03-PLAN.md — /admin/sentry-test endpoint + .env.example Stripe runbook + Sentry E2E human checkpoint (OBS-06)
 
 ### Phase 4: Dashboard, Landing Page & Profile
 **Goal**: Vendors have a complete admin dashboard to monitor their bot, a public landing page attracts new vendors, and vendors can configure their business profile
@@ -110,6 +112,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. Observability & Hardening | 3/4 | Complete    | 2026-03-01 |
 | 2. Production Deployment | 2/2 | Complete   | 2026-03-02 |
-| 3. Billing + Ops Hardening | 0/0 | Not started | - |
+| 3. Billing + Ops Hardening | 0/3 | Not started | - |
 | 4. Dashboard, Landing Page & Profile | 0/0 | Not started | - |
 | 5. Automated Test Coverage | 0/0 | Not started | - |
