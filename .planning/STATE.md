@@ -82,6 +82,10 @@ Recent decisions affecting current work:
 - [Phase 02-production-deployment]: 02-01: WHATSAPP_APP_SECRET is canonical name; META_APP_SECRET documented as accepted alias
 - [Phase 02-production-deployment]: 02-02: Checks 2+5 manual (require WHATSAPP_VERIFY_TOKEN and Convex Dashboard access); Checks 1/3/4 automated -- all passed confirming DEPLOY-04
 
+### Roadmap Evolution
+
+- Phase 3 redefined: "Stripe Billing & Subscription Enforcement" → "Billing + Ops Hardening" (tighter scope: Stripe webhook foundations + ops hardening; full billing UI/enforcement moved to Phase 4)
+
 ### Pending Todos
 
 None yet.

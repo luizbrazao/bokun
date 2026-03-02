@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Observability & Hardening** - Structured logging, error tracking, security hardening, and reliability improvements (completed 2026-03-01)
 - [x] **Phase 2: Production Deployment** - Render.com infrastructure, environment config, Convex production deployment (completed 2026-03-02)
-- [ ] **Phase 3: Stripe Billing & Subscription Enforcement** - Subscription plans, checkout flow, webhook processing, trial support, and access gating
+- [ ] **Phase 3: Billing + Ops Hardening** - Stripe webhook foundations, basic subscription state, ops hardening (Sentry validated, dead-letter/retry, rate limiting)
 - [ ] **Phase 4: Dashboard, Landing Page & Profile** - Complete vendor admin UI, marketing landing page, vendor settings
 - [ ] **Phase 5: Automated Test Coverage** - Automated test suite covering critical booking, isolation, and billing flows
 
@@ -53,16 +53,18 @@ Plans:
 - [ ] 02-01-PLAN.md — render.yaml Blueprint (both services) + .env.example files (backend + frontend) (DEPLOY-01, DEPLOY-02, DEPLOY-03, DEPLOY-04, INFRA-05)
 - [ ] 02-02-PLAN.md — Human checkpoint: Render setup, first deploy, HMAC webhook verification in production (DEPLOY-01, DEPLOY-02, DEPLOY-03, DEPLOY-04, INFRA-05)
 
-### Phase 3: Stripe Billing & Subscription Enforcement
-**Goal**: Vendors can subscribe to a paid plan with a free trial, their subscription lifecycle is tracked reliably, and non-paying vendors are immediately blocked from bot service
+### Phase 3: Billing + Ops Hardening
+**Goal**: Ship Stripe billing foundations (webhook verified, basic subscription state) AND production-grade ops hardening (Sentry validated end-to-end, dead-letter/retry for failed webhooks, rate limiting on all inbound endpoints). Must be deploy-safe and verified in production. No billing UI — backend and observability foundations only.
 **Depends on**: Phase 2
-**Requirements**: BILL-01, BILL-02, BILL-03, BILL-04, BILL-05
+**Requirements**: BILL-03, BILL-04, OBS-06
 **Success Criteria** (what must be TRUE):
-  1. A vendor can select Monthly or Annual plan and complete payment through Stripe Checkout
-  2. New subscriptions start with a 14-day free trial before the first charge
-  3. Stripe webhook events (checkout.session.completed, customer.subscription.updated, customer.subscription.deleted) correctly update tenant subscription status in Convex
-  4. Duplicate delivery of the same Stripe webhook event produces no duplicate state changes
-  5. Vendors with cancelled or expired subscriptions receive a polite message instead of booking service, with a 7-day grace period for past_due status
+  1. POST /stripe/webhook route exists and verifies Stripe-Signature using STRIPE_WEBHOOK_SECRET; invalid signatures rejected with 403
+  2. Stripe webhook events (checkout.session.completed, customer.subscription.updated, customer.subscription.deleted) persist basic subscription state (customerId, subscriptionId, status, current_period_end) in Convex
+  3. Stripe webhook processing is idempotent — duplicate delivery of the same event.id produces no duplicate state changes
+  4. Sentry is wired end-to-end and proven by a test error captured in the production Sentry project (event visible in dashboard)
+  5. Failed webhook events (WhatsApp, Bokun, Stripe) are stored in Convex with error reason and payload hash; basic retry/dead-letter mechanism in place
+  6. Rate limiting is enforced on all inbound webhook endpoints (WhatsApp, Bokun, Stripe) with safe defaults and structured log entries on limit hits
+  7. render.yaml and .env.example updated with any new Stripe vars; runbook notes added for webhook verification and troubleshooting
 **Plans**: TBD
 
 Plans:
@@ -108,6 +110,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. Observability & Hardening | 3/4 | Complete    | 2026-03-01 |
 | 2. Production Deployment | 2/2 | Complete   | 2026-03-02 |
-| 3. Stripe Billing & Subscription Enforcement | 0/0 | Not started | - |
+| 3. Billing + Ops Hardening | 0/0 | Not started | - |
 | 4. Dashboard, Landing Page & Profile | 0/0 | Not started | - |
 | 5. Automated Test Coverage | 0/0 | Not started | - |
