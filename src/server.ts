@@ -549,231 +549,289 @@ async function handleTelegramWebhookPost(req: IncomingMessage, res: ServerRespon
 }
 
 async function handleWebhookPost(req: IncomingMessage, res: ServerResponse): Promise<void> {
-  const appSecret = process.env.WHATSAPP_APP_SECRET ?? process.env.META_APP_SECRET;
-  if (!appSecret || appSecret.trim().length === 0) {
-    sendJson(res, 500, {
-      ok: false,
-      error: "Missing WHATSAPP_APP_SECRET (or META_APP_SECRET).",
-    });
-    return;
-  }
-
-  let rawBody: Buffer;
   try {
-    rawBody = await readRawBody(req);
-  } catch (error) {
-    sendJson(res, 400, {
-      ok: false,
-      error: error instanceof Error ? error.message : "Failed to read request body.",
-    });
-    return;
-  }
-
-  rootLogger.info(
-    {
-      handler: "whatsapp_webhook",
-      path: "/whatsapp/webhook",
-      contentLength: rawBody.length,
-      hasSignature: Boolean(getHeaderValue(req, "x-hub-signature-256")),
-    },
-    "wa_webhook_hit"
-  );
-
-  const signatureHeader = getHeaderValue(req, "x-hub-signature-256");
-  const signatureOk = signatureHeader ? isValidHmacSignature(rawBody, signatureHeader, appSecret) : false;
-
-  if (!signatureOk) {
-    rootLogger.warn(
-      {
-        handler: "whatsapp_webhook",
-        hasSignature: Boolean(signatureHeader),
-        signatureHeaderPreview: signatureHeader?.slice(0, 20), // opcional (não é segredo)
-      },
-      "wa_webhook_signature_invalid"
-    );
-
-    sendJson(res, 403, {
-      ok: false,
-      error: "Invalid webhook signature.",
-    });
-    return;
-  }
-
-  let body: unknown;
-  try {
-    body = parseJsonBody(rawBody);
-  } catch (error) {
-    sendJson(res, 400, {
-      ok: false,
-      error: error instanceof Error ? error.message : "Invalid JSON body.",
-    });
-    return;
-  }
-
-  // Meta requires 200 response quickly, even for status updates
-  if (isStatusUpdate(body)) {
-    webhookDebug("status update only", {
-      extractedId: extractMessageId(body),
-    });
-    sendJson(res, 200, { ok: true, handled: false, statusUpdate: true });
-    return;
-  }
-
-  // Try to parse as Meta Cloud API webhook payload
-  const metaParsed = parseMetaWebhook(body);
-  webhookDebug("parsed webhook payload", {
-    messages: metaParsed.messages.length,
-  });
-
-  if (metaParsed.messages.length > 0) {
-    // Meta Cloud API format: resolve tenant from phoneNumberId
-    const results: Array<{ messageId: string; handled: boolean; duplicate: boolean }> = [];
-
-    for (const msg of metaParsed.messages) {
-      webhookDebug("incoming message", {
-        messageId: msg.messageId,
-        phoneNumberId: msg.phoneNumberId,
-        waUserId: msg.from,
-        textPreview: msg.text.slice(0, 120),
-      });
-      const channel = await resolveChannelByPhoneNumberId(msg.phoneNumberId);
-      if (!channel || channel.status !== "active") {
-        webhookDebug("channel not found or inactive", {
-          phoneNumberId: msg.phoneNumberId,
-          hasChannel: Boolean(channel),
-          channelStatus: channel?.status,
-        });
-        results.push({ messageId: msg.messageId, handled: false, duplicate: false });
-        continue;
-      }
-
-      const reqLog = createRequestLogger({
-        tenantId: channel.tenantId,
-        channel: "wa",
-        requestId: randomUUID(),
-        messageId: msg.messageId,
-        providerMessageId: msg.messageId,
-        event: "message_received",
-      });
-      reqLog.info({ waUserId: msg.from }, "message_received");
-
-      // Rate limit check (per end-user, inbound WhatsApp only — UX backpressure, not security)
-      const rateLimitKey = `wa:${msg.from}`;
-      const rateCheck = await inboundMessageLimiter.check(rateLimitKey);
-      if (!rateCheck.allowed) {
-        rootLogger.warn({ tenantId: channel.tenantId, waUserId: msg.from, handler: "whatsapp_webhook" }, "rate_limit_exceeded");
-        // Send polite reply to the user and return 200 to Meta (so Meta doesn't retry)
-        await sendWhatsAppMessage({
-          phoneNumberId: msg.phoneNumberId,
-          recipientPhone: msg.from,
-          text: "Por favor, aguarde um momento antes de enviar mais mensagens.",
-          accessToken: channel.accessToken,
-        });
-        results.push({ messageId: msg.messageId, handled: false, duplicate: false });
-        continue;
-      }
-
-      // Webhook replay protection — silently skip messages older than 5 minutes
-      // Return 200 (not 403) so Meta does not retry the stale message
-      const msgTimestamp = parseInt(msg.timestamp, 10);
-      if (isReplayAttack(msgTimestamp)) {
-        const delta = Math.abs(Date.now() - msgTimestamp * 1000);
-        rootLogger.warn({ tenantId: channel.tenantId, waUserId: msg.from, messageId: msg.messageId, deltaMs: delta }, "webhook_replay_skipped");
-        results.push({ messageId: msg.messageId, handled: false, duplicate: false });
-        continue; // skip processing, continue to next message in loop
-      }
-
-      const processed = await processWebhookWithDedup(
-        {
-          tenantId: channel.tenantId,
-          waUserId: msg.from,
-          text: msg.text,
-          body,
-        },
-        {
-          claimDedup: claimDedupPersisted,
-          runBookingFlow: async (args) => handleWhatsAppWebhookMessage(args),
-        }
-      );
-
-      // Send reply back via Meta Cloud API
-      if (processed.replyText.trim().length > 0) {
-        const sendResult = await sendWhatsAppMessage({
-          phoneNumberId: msg.phoneNumberId,
-          recipientPhone: msg.from,
-          text: processed.replyText,
-          accessToken: channel.accessToken,
-        });
-        reqLog.debug({
-          event: "send_reply",
-          ok: sendResult.ok,
-          providerMessageId: sendResult.messageId,
-          error: sendResult.error,
-          replyPreview: processed.replyText.slice(0, 120),
-        }, "send reply result");
-      }
-
-      reqLog.debug({
-        event: "message_processed",
-        handled: processed.handled,
-        duplicate: processed.duplicate,
-      }, "message processed");
-      results.push({
-        messageId: msg.messageId,
-        handled: processed.handled,
-        duplicate: processed.duplicate,
-      });
-    }
-
-    sendJson(res, 200, { ok: true, messages: results });
-    return;
-  }
-
-  // Fallback: legacy format with explicit tenantId/waUserId/text fields
-  if (isRecord(body)) {
-    const tenantId = asNonEmptyString((body as JsonRecord).tenantId);
-    const waUserId = asNonEmptyString((body as JsonRecord).waUserId);
-    const text = asNonEmptyString((body as JsonRecord).text);
-
-    if (tenantId && waUserId && text) {
-      const processed = await processWebhookWithDedup(
-        { tenantId, waUserId, text, body },
-        {
-          claimDedup: claimDedupPersisted,
-          runBookingFlow: async (args) => handleWhatsAppWebhookMessage(args),
-        }
-      );
-
-      if (processed.duplicate) {
-        sendJson(res, 200, { ok: true, handled: false, duplicate: true });
-        return;
-      }
-
-      if (processed.legacyFlowExecuted) {
-        sendJson(res, 202, {
-          ok: true,
-          handled: false,
-          message: "No booking draft route handled. Continue with legacy flow.",
-        });
-        return;
-      }
-
-      sendJson(res, 200, {
-        ok: true,
-        handled: processed.handled,
-        text: processed.replyText,
+    const appSecret = process.env.WHATSAPP_APP_SECRET ?? process.env.META_APP_SECRET;
+    if (!appSecret || appSecret.trim().length === 0) {
+      sendJson(res, 500, {
+        ok: false,
+        error: "Missing WHATSAPP_APP_SECRET (or META_APP_SECRET).",
       });
       return;
     }
-  }
 
-  webhookDebug("payload not recognized as message", {
-    extractedId: extractMessageId(body),
-  });
-  sendJson(res, 400, {
-    ok: false,
-    error: "Could not extract messages from webhook payload.",
-  });
+    let rawBody: Buffer;
+    try {
+      rawBody = await readRawBody(req);
+    } catch (error) {
+      rootLogger.error(
+        { handler: "whatsapp_webhook", step: "read_body", error: error instanceof Error ? error.message : String(error) },
+        "wa_webhook_read_body_failed"
+      );
+      sendJson(res, 400, {
+        ok: false,
+        error: error instanceof Error ? error.message : "Failed to read request body.",
+      });
+      return;
+    }
+
+    const signatureHeader = getHeaderValue(req, "x-hub-signature-256");
+
+    rootLogger.info(
+      {
+        handler: "whatsapp_webhook",
+        step: "body_read",
+        path: "/whatsapp/webhook",
+        contentLength: rawBody.length,
+        hasSignature: Boolean(signatureHeader),
+      },
+      "wa_webhook_hit"
+    );
+
+    // ── Step 1: Signature validation ──────────────────────────────────────────
+    const signatureOk = signatureHeader
+      ? isValidHmacSignature(rawBody, signatureHeader, appSecret)
+      : false;
+
+    if (!signatureOk) {
+      rootLogger.warn(
+        {
+          handler: "whatsapp_webhook",
+          step: "after_signature_check",
+          hasSignature: Boolean(signatureHeader),
+          signatureHeaderPreview: signatureHeader?.slice(0, 20),
+        },
+        "wa_webhook_signature_invalid"
+      );
+      sendJson(res, 403, { ok: false, error: "Invalid webhook signature." });
+      return;
+    }
+
+    rootLogger.info(
+      { handler: "whatsapp_webhook", step: "after_signature_check", signatureOk: true },
+      "wa_webhook_signature_ok"
+    );
+
+    // ── Step 2: JSON parse ────────────────────────────────────────────────────
+    let body: unknown;
+    try {
+      body = parseJsonBody(rawBody);
+    } catch (error) {
+      rootLogger.error(
+        {
+          handler: "whatsapp_webhook",
+          step: "after_json_parse",
+          error: error instanceof Error ? error.message : String(error),
+        },
+        "wa_webhook_json_parse_failed"
+      );
+      sendJson(res, 400, {
+        ok: false,
+        error: error instanceof Error ? error.message : "Invalid JSON body.",
+      });
+      return;
+    }
+
+    rootLogger.info(
+      { handler: "whatsapp_webhook", step: "after_json_parse", bodyType: typeof body },
+      "wa_webhook_json_parsed"
+    );
+
+    // ── Step 3: Status update fast-path ──────────────────────────────────────
+    if (isStatusUpdate(body)) {
+      rootLogger.info(
+        { handler: "whatsapp_webhook", step: "after_meta_parse", statusUpdate: true },
+        "wa_webhook_status_update_skipped"
+      );
+      sendJson(res, 200, { ok: true, handled: false, statusUpdate: true });
+      return;
+    }
+
+    // ── Step 4: Meta message parsing ─────────────────────────────────────────
+    const metaParsed = parseMetaWebhook(body);
+
+    rootLogger.info(
+      {
+        handler: "whatsapp_webhook",
+        step: "after_meta_parse",
+        messageCount: metaParsed.messages.length,
+      },
+      "wa_webhook_meta_parsed"
+    );
+
+    if (metaParsed.messages.length > 0) {
+      // Meta Cloud API format: resolve tenant from phoneNumberId
+      const results: Array<{ messageId: string; handled: boolean; duplicate: boolean }> = [];
+
+      for (const msg of metaParsed.messages) {
+        rootLogger.info(
+          {
+            handler: "whatsapp_webhook",
+            step: "before_channel_resolution",
+            messageId: msg.messageId,
+            phoneNumberId: msg.phoneNumberId,
+            waUserId: msg.from,
+            textPreview: msg.text.slice(0, 120),
+          },
+          "wa_webhook_incoming_message"
+        );
+        const channel = await resolveChannelByPhoneNumberId(msg.phoneNumberId);
+        if (!channel || channel.status !== "active") {
+          rootLogger.warn(
+            {
+              handler: "whatsapp_webhook",
+              step: "before_channel_resolution",
+              phoneNumberId: msg.phoneNumberId,
+              hasChannel: Boolean(channel),
+              channelStatus: channel?.status,
+            },
+            "wa_webhook_channel_not_found"
+          );
+          results.push({ messageId: msg.messageId, handled: false, duplicate: false });
+          continue;
+        }
+
+        const reqLog = createRequestLogger({
+          tenantId: channel.tenantId,
+          channel: "wa",
+          requestId: randomUUID(),
+          messageId: msg.messageId,
+          providerMessageId: msg.messageId,
+          event: "message_received",
+        });
+        reqLog.info({ waUserId: msg.from }, "message_received");
+
+        // Rate limit check (per end-user, inbound WhatsApp only — UX backpressure, not security)
+        const rateLimitKey = `wa:${msg.from}`;
+        const rateCheck = await inboundMessageLimiter.check(rateLimitKey);
+        if (!rateCheck.allowed) {
+          rootLogger.warn({ tenantId: channel.tenantId, waUserId: msg.from, handler: "whatsapp_webhook" }, "rate_limit_exceeded");
+          // Send polite reply to the user and return 200 to Meta (so Meta doesn't retry)
+          await sendWhatsAppMessage({
+            phoneNumberId: msg.phoneNumberId,
+            recipientPhone: msg.from,
+            text: "Por favor, aguarde um momento antes de enviar mais mensagens.",
+            accessToken: channel.accessToken,
+          });
+          results.push({ messageId: msg.messageId, handled: false, duplicate: false });
+          continue;
+        }
+
+        // Webhook replay protection — silently skip messages older than 5 minutes
+        // Return 200 (not 403) so Meta does not retry the stale message
+        const msgTimestamp = parseInt(msg.timestamp, 10);
+        if (isReplayAttack(msgTimestamp)) {
+          const delta = Math.abs(Date.now() - msgTimestamp * 1000);
+          rootLogger.warn({ tenantId: channel.tenantId, waUserId: msg.from, messageId: msg.messageId, deltaMs: delta }, "webhook_replay_skipped");
+          results.push({ messageId: msg.messageId, handled: false, duplicate: false });
+          continue; // skip processing, continue to next message in loop
+        }
+
+        const processed = await processWebhookWithDedup(
+          {
+            tenantId: channel.tenantId,
+            waUserId: msg.from,
+            text: msg.text,
+            body,
+          },
+          {
+            claimDedup: claimDedupPersisted,
+            runBookingFlow: async (args) => handleWhatsAppWebhookMessage(args),
+          }
+        );
+
+        // Send reply back via Meta Cloud API
+        if (processed.replyText.trim().length > 0) {
+          const sendResult = await sendWhatsAppMessage({
+            phoneNumberId: msg.phoneNumberId,
+            recipientPhone: msg.from,
+            text: processed.replyText,
+            accessToken: channel.accessToken,
+          });
+          reqLog.debug({
+            event: "send_reply",
+            ok: sendResult.ok,
+            providerMessageId: sendResult.messageId,
+            error: sendResult.error,
+            replyPreview: processed.replyText.slice(0, 120),
+          }, "send reply result");
+        }
+
+        reqLog.debug({
+          event: "message_processed",
+          handled: processed.handled,
+          duplicate: processed.duplicate,
+        }, "message processed");
+        results.push({
+          messageId: msg.messageId,
+          handled: processed.handled,
+          duplicate: processed.duplicate,
+        });
+      }
+
+      sendJson(res, 200, { ok: true, messages: results });
+      return;
+    }
+
+    // Fallback: legacy format with explicit tenantId/waUserId/text fields
+    if (isRecord(body)) {
+      const tenantId = asNonEmptyString((body as JsonRecord).tenantId);
+      const waUserId = asNonEmptyString((body as JsonRecord).waUserId);
+      const text = asNonEmptyString((body as JsonRecord).text);
+
+      if (tenantId && waUserId && text) {
+        const processed = await processWebhookWithDedup(
+          { tenantId, waUserId, text, body },
+          {
+            claimDedup: claimDedupPersisted,
+            runBookingFlow: async (args) => handleWhatsAppWebhookMessage(args),
+          }
+        );
+
+        if (processed.duplicate) {
+          sendJson(res, 200, { ok: true, handled: false, duplicate: true });
+          return;
+        }
+
+        if (processed.legacyFlowExecuted) {
+          sendJson(res, 202, {
+            ok: true,
+            handled: false,
+            message: "No booking draft route handled. Continue with legacy flow.",
+          });
+          return;
+        }
+
+        sendJson(res, 200, {
+          ok: true,
+          handled: processed.handled,
+          text: processed.replyText,
+        });
+        return;
+      }
+    }
+
+    rootLogger.warn(
+      { handler: "whatsapp_webhook", step: "unrecognized_payload", extractedId: extractMessageId(body) },
+      "wa_webhook_payload_unrecognized"
+    );
+    sendJson(res, 400, {
+      ok: false,
+      error: "Could not extract messages from webhook payload.",
+    });
+  } catch (error) {
+    rootLogger.error(
+      {
+        handler: "whatsapp_webhook",
+        step: "unhandled_exception",
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+      "wa_webhook_unhandled_error"
+    );
+    if (!res.headersSent) {
+      sendJson(res, 500, { ok: false, error: "Internal server error." });
+    }
+  }
 }
 
 async function handleWebhookVerify(req: IncomingMessage, res: ServerResponse): Promise<void> {
