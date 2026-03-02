@@ -74,6 +74,28 @@ curl -sS -X POST "https://bokun-bot-api.onrender.com/admin/bootstrap" \
   }'
 ```
 
+### 2.1 Verificar se o canal existe no Convex do ambiente
+
+```bash
+curl -sS "https://bokun-bot-api.onrender.com/admin/whatsapp/channel?phoneNumberId=1009293745601026" \
+  -H "x-admin-api-key: $ADMIN_API_KEY"
+```
+
+Resposta esperada (exemplo):
+
+```json
+{
+  "ok": true,
+  "found": true,
+  "channel": {
+    "tenantId": "jh7...",
+    "phoneNumberId": "1009293745601026",
+    "status": "active"
+  },
+  "convexUrl": "https://...convex.cloud"
+}
+```
+
 ## 3) Teste webhook end-to-end
 
 ### 3.1 Verifique saúde da API

@@ -826,12 +826,23 @@ async function handleWebhookPost(req: IncomingMessage, res: ServerResponse): Pro
         if (!rateCheck.allowed) {
           rootLogger.warn({ tenantId: channel.tenantId, waUserId: msg.from, handler: "whatsapp_webhook" }, "rate_limit_exceeded");
           // Send polite reply to the user and return 200 to Meta (so Meta doesn't retry)
-          await sendWhatsAppMessage({
+          const rateLimitReply = await sendWhatsAppMessage({
             phoneNumberId: msg.phoneNumberId,
             recipientPhone: msg.from,
             text: "Por favor, aguarde um momento antes de enviar mais mensagens.",
             accessToken: channel.accessToken,
           });
+          if (!rateLimitReply.ok) {
+            rootLogger.warn(
+              {
+                tenantId: channel.tenantId,
+                waUserId: msg.from,
+                phoneNumberId: msg.phoneNumberId,
+                error: rateLimitReply.error,
+              },
+              "wa_rate_limit_reply_failed"
+            );
+          }
           results.push({ messageId: msg.messageId, handled: false, duplicate: false });
           continue;
         }
@@ -867,6 +878,13 @@ async function handleWebhookPost(req: IncomingMessage, res: ServerResponse): Pro
             text: processed.replyText,
             accessToken: channel.accessToken,
           });
+          if (!sendResult.ok) {
+            reqLog.warn({
+              event: "send_reply_failed",
+              error: sendResult.error,
+              phoneNumberId: msg.phoneNumberId,
+            }, "send reply failed");
+          }
           reqLog.debug({
             event: "send_reply",
             ok: sendResult.ok,
@@ -1221,6 +1239,64 @@ async function handleAdminWhatsappChannelRoute(req: IncomingMessage, res: Server
   }
 }
 
+async function handleAdminWhatsappChannelLookupRoute(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  if (!requireAdminApiKey(req, res)) {
+    return;
+  }
+
+  const url = new URL(req.url ?? "/admin/whatsapp/channel", "http://localhost");
+  const phoneNumberId = asNonEmptyString(url.searchParams.get("phoneNumberId"));
+
+  if (!phoneNumberId) {
+    sendJson(res, 400, { ok: false, error: "Query param 'phoneNumberId' is required." });
+    return;
+  }
+
+  try {
+    const convex = getConvexClient();
+    const channel = (await convex.query(
+      "whatsappChannels:getByPhoneNumberId" as any,
+      { phoneNumberId } as any
+    )) as {
+      tenantId: string;
+      phoneNumberId: string;
+      wabaId?: string;
+      status: string;
+      createdAt?: number;
+      updatedAt?: number;
+    } | null;
+
+    if (!channel) {
+      sendJson(res, 200, {
+        ok: true,
+        found: false,
+        phoneNumberId,
+        convexUrl: process.env.CONVEX_URL ?? "missing",
+      });
+      return;
+    }
+
+    sendJson(res, 200, {
+      ok: true,
+      found: true,
+      channel: {
+        tenantId: channel.tenantId,
+        phoneNumberId: channel.phoneNumberId,
+        wabaId: channel.wabaId ?? null,
+        status: channel.status,
+        createdAt: channel.createdAt ?? null,
+        updatedAt: channel.updatedAt ?? null,
+      },
+      convexUrl: process.env.CONVEX_URL ?? "missing",
+    });
+  } catch (error) {
+    sendJson(res, 400, {
+      ok: false,
+      error: error instanceof Error ? error.message : "Channel lookup failed.",
+    });
+  }
+}
+
 async function handleBokunWebhookPost(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const appSecret = process.env.BOKUN_APP_CLIENT_SECRET;
   if (!appSecret || appSecret.trim().length === 0) {
@@ -1390,6 +1466,11 @@ export function createAppServer() {
 
       if (pathname === "/admin/whatsapp/channel" && method === "POST") {
         await handleAdminWhatsappChannelRoute(req, res);
+        return;
+      }
+
+      if (pathname === "/admin/whatsapp/channel" && method === "GET") {
+        await handleAdminWhatsappChannelLookupRoute(req, res);
         return;
       }
 
