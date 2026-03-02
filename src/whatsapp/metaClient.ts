@@ -13,6 +13,32 @@ export type SendWhatsAppMessageResult = {
 
 const META_GRAPH_API_VERSION = "v21.0";
 
+function sanitizeMetaError(raw: string): string {
+  const compact = raw.replace(/\s+/g, " ").trim();
+  try {
+    const parsed = JSON.parse(raw) as {
+      error?: {
+        message?: string;
+        type?: string;
+        code?: number;
+      };
+    };
+    if (parsed?.error) {
+      const message = parsed.error.message ?? "unknown_error";
+      const type = parsed.error.type ?? "unknown_type";
+      const code = typeof parsed.error.code === "number" ? parsed.error.code : "unknown_code";
+      return `code=${code}; type=${type}; message=${message}`;
+    }
+  } catch {
+    // Non-JSON payload; continue with regex-based redaction below.
+  }
+
+  // Redact common token-like fragments to avoid leaking secrets in logs.
+  return compact
+    .replace(/EA[A-Za-z0-9_-]{20,}/g, "[REDACTED_TOKEN]")
+    .replace(/access[_\s-]?token[^,;}\]]*/gi, "access_token=[REDACTED]");
+}
+
 /**
  * Sends a text message via Meta Cloud API (WhatsApp Business).
  *
@@ -56,7 +82,7 @@ export async function sendWhatsAppMessage(
     const errorText = await response.text().catch(() => "");
     return {
       ok: false,
-      error: `Meta API error (${response.status}): ${errorText}`,
+      error: `Meta API error (${response.status}): ${sanitizeMetaError(errorText)}`,
     };
   }
 
