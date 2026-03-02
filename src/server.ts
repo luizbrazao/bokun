@@ -569,8 +569,29 @@ async function handleWebhookPost(req: IncomingMessage, res: ServerResponse): Pro
     return;
   }
 
+  rootLogger.info(
+    {
+      handler: "whatsapp_webhook",
+      path: "/whatsapp/webhook",
+      contentLength: rawBody.length,
+      hasSignature: Boolean(getHeaderValue(req, "x-hub-signature-256")),
+    },
+    "wa_webhook_hit"
+  );
+
   const signatureHeader = getHeaderValue(req, "x-hub-signature-256");
-  if (!signatureHeader || !isValidHmacSignature(rawBody, signatureHeader, appSecret)) {
+  const signatureOk = signatureHeader ? isValidHmacSignature(rawBody, signatureHeader, appSecret) : false;
+
+  if (!signatureOk) {
+    rootLogger.warn(
+      {
+        handler: "whatsapp_webhook",
+        hasSignature: Boolean(signatureHeader),
+        signatureHeaderPreview: signatureHeader?.slice(0, 20), // opcional (não é segredo)
+      },
+      "wa_webhook_signature_invalid"
+    );
+
     sendJson(res, 403, {
       ok: false,
       error: "Invalid webhook signature.",
@@ -584,7 +605,7 @@ async function handleWebhookPost(req: IncomingMessage, res: ServerResponse): Pro
   } catch (error) {
     sendJson(res, 400, {
       ok: false,
-      error: error instanceof Error ? error.message : "Invalid request body.",
+      error: error instanceof Error ? error.message : "Invalid JSON body.",
     });
     return;
   }
