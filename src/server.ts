@@ -892,12 +892,21 @@ async function handleWebhookPost(req: IncomingMessage, res: ServerResponse): Pro
             error: sendResult.error,
             replyPreview: processed.replyText.slice(0, 120),
           }, "send reply result");
+        } else {
+          reqLog.info({
+            event: "no_reply_generated",
+            handled: processed.handled,
+            duplicate: processed.duplicate,
+            legacyFlowExecuted: processed.legacyFlowExecuted,
+          }, "no reply generated for incoming message");
         }
 
-        reqLog.debug({
+        reqLog.info({
           event: "message_processed",
           handled: processed.handled,
           duplicate: processed.duplicate,
+          legacyFlowExecuted: processed.legacyFlowExecuted,
+          replyTextLength: processed.replyText.trim().length,
         }, "message processed");
         results.push({
           messageId: msg.messageId,

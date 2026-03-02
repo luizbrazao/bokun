@@ -1,4 +1,5 @@
 import { routeWhatsAppMessage } from "./router.ts";
+import { rootLogger } from "../lib/logger.ts";
 
 export type HandleWhatsAppWebhookMessageArgs = {
   tenantId: string;
@@ -24,6 +25,15 @@ export async function handleWhatsAppWebhookMessage(
   if (routed.handled) {
     if (routed.text.trim().length > 0) {
       await args.sendReply(routed.text);
+    } else {
+      rootLogger.info(
+        {
+          handler: "whatsapp_router",
+          tenantId: args.tenantId,
+          waUserId: args.waUserId,
+        },
+        "routed_handled_without_text"
+      );
     }
 
     return { handled: true };
