@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as adminBootstrap from "../adminBootstrap.js";
 import type * as auditLog from "../auditLog.js";
 import type * as auth from "../auth.js";
 import type * as bokunInstallations from "../bokunInstallations.js";
@@ -37,6 +38,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  adminBootstrap: typeof adminBootstrap;
   auditLog: typeof auditLog;
   auth: typeof auth;
   bokunInstallations: typeof bokunInstallations;

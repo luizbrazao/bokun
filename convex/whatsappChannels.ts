@@ -4,10 +4,21 @@ import { query, mutation } from "./_generated/server";
 export const getByPhoneNumberId = query({
   args: { phoneNumberId: v.string() },
   handler: async (ctx, args) => {
-    return ctx.db
+    const channels = await ctx.db
       .query("whatsapp_channels")
       .withIndex("by_phoneNumberId", (q) => q.eq("phoneNumberId", args.phoneNumberId))
-      .first();
+      .collect();
+
+    if (channels.length === 0) {
+      return null;
+    }
+
+    const active = channels.filter((channel) => channel.status === "active");
+    const candidates = active.length > 0 ? active : channels;
+
+    return candidates.reduce((best, current) =>
+      current.updatedAt > best.updatedAt ? current : best
+    );
   },
 });
 

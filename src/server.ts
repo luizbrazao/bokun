@@ -64,6 +64,23 @@ function asNonEmptyString(value: unknown): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
+function asBoolean(value: unknown): boolean | undefined {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "true" || normalized === "1") {
+    return true;
+  }
+  if (normalized === "false" || normalized === "0") {
+    return false;
+  }
+  return undefined;
+}
+
 function stableStringify(value: unknown): string {
   if (value === null || typeof value !== "object") {
     return JSON.stringify(value);
@@ -153,6 +170,55 @@ function getHeaderValue(req: IncomingMessage, headerName: string): string | unde
     return raw[0];
   }
   return undefined;
+}
+
+function constantTimeEquals(left: string, right: string): boolean {
+  const leftBuffer = Buffer.from(left);
+  const rightBuffer = Buffer.from(right);
+  if (leftBuffer.length !== rightBuffer.length) {
+    return false;
+  }
+  return timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function getAdminApiKeyFromRequest(req: IncomingMessage): string | undefined {
+  const directHeader = asNonEmptyString(getHeaderValue(req, "x-admin-api-key"));
+  if (directHeader) {
+    return directHeader;
+  }
+
+  const authorization = asNonEmptyString(getHeaderValue(req, "authorization"));
+  if (!authorization) {
+    return undefined;
+  }
+
+  const [scheme, token] = authorization.split(" ", 2);
+  if (scheme?.toLowerCase() !== "bearer") {
+    return undefined;
+  }
+  return asNonEmptyString(token);
+}
+
+function requireAdminApiKey(req: IncomingMessage, res: ServerResponse): boolean {
+  const configuredAdminKey = asNonEmptyString(process.env.ADMIN_API_KEY);
+  if (!configuredAdminKey) {
+    sendJson(res, 500, {
+      ok: false,
+      error: "Missing ADMIN_API_KEY.",
+    });
+    return false;
+  }
+
+  const providedAdminKey = getAdminApiKeyFromRequest(req);
+  if (!providedAdminKey || !constantTimeEquals(providedAdminKey, configuredAdminKey)) {
+    sendJson(res, 401, {
+      ok: false,
+      error: "Unauthorized.",
+    });
+    return false;
+  }
+
+  return true;
 }
 
 function isValidHexSignature(value: string): boolean {
@@ -311,10 +377,51 @@ type WhatsAppChannelRecord = {
 
 async function resolveChannelByPhoneNumberId(phoneNumberId: string): Promise<WhatsAppChannelRecord> {
   const convex = getConvexClient();
-  return (await convex.query(
+  const convexUrl = process.env.CONVEX_URL ?? "missing";
+  const nodeEnv = process.env.NODE_ENV ?? "development";
+
+  rootLogger.info(
+    {
+      handler: "whatsapp_webhook",
+      step: "channel_lookup_query",
+      phoneNumberId,
+      convexUrl,
+      nodeEnv,
+    },
+    "wa_channel_lookup_query"
+  );
+
+  const channel = (await convex.query(
     "whatsappChannels:getByPhoneNumberId" as any,
     { phoneNumberId } as any
   )) as WhatsAppChannelRecord;
+
+  if (!channel) {
+    rootLogger.warn(
+      {
+        handler: "whatsapp_webhook",
+        step: "channel_lookup_result",
+        phoneNumberId,
+        convexUrl,
+        nodeEnv,
+      },
+      "wa_channel_lookup_not_found"
+    );
+    return null;
+  }
+
+  rootLogger.info(
+    {
+      handler: "whatsapp_webhook",
+      step: "channel_lookup_result",
+      phoneNumberId,
+      tenantId: channel.tenantId,
+      status: channel.status,
+    },
+    "wa_channel_lookup_found"
+  );
+
+  return channel;
 }
 
 type TelegramChannelRecord = {
@@ -680,15 +787,28 @@ async function handleWebhookPost(req: IncomingMessage, res: ServerResponse): Pro
             {
               handler: "whatsapp_webhook",
               step: "before_channel_resolution",
+              criteria: { phoneNumberId: msg.phoneNumberId },
               phoneNumberId: msg.phoneNumberId,
               hasChannel: Boolean(channel),
               channelStatus: channel?.status,
+              convexUrl: process.env.CONVEX_URL ?? "missing",
+              nodeEnv: process.env.NODE_ENV ?? "development",
             },
             "wa_webhook_channel_not_found"
           );
           results.push({ messageId: msg.messageId, handled: false, duplicate: false });
           continue;
         }
+
+        rootLogger.info(
+          {
+            handler: "whatsapp_webhook",
+            step: "after_channel_resolution",
+            phoneNumberId: msg.phoneNumberId,
+            tenantId: channel.tenantId,
+          },
+          "wa_webhook_channel_resolved"
+        );
 
         const reqLog = createRequestLogger({
           tenantId: channel.tenantId,
@@ -859,6 +979,248 @@ async function handleWebhookVerify(req: IncomingMessage, res: ServerResponse): P
   res.end("Forbidden");
 }
 
+async function readJsonRecordBody(req: IncomingMessage, res: ServerResponse): Promise<JsonRecord | null> {
+  let rawBody: Buffer;
+  try {
+    rawBody = await readRawBody(req);
+  } catch {
+    sendJson(res, 400, { ok: false, error: "Failed to read request body." });
+    return null;
+  }
+
+  let body: unknown;
+  try {
+    body = parseJsonBody(rawBody);
+  } catch {
+    sendJson(res, 400, { ok: false, error: "Invalid JSON body." });
+    return null;
+  }
+
+  if (!isRecord(body)) {
+    sendJson(res, 400, { ok: false, error: "JSON body must be an object." });
+    return null;
+  }
+
+  return body;
+}
+
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function resolveWhatsAppAccessToken(override?: string): string | undefined {
+  return (
+    asNonEmptyString(override) ??
+    asNonEmptyString(process.env.WHATSAPP_ACCESS_TOKEN) ??
+    asNonEmptyString(process.env.META_ACCESS_TOKEN)
+  );
+}
+
+type AdminBootstrapResult = {
+  tenantId: string;
+  userId: string;
+  alreadyExisted: boolean;
+  tenantName: string;
+};
+
+type AdminUpsertChannelResult = {
+  channelId: string;
+  created: boolean;
+  tenantId?: string;
+};
+
+async function handleAdminBootstrapRoute(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  if (!requireAdminApiKey(req, res)) {
+    return;
+  }
+
+  const body = await readJsonRecordBody(req, res);
+  if (!body) {
+    return;
+  }
+
+  const tenantName = asNonEmptyString(body.tenantName);
+  const adminEmailRaw = asNonEmptyString(body.adminEmail);
+  const adminEmail = adminEmailRaw?.toLowerCase();
+
+  if (!tenantName) {
+    sendJson(res, 400, { ok: false, error: "Field 'tenantName' is required." });
+    return;
+  }
+
+  if (!adminEmail || !isValidEmail(adminEmail)) {
+    sendJson(res, 400, { ok: false, error: "Field 'adminEmail' must be a valid email." });
+    return;
+  }
+
+  const whatsappPayload = body.whatsapp;
+  if (whatsappPayload !== undefined && !isRecord(whatsappPayload)) {
+    sendJson(res, 400, { ok: false, error: "Field 'whatsapp' must be an object when provided." });
+    return;
+  }
+
+  const whatsapp = isRecord(whatsappPayload) ? whatsappPayload : undefined;
+
+  const bodyPhoneNumberId = asNonEmptyString(body.phoneNumberId) ?? asNonEmptyString(whatsapp?.phoneNumberId);
+  const phoneNumberId = bodyPhoneNumberId ?? asNonEmptyString(process.env.DEFAULT_WHATSAPP_PHONE_NUMBER_ID);
+  const accessToken = resolveWhatsAppAccessToken(
+    asNonEmptyString(body.accessToken) ?? asNonEmptyString(whatsapp?.accessToken)
+  );
+  const wabaId =
+    asNonEmptyString(body.wabaId) ??
+    asNonEmptyString(whatsapp?.wabaId) ??
+    asNonEmptyString(process.env.WHATSAPP_WABA_ID) ??
+    phoneNumberId;
+  const verifyToken =
+    asNonEmptyString(body.verifyToken) ??
+    asNonEmptyString(whatsapp?.verifyToken) ??
+    asNonEmptyString(process.env.WHATSAPP_VERIFY_TOKEN);
+
+  const hasChannelInputs = Boolean(
+    bodyPhoneNumberId ||
+      asNonEmptyString(body.accessToken) ||
+      asNonEmptyString(body.wabaId) ||
+      asNonEmptyString(body.verifyToken) ||
+      asNonEmptyString(whatsapp?.phoneNumberId) ||
+      asNonEmptyString(whatsapp?.accessToken) ||
+      asNonEmptyString(whatsapp?.wabaId) ||
+      asNonEmptyString(whatsapp?.verifyToken)
+  );
+  const createWhatsappChannel = asBoolean(body.createWhatsappChannel) ?? asBoolean(whatsapp?.enabled) ?? hasChannelInputs;
+
+  const convex = getConvexClient();
+
+  try {
+    const bootstrap = (await convex.mutation(
+      "adminBootstrap:createTenantWithUser" as any,
+      { tenantName, adminEmail } as any
+    )) as AdminBootstrapResult;
+
+    let channelResponse:
+      | { configured: false }
+      | {
+          configured: true;
+          channelId: string;
+          created: boolean;
+          phoneNumberId: string;
+          status: "active";
+        } = { configured: false };
+
+    if (createWhatsappChannel) {
+      if (!phoneNumberId) {
+        sendJson(res, 400, {
+          ok: false,
+          error: "WhatsApp setup requires 'phoneNumberId' (or DEFAULT_WHATSAPP_PHONE_NUMBER_ID env).",
+        });
+        return;
+      }
+      if (!accessToken) {
+        sendJson(res, 400, {
+          ok: false,
+          error: "WhatsApp setup requires 'accessToken' (or WHATSAPP_ACCESS_TOKEN/META_ACCESS_TOKEN env).",
+        });
+        return;
+      }
+
+      const channel = (await convex.mutation(
+        "adminBootstrap:upsertWhatsappChannel" as any,
+        {
+          tenantId: bootstrap.tenantId,
+          phoneNumberId,
+          accessToken,
+          wabaId,
+          verifyToken,
+        } as any
+      )) as AdminUpsertChannelResult;
+
+      channelResponse = {
+        configured: true,
+        channelId: channel.channelId,
+        created: channel.created,
+        phoneNumberId,
+        status: "active",
+      };
+    }
+
+    sendJson(res, 200, {
+      ok: true,
+      tenantId: bootstrap.tenantId,
+      userId: bootstrap.userId,
+      tenantName: bootstrap.tenantName,
+      alreadyExisted: bootstrap.alreadyExisted,
+      whatsappChannel: channelResponse,
+    });
+  } catch (error) {
+    sendJson(res, 400, {
+      ok: false,
+      error: error instanceof Error ? error.message : "Bootstrap failed.",
+    });
+  }
+}
+
+async function handleAdminWhatsappChannelRoute(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  if (!requireAdminApiKey(req, res)) {
+    return;
+  }
+
+  const body = await readJsonRecordBody(req, res);
+  if (!body) {
+    return;
+  }
+
+  const tenantId = asNonEmptyString(body.tenantId);
+  const phoneNumberId = asNonEmptyString(body.phoneNumberId);
+  const accessToken = resolveWhatsAppAccessToken(asNonEmptyString(body.accessToken));
+  const wabaId = asNonEmptyString(body.wabaId) ?? asNonEmptyString(process.env.WHATSAPP_WABA_ID) ?? phoneNumberId;
+  const verifyToken = asNonEmptyString(body.verifyToken) ?? asNonEmptyString(process.env.WHATSAPP_VERIFY_TOKEN);
+
+  if (!tenantId) {
+    sendJson(res, 400, { ok: false, error: "Field 'tenantId' is required." });
+    return;
+  }
+
+  if (!phoneNumberId) {
+    sendJson(res, 400, { ok: false, error: "Field 'phoneNumberId' is required." });
+    return;
+  }
+
+  if (!accessToken) {
+    sendJson(res, 400, {
+      ok: false,
+      error: "Field 'accessToken' is required (or set WHATSAPP_ACCESS_TOKEN/META_ACCESS_TOKEN env).",
+    });
+    return;
+  }
+
+  try {
+    const convex = getConvexClient();
+    const result = (await convex.mutation(
+      "adminBootstrap:upsertWhatsappChannel" as any,
+      {
+        tenantId,
+        phoneNumberId,
+        accessToken,
+        wabaId,
+        verifyToken,
+      } as any
+    )) as AdminUpsertChannelResult;
+
+    sendJson(res, 200, {
+      ok: true,
+      tenantId,
+      phoneNumberId,
+      status: "active",
+      channelId: result.channelId,
+      created: result.created,
+    });
+  } catch (error) {
+    sendJson(res, 400, {
+      ok: false,
+      error: error instanceof Error ? error.message : "Failed to upsert WhatsApp channel.",
+    });
+  }
+}
+
 async function handleBokunWebhookPost(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const appSecret = process.env.BOKUN_APP_CLIENT_SECRET;
   if (!appSecret || appSecret.trim().length === 0) {
@@ -912,6 +1274,23 @@ async function handleBokunWebhookPost(req: IncomingMessage, res: ServerResponse)
   // Bokun has 5-second timeout - respond quickly
   const result = await handleBokunWebhookEvent(webhookHeaders, body);
   sendJson(res, 200, { ok: result.ok, topic: result.topic });
+}
+
+async function handleRootRoute(_req: IncomingMessage, res: ServerResponse): Promise<void> {
+  sendJson(res, 200, {
+    ok: true,
+    service: "bokun-bot-api",
+    message: "API online",
+    routes: {
+      health: "/health",
+      whatsappWebhook: "/whatsapp/webhook",
+      bokunWebhook: "/bokun/webhook",
+      oauthAuthorize: "/oauth/authorize",
+      oauthCallback: "/oauth/callback",
+      adminBootstrap: "/admin/bootstrap",
+      adminWhatsappChannel: "/admin/whatsapp/channel",
+    },
+  });
 }
 
 async function handleHealthRoute(_req: IncomingMessage, res: ServerResponse): Promise<void> {
@@ -998,6 +1377,21 @@ export function createAppServer() {
       const method = req.method ?? "GET";
       const url = new URL(req.url ?? "/", "http://localhost");
       const pathname = url.pathname;
+
+      if (pathname === "/" && method === "GET") {
+        await handleRootRoute(req, res);
+        return;
+      }
+
+      if (pathname === "/admin/bootstrap" && method === "POST") {
+        await handleAdminBootstrapRoute(req, res);
+        return;
+      }
+
+      if (pathname === "/admin/whatsapp/channel" && method === "POST") {
+        await handleAdminWhatsappChannelRoute(req, res);
+        return;
+      }
 
       if (pathname === "/whatsapp/webhook" && method === "POST") {
         await handleWebhookPost(req, res);
