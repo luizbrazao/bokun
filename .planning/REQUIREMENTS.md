@@ -31,7 +31,7 @@ Requirements for commercial launch. Each maps to roadmap phases.
 - [x] **DEPLOY-01**: render.yaml Blueprint defines two Render services: Node.js web service (Starter tier minimum) and React dashboard as static site
 - [x] **DEPLOY-02**: All required environment variables are documented per service with clear descriptions and examples
 - [x] **DEPLOY-03**: Convex production deployment runs before app deploy in the pipeline (schema never lags behind app code)
-- [x] **DEPLOY-04**: HMAC signature verification passes for all three webhook types (Meta, Bokun, Stripe) in the production Render environment immediately after first deploy
+- [x] **DEPLOY-04**: HMAC signature verification passes for Meta (WhatsApp) and Bokun webhook types in the production Render environment immediately after first deploy. Stripe webhook HMAC verification is deferred to Phase 3 (billing); `STRIPE_WEBHOOK_SECRET` is declared as a placeholder in `render.yaml` and `.env.example`
 
 ### Billing
 

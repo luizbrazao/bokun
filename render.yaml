@@ -71,6 +71,7 @@ services:
   - type: web
     name: bokun-bot-dashboard
     runtime: static
+    plan: free
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
