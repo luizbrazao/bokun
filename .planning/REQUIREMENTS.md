@@ -38,7 +38,7 @@ Requirements for commercial launch. Each maps to roadmap phases.
 ### Billing
 
 - [ ] **BILL-01**: Vendor can select a Monthly or Annual subscription plan via Stripe Checkout
-- [ ] **BILL-02**: New subscription includes a 14-day free trial before first charge
+- [ ] **BILL-02**: New subscription includes a 7-day free trial before first charge
 - [x] **BILL-03**: Stripe webhook events checkout.session.completed, customer.subscription.updated, and customer.subscription.deleted activate/deactivate the tenant subscription status in Convex
 - [x] **BILL-04**: Stripe webhook processing is idempotent — duplicate Stripe event delivery produces no duplicate state changes
 - [ ] **BILL-05**: Bot service is gated on active subscription status — vendors with cancelled or expired subscriptions receive a polite message instead of booking service (with 7-day grace period for past_due)
@@ -168,3 +168,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 ---
 *Requirements defined: 2026-03-01*
 *Last updated: 2026-03-03 — BILL-01/BILL-02 moved from Phase 3 → Phase 4; BILL-05 moved Phase 3 → Phase 5 (Phase 3 scope was narrowed to billing foundations only); milestone v1.1 started*
+*Last updated: 2026-03-03 — BILL-02 corrected from 14-day to 7-day free trial to match CONTEXT.md locked decision*
