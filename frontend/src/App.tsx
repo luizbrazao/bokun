@@ -2,6 +2,7 @@ import { useConvexAuth } from "convex/react";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
+import LandingPage from "./pages/LandingPage";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
 import OverviewPage from "./pages/OverviewPage";
 import BookingsPage from "./pages/BookingsPage";
@@ -56,7 +57,8 @@ function App() {
 
   return (
     <Routes>
-      {/* Rota pública */}
+      {/* Rotas públicas */}
+      <Route path="/" element={<LandingPage />} />
       <Route path="/auth" element={<AuthRoute />} />
 
       {/* Rotas protegidas: exigem autenticação */}
@@ -67,7 +69,6 @@ function App() {
         {/* Dashboard: autenticado E com tenant */}
         <Route element={<RequireTenant />}>
           <Route element={<DashboardLayout />}>
-            <Route path="/" element={<Navigate to="/overview" replace />} />
             <Route path="/overview" element={<OverviewPage />} />
             <Route path="/reservas" element={<BookingsPage />} />
             <Route path="/conversas" element={<ConversationsPage />} />
