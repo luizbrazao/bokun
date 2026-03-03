@@ -125,7 +125,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | OBS-03 | Phase 1 | Complete |
 | OBS-04 | Phase 1 | Complete |
 | OBS-05 | Phase 1 | Complete |
-| OBS-06a (storage layer) | Phase 3 | Pending |
+| OBS-06a (storage layer) | Phase 3 | Complete |
 | OBS-06b (admin UI + retry) | Phase 4 | Pending |
 | INFRA-01 | Phase 1 | Complete |
 | INFRA-02 | Phase 1 | Complete |

@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Observability & Hardening** - Structured logging, error tracking, security hardening, and reliability improvements (completed 2026-03-01)
 - [x] **Phase 2: Production Deployment** - Render.com infrastructure, environment config, Convex production deployment (completed 2026-03-02)
-- [ ] **Phase 3: Billing + Ops Hardening** - Stripe webhook foundations, basic subscription state, ops hardening (Sentry validated, dead-letter/retry, rate limiting)
+- [x] **Phase 3: Billing + Ops Hardening** - Stripe webhook foundations, basic subscription state, ops hardening (Sentry validated, dead-letter/retry, rate limiting)
 - [ ] **Phase 4: Dashboard, Landing Page & Profile** - Complete vendor admin UI, marketing landing page, vendor settings
 - [ ] **Phase 5: Automated Test Coverage** - Automated test suite covering critical booking, isolation, and billing flows
 
@@ -70,7 +70,7 @@ Plans:
 Plans:
 - [ ] 03-01-PLAN.md — Convex schema (Stripe fields, stripe_event_dedup, failed_webhooks tables) + all Convex mutations (BILL-03, BILL-04, OBS-06)
 - [ ] 03-02-PLAN.md — Stripe webhook handler + serverWebhookLimiter + Bokun/Stripe rate limiting + dead-letter write sites in server.ts (BILL-03, BILL-04, OBS-06)
-- [ ] 03-03-PLAN.md — /admin/sentry-test endpoint + .env.example Stripe runbook + Sentry E2E human checkpoint (OBS-06)
+- [x] 03-03-PLAN.md — /admin/sentry-test endpoint + .env.example Stripe runbook + Sentry E2E human checkpoint (OBS-06)
 
 ### Phase 4: Dashboard, Landing Page & Profile
 **Goal**: Vendors have a complete admin dashboard to monitor their bot, a public landing page attracts new vendors, and vendors can configure their business profile
@@ -112,6 +112,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. Observability & Hardening | 3/4 | Complete    | 2026-03-01 |
 | 2. Production Deployment | 2/2 | Complete   | 2026-03-02 |
-| 3. Billing + Ops Hardening | 2/3 | In Progress|  |
+| 3. Billing + Ops Hardening | 3/3 | Complete   | 2026-03-03 |
 | 4. Dashboard, Landing Page & Profile | 0/0 | Not started | - |
 | 5. Automated Test Coverage | 0/0 | Not started | - |
