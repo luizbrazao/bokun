@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-last_updated: "2026-03-03T07:19:36Z"
+last_updated: "2026-03-03T07:26:18Z"
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 9
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 3 of 5 (Billing + Ops Hardening) -- IN PROGRESS
-Plan: 1 of 3 in current phase (03-01 complete)
-Status: Phase 3 Plan 1 complete (Convex data layer: Stripe schema + dedup + failed webhooks + cleanup crons deployed)
-Last activity: 2026-03-03 -- Completed 03-01 (schema extended, 3 mutation files created, cleanup+crons updated, deployed to prod)
+Plan: 2 of 3 in current phase (03-02 complete)
+Status: Phase 3 Plan 2 complete (Stripe webhook endpoint, serverWebhookLimiter, dead-letter write sites for all three handlers)
+Last activity: 2026-03-03 -- Completed 03-02 (src/stripe/webhookHandler.ts created, rateLimiter extended, server.ts updated with POST /stripe/webhook + Bokun rate limiting + dead-letter writes)
 
-Progress: [██████░░░░] 57%
+Progress: [███████░░░] 62%
 
 ## Performance Metrics
 
@@ -42,10 +42,10 @@ Progress: [██████░░░░] 57%
 |-------|-------|-------|----------|
 | 01-observability-hardening | 4 | ~11 min | ~2.8 min |
 | 02-production-deployment | 2 | ~7 min | ~3.5 min |
-| 03-billing-ops-hardening | 1 (in progress) | ~2 min | ~2 min |
+| 03-billing-ops-hardening | 2 complete | ~6 min | ~3 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-04 (~4min), 02-01 (~2min), 02-02 (~5min), 03-01 (~2min)
+- Last 5 plans: 02-01 (~2min), 02-02 (~5min), 03-01 (~2min), 03-02 (~4min)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -54,6 +54,7 @@ Progress: [██████░░░░] 57%
 | Phase 02-production-deployment P01 | 1 | 2 tasks | 3 files |
 | Phase 02-production-deployment P02 | 2 | 2 tasks | 0 files |
 | Phase 03-billing-ops-hardening P01 | 2 | 2 tasks | 6 files |
+| Phase 03-billing-ops-hardening P02 | 4 | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,10 @@ Recent decisions affecting current work:
 - [Phase 03-billing-ops-hardening]: 03-01: failed_webhooks stores payloadHash (SHA256) only, never raw body -- hard PII protection requirement for all three sources
 - [Phase 03-billing-ops-hardening]: 03-01: cleanupFailedWebhooks uses 30-day retention vs 7-day for dedup records -- failed webhooks have operational debugging value beyond dedup period
 - [Phase 03-billing-ops-hardening]: 03-01: stripeCurrentPeriodEnd stored as Unix timestamp in SECONDS (Stripe format) -- no conversion at storage layer
+- [Phase 03-billing-ops-hardening]: 03-02: Lazy Stripe client singleton avoids throwing at module load time when STRIPE_SECRET_KEY absent -- key validated at request time
+- [Phase 03-billing-ops-hardening]: 03-02: Stripe/Bokun webhook 429 on rate limit excess -- server-to-server callers handle 429 with backoff; unlike Meta/WhatsApp which must receive 200
+- [Phase 03-billing-ops-hardening]: 03-02: Dead-letter writes are best-effort (.catch(() => {})) -- dead-letter failure must never mask original processing error
+- [Phase 03-billing-ops-hardening]: 03-02: Two-tier rate limiting: inboundMessageLimiter (per-user, 10/min) vs serverWebhookLimiter (per-source, 300/min)
 
 ### Roadmap Evolution
 
@@ -103,5 +108,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 03-01-PLAN.md (Convex data layer: Stripe schema + claimStripeEvent + upsertTenantSubscription + recordFailedWebhook + cleanup crons deployed)
+Stopped at: Completed 03-02-PLAN.md (Stripe webhook endpoint, serverWebhookLimiter, dead-letter instrumentation across all three webhook handlers)
 Resume file: None

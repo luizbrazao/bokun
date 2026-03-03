@@ -112,6 +112,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. Observability & Hardening | 3/4 | Complete    | 2026-03-01 |
 | 2. Production Deployment | 2/2 | Complete   | 2026-03-02 |
-| 3. Billing + Ops Hardening | 1/3 | In Progress|  |
+| 3. Billing + Ops Hardening | 2/3 | In Progress|  |
 | 4. Dashboard, Landing Page & Profile | 0/0 | Not started | - |
 | 5. Automated Test Coverage | 0/0 | Not started | - |
