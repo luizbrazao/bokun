@@ -138,11 +138,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEPLOY-02 | Phase 2 | Complete |
 | DEPLOY-03 | Phase 2 | Complete |
 | DEPLOY-04 | Phase 2 | Complete |
-| BILL-01 | Phase 3 | Pending |
-| BILL-02 | Phase 3 | Pending |
+| BILL-01 | Phase 4 | Pending |
+| BILL-02 | Phase 4 | Pending |
 | BILL-03 | Phase 3 | Complete |
 | BILL-04 | Phase 3 | Complete |
-| BILL-05 | Phase 3 | Pending |
+| BILL-05 | Phase 5 | Pending |
 | DASH-01 | Phase 4 | Pending |
 | DASH-02 | Phase 4 | Pending |
 | DASH-03 | Phase 4 | Pending |
@@ -167,4 +167,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-03-01*
-*Last updated: 2026-03-03 — OBS-06 split into OBS-06a (Phase 3 storage) and OBS-06b (Phase 4 UI) for accurate traceability*
+*Last updated: 2026-03-03 — BILL-01/BILL-02 moved from Phase 3 → Phase 4; BILL-05 moved Phase 3 → Phase 5 (Phase 3 scope was narrowed to billing foundations only); milestone v1.1 started*

@@ -75,7 +75,7 @@ Plans:
 ### Phase 4: Dashboard, Landing Page & Profile
 **Goal**: Vendors have a complete admin dashboard to monitor their bot, a public landing page attracts new vendors, and vendors can configure their business profile
 **Depends on**: Phase 3
-**Requirements**: OBS-06, DASH-01, DASH-02, DASH-03, DASH-04, LAND-01, LAND-02, LAND-03, LAND-04, PROF-01, PROF-02, PROF-03, PROF-04
+**Requirements**: BILL-01, BILL-02, OBS-06b, DASH-01, DASH-02, DASH-03, DASH-04, LAND-01, LAND-02, LAND-03, LAND-04, PROF-01, PROF-02, PROF-03, PROF-04
 **Success Criteria** (what must be TRUE):
   1. Dashboard overview shows total messages today, bookings this week, bot on/off status, and WhatsApp connection indicator
   2. Vendor can toggle the bot on/off from the dashboard and the webhook router respects the toggle state immediately
@@ -92,7 +92,7 @@ Plans:
 ### Phase 5: Automated Test Coverage
 **Goal**: Critical booking, isolation, and billing flows are verified by automated tests before the product scales
 **Depends on**: Phase 4
-**Requirements**: TEST-01, TEST-02, TEST-03, TEST-04
+**Requirements**: BILL-05, TEST-01, TEST-02, TEST-03, TEST-04
 **Success Criteria** (what must be TRUE):
   1. Automated tests cover the booking state machine happy path (select_time through confirm) and the cancellation flow triggered mid-booking
   2. Tests verify that tenant A cannot read or modify data belonging to tenant B across all critical Convex queries
