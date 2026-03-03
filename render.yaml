@@ -66,6 +66,12 @@ services:
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
+      - key: STRIPE_MONTHLY_PRICE_ID
+        sync: false
+      - key: STRIPE_ANNUAL_PRICE_ID
+        sync: false
+      - key: FRONTEND_URL
+        value: https://your-dashboard.onrender.com
 
   # ── React Dashboard (Static Site) ─────────────────────────────
   - type: web

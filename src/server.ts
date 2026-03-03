@@ -6,6 +6,7 @@ import { initSentry, captureError } from "./lib/sentry.ts";
 import * as Sentry from "@sentry/node";
 import { inboundMessageLimiter, serverWebhookLimiter } from "./middleware/rateLimiter.ts";
 import { verifyAndParseStripeWebhook, handleStripeEvent } from "./stripe/webhookHandler.ts";
+import { createCheckoutSession } from "./stripe/checkoutHandler.ts";
 import { getConvexClient } from "./convex/client.ts";
 import { handleWhatsAppWebhookMessage } from "./whatsapp/webhook.ts";
 import { parseMetaWebhook, isStatusUpdate } from "./whatsapp/parseMetaWebhook.ts";
@@ -1507,6 +1508,57 @@ async function handleStripeWebhookPost(req: IncomingMessage, res: ServerResponse
   }
 }
 
+async function handleCreateCheckoutSessionRoute(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  let rawBody: Buffer;
+  try {
+    rawBody = await readRawBody(req);
+  } catch {
+    sendJson(res, 400, { ok: false, error: "Failed to read request body." });
+    return;
+  }
+
+  let parsed: Record<string, unknown>;
+  try {
+    const bodyText = rawBody.toString("utf8").trim();
+    parsed = bodyText.length > 0 ? (JSON.parse(bodyText) as Record<string, unknown>) : {};
+  } catch {
+    sendJson(res, 400, { ok: false, error: "Invalid JSON body." });
+    return;
+  }
+
+  const plan = parsed?.plan;
+  const tenantId = parsed?.tenantId;
+
+  if (
+    !plan ||
+    !tenantId ||
+    typeof tenantId !== "string" ||
+    (plan !== "monthly" && plan !== "annual")
+  ) {
+    sendJson(res, 400, { ok: false, error: "Missing or invalid plan or tenantId" });
+    return;
+  }
+
+  const frontendUrl = process.env.FRONTEND_URL ?? "http://localhost:5173";
+  const successUrl = `${frontendUrl}/configuracoes?checkout=success`;
+  const cancelUrl = `${frontendUrl}/configuracoes?checkout=cancelled`;
+
+  try {
+    const { url } = await createCheckoutSession({
+      tenantId,
+      plan: plan as "monthly" | "annual",
+      successUrl,
+      cancelUrl,
+    });
+    sendJson(res, 200, { ok: true, url });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    rootLogger.error({ handler: "create_checkout_session", error: msg }, "checkout_session_failed");
+    captureError(err, { tenantId: typeof tenantId === "string" ? tenantId : "unknown", handler: "create_checkout_session" });
+    sendJson(res, 500, { ok: false, error: msg });
+  }
+}
+
 async function handleRootRoute(_req: IncomingMessage, res: ServerResponse): Promise<void> {
   sendJson(res, 200, {
     ok: true,
@@ -1659,6 +1711,12 @@ export function createAppServer() {
       // Stripe webhook
       if (pathname === "/stripe/webhook" && method === "POST") {
         await handleStripeWebhookPost(req, res);
+        return;
+      }
+
+      // Stripe Checkout session creation (frontend -> backend -> Stripe)
+      if (pathname === "/api/create-checkout-session" && method === "POST") {
+        await handleCreateCheckoutSessionRoute(req, res);
         return;
       }
 

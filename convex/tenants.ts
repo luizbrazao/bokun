@@ -91,6 +91,52 @@ export const getOpenAIKeyForTenant = query({
   },
 });
 
+/* ─── Profile Settings ─── */
+
+export const getTenantProfile = query({
+  args: { tenantId: v.id("tenants") },
+  handler: async (ctx, args) => {
+    await requireTenantMembership(ctx, args.tenantId);
+    const tenant = await ctx.db.get(args.tenantId);
+    if (!tenant) return null;
+    return {
+      name: tenant.name,
+      businessName: tenant.businessName ?? null,
+      logoUrl: tenant.logoUrl ?? null,
+      contactEmail: tenant.contactEmail ?? null,
+      timezone: tenant.timezone ?? "Europe/Madrid",
+      language: tenant.language ?? "pt",
+      // Subscription fields for Assinatura tab:
+      stripeStatus: tenant.stripeStatus ?? null,
+      stripeCurrentPeriodEnd: tenant.stripeCurrentPeriodEnd ?? null,
+      stripeSubscriptionId: tenant.stripeSubscriptionId ?? null,
+    };
+  },
+});
+
+export const updateTenantProfile = mutation({
+  args: {
+    tenantId: v.id("tenants"),
+    businessName: v.optional(v.string()),
+    logoUrl: v.optional(v.string()),
+    contactEmail: v.optional(v.string()),
+    timezone: v.optional(v.string()),
+    language: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await requireTenantMembership(ctx, args.tenantId);
+    const { tenantId, ...fields } = args;
+    // Only patch fields that are provided (not undefined)
+    const patch: Record<string, unknown> = {};
+    if (fields.businessName !== undefined) patch.businessName = fields.businessName.trim();
+    if (fields.logoUrl !== undefined) patch.logoUrl = fields.logoUrl.trim();
+    if (fields.contactEmail !== undefined) patch.contactEmail = fields.contactEmail.trim();
+    if (fields.timezone !== undefined) patch.timezone = fields.timezone;
+    if (fields.language !== undefined) patch.language = fields.language;
+    await ctx.db.patch(tenantId, patch);
+  },
+});
+
 export const updateTenantStatus = mutation({
   args: {
     tenantId: v.id("tenants"),

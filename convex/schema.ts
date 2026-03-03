@@ -15,6 +15,11 @@ export default defineSchema({
     stripeSubscriptionId: v.optional(v.string()),
     stripeStatus: v.optional(v.string()), // "active" | "past_due" | "canceled" | "trialing" etc. (Stripe uses American English "canceled" — one L)
     stripeCurrentPeriodEnd: v.optional(v.number()), // Unix timestamp in SECONDS from Stripe (not milliseconds)
+    businessName: v.optional(v.string()),
+    logoUrl: v.optional(v.string()),
+    contactEmail: v.optional(v.string()),
+    timezone: v.optional(v.string()), // IANA timezone e.g. "Europe/Lisbon"; defaults to "Europe/Madrid" at runtime
+    language: v.optional(v.string()), // "pt" | "en" | "es"
     createdAt: v.number(),
   }),
 
@@ -93,7 +98,7 @@ export default defineSchema({
       v.object({
         kind: v.literal("time_options_v1"),
         createdAt: v.number(),
-        tz: v.literal("Europe/Madrid"),
+        tz: v.string(),
         activityId: v.number(),
         options: v.array(
           v.object({
