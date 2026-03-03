@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: in_progress
-last_updated: "2026-03-03T07:26:18Z"
+status: unknown
+last_updated: "2026-03-03T07:31:24.435Z"
 progress:
-  total_phases: 5
+  total_phases: 3
   completed_phases: 2
   total_plans: 9
   completed_plans: 8
@@ -92,6 +92,7 @@ Recent decisions affecting current work:
 - [Phase 03-billing-ops-hardening]: 03-02: Stripe/Bokun webhook 429 on rate limit excess -- server-to-server callers handle 429 with backoff; unlike Meta/WhatsApp which must receive 200
 - [Phase 03-billing-ops-hardening]: 03-02: Dead-letter writes are best-effort (.catch(() => {})) -- dead-letter failure must never mask original processing error
 - [Phase 03-billing-ops-hardening]: 03-02: Two-tier rate limiting: inboundMessageLimiter (per-user, 10/min) vs serverWebhookLimiter (per-source, 300/min)
+- [Phase 03-billing-ops-hardening]: 03-03: Sentry test endpoint kept permanently (not ephemeral) — admin-authenticated, serves as runbook tool for future health checks
 
 ### Roadmap Evolution
 
