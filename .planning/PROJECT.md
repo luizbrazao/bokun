@@ -10,6 +10,18 @@ The system runs a deterministic booking state machine first (fast, predictable r
 
 Vendors close bookings through WhatsApp without building or managing any chatbot infrastructure — they install once via Bokun, configure their channel, and it works.
 
+## Current Milestone: v1.1 Dashboard, Launch & Testing
+
+**Goal:** Complete the vendor-facing product surface (admin dashboard, landing page, profile/settings, billing UI) and automated test coverage required for commercial launch on the Bokun marketplace.
+
+**Target features:**
+- Vendor admin dashboard (overview stats, bot toggle, conversation log, booking list)
+- Marketing landing page with hero, features, pricing tiers → Stripe Checkout CTA
+- Vendor profile & settings (business info, timezone, language, subscription status)
+- Billing UI — Stripe Checkout for plan selection + 14-day trial
+- Subscription gating — bot disabled for expired/cancelled subscriptions
+- Automated test coverage (booking flows, tenant isolation, Stripe webhook handlers)
+
 ## Requirements
 
 ### Validated
@@ -75,4 +87,4 @@ Vendors close bookings through WhatsApp without building or managing any chatbot
 | Stripe subscription per vendor | Predictable SaaS revenue; simpler than per-booking fees | — Pending |
 
 ---
-*Last updated: 2026-03-01 after initialization*
+*Last updated: 2026-03-03 after milestone v1.1 start*
