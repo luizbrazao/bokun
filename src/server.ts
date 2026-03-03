@@ -3,7 +3,8 @@ import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto
 import { pathToFileURL } from "node:url";
 import { rootLogger, createRequestLogger } from "./lib/logger.ts";
 import { initSentry, captureError } from "./lib/sentry.ts";
-import { inboundMessageLimiter } from "./middleware/rateLimiter.ts";
+import { inboundMessageLimiter, serverWebhookLimiter } from "./middleware/rateLimiter.ts";
+import { verifyAndParseStripeWebhook, handleStripeEvent } from "./stripe/webhookHandler.ts";
 import { getConvexClient } from "./convex/client.ts";
 import { handleWhatsAppWebhookMessage } from "./whatsapp/webhook.ts";
 import { parseMetaWebhook, isStatusUpdate } from "./whatsapp/parseMetaWebhook.ts";
@@ -1321,6 +1322,15 @@ async function handleBokunWebhookPost(req: IncomingMessage, res: ServerResponse)
     return;
   }
 
+  // Rate limit check — Bokun is a single server source, key by constant "bokun"
+  const bokunRateCheck = await serverWebhookLimiter.check("bokun");
+  if (!bokunRateCheck.allowed) {
+    rootLogger.warn({ handler: "bokun_webhook" }, "rate_limit_exceeded");
+    // Return 429 for Bokun (server-to-server; Bokun retries with backoff)
+    sendJson(res, 429, { ok: false, error: "Rate limit exceeded." });
+    return;
+  }
+
   const webhookHeaders = extractBokunWebhookHeaders(req.headers as Record<string, string | string[] | undefined>);
 
   if (!webhookHeaders.hmac || !validateBokunWebhookHmac(rawBody, webhookHeaders.hmac, appSecret)) {
@@ -1359,6 +1369,79 @@ async function handleBokunWebhookPost(req: IncomingMessage, res: ServerResponse)
   // Bokun has 5-second timeout - respond quickly
   const result = await handleBokunWebhookEvent(webhookHeaders, body);
   sendJson(res, 200, { ok: result.ok, topic: result.topic });
+}
+
+async function handleStripeWebhookPost(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret?.trim()) {
+    sendJson(res, 500, { ok: false, error: "Missing STRIPE_WEBHOOK_SECRET." });
+    return;
+  }
+
+  // Rate limit check — Stripe is a single server source, key by constant "stripe"
+  const rateCheck = await serverWebhookLimiter.check("stripe");
+  if (!rateCheck.allowed) {
+    rootLogger.warn({ handler: "stripe_webhook" }, "rate_limit_exceeded");
+    // Return 429 for Stripe (Stripe handles 429 with exponential backoff — unlike Meta/WhatsApp)
+    sendJson(res, 429, { ok: false, error: "Rate limit exceeded." });
+    return;
+  }
+
+  let rawBody: Buffer;
+  try {
+    rawBody = await readRawBody(req);
+  } catch {
+    sendJson(res, 400, { ok: false, error: "Failed to read request body." });
+    return;
+  }
+
+  const sigHeader = getHeaderValue(req, "stripe-signature");
+  if (!sigHeader) {
+    sendJson(res, 400, { ok: false, error: "Missing stripe-signature header." });
+    return;
+  }
+
+  let event: import("stripe").default.Event;
+  try {
+    event = verifyAndParseStripeWebhook(rawBody, sigHeader, webhookSecret);
+  } catch (err) {
+    // Invalid or expired signature — return 403 per locked decision
+    rootLogger.warn(
+      { handler: "stripe_webhook", error: err instanceof Error ? err.message : String(err) },
+      "stripe_signature_invalid"
+    );
+    sendJson(res, 403, { ok: false, error: "Invalid Stripe webhook signature." });
+    return;
+  }
+
+  try {
+    const result = await handleStripeEvent(event);
+    rootLogger.info(
+      { handler: "stripe_webhook", eventId: event.id, eventType: event.type, handled: result.handled, reason: result.reason },
+      "stripe_event_processed"
+    );
+    sendJson(res, 200, { ok: true, eventId: event.id, handled: result.handled });
+  } catch (err) {
+    // Dead-letter: record this event as failed for operator review
+    const convex = getConvexClient();
+    const payloadHash = createHash("sha256").update(rawBody).digest("hex");
+    await convex.mutation(
+      "failedWebhooks:recordFailedWebhook" as any,
+      {
+        source: "stripe",
+        payloadHash,
+        errorReason: err instanceof Error ? err.message : String(err),
+        eventType: event.type,
+      } as any
+    ).catch(() => {}); // best-effort — don't fail the response over dead-letter write
+
+    rootLogger.error(
+      { handler: "stripe_webhook", eventId: event.id, eventType: event.type, error: err instanceof Error ? err.message : String(err) },
+      "stripe_event_handler_error"
+    );
+    captureError(err, { tenantId: "stripe", handler: "stripe_webhook" });
+    sendJson(res, 500, { ok: false, error: "Internal server error processing Stripe event." });
+  }
 }
 
 async function handleRootRoute(_req: IncomingMessage, res: ServerResponse): Promise<void> {
@@ -1502,6 +1585,12 @@ export function createAppServer() {
       // Bokun webhook
       if (pathname === "/bokun/webhook" && method === "POST") {
         await handleBokunWebhookPost(req, res);
+        return;
+      }
+
+      // Stripe webhook
+      if (pathname === "/stripe/webhook" && method === "POST") {
+        await handleStripeWebhookPost(req, res);
         return;
       }
 
