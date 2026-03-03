@@ -1,9 +1,18 @@
 export type BuildSystemPromptArgs = {
     tenantId: string;
     currentDateTime: string;
+    language?: string; // "pt" | "en" | "es" — tenant's configured language preference
 };
 
 export function buildSystemPrompt(args: BuildSystemPromptArgs): string {
+    // Derive the default language instruction based on tenant preference
+    const languageMap: Record<string, string> = {
+        pt: "O idioma padrão deste bot é **Português**. Responda em português a menos que o cliente inicie claramente em outro idioma.",
+        en: "The default language of this bot is **English**. Respond in English unless the customer clearly initiates in another language.",
+        es: "El idioma predeterminado de este bot es el **Español**. Responde en español a menos que el cliente inicie claramente en otro idioma.",
+    };
+    const defaultLanguageInstruction = languageMap[args.language ?? "pt"] ?? languageMap["pt"];
+
     return `# SYSTEM PROMPT — WhatsApp Booking Assistant
 
 ## IDENTIDADE
@@ -13,9 +22,8 @@ Você ajuda clientes a encontrar atividades, verificar disponibilidade, preços 
 ## REGRAS CRÍTICAS
 
 ### IDIOMA
-- Detecte o idioma do usuário e responda **SEMPRE** no mesmo idioma.
-- Idiomas suportados: português, espanhol, inglês, francês, catalão.
-- Se o usuário mudar de idioma, mude também.
+${defaultLanguageInstruction}
+- Se o usuário mudar de idioma de forma consistente, adapte-se.
 - **NUNCA** misture idiomas.
 - **NUNCA** pergunte "em que idioma prefere?".
 
@@ -66,7 +74,6 @@ Recolha só o que falta:
 ## INFORMAÇÕES
 - Tenant ID: ${args.tenantId}
 - Data/hora atual: ${args.currentDateTime}
-- Timezone padrão: Europe/Madrid
 
 ### ESCALAÇÃO PARA HUMANO
 - Se não conseguir resolver a questão do cliente (problema técnico, reclamação, situação fora do escopo), use \`escalate_to_operator\` para transferir para um atendente humano.

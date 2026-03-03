@@ -53,16 +53,16 @@ export type TimeOption = {
 export type OptionMap = {
     kind: "time_options_v1";
     createdAt: number;
-    tz: "Europe/Madrid";
+    tz: string;
     activityId: number;
     options: TimeOption[];
 };
 
-function formatDateKeyEuropeMadrid(epochMs: number): string {
-    // epochMs é o "dia" que veio do Bokun. A gente formata data em Europe/Madrid.
+function formatDateKey(epochMs: number, tz: string): string {
+    // epochMs é o "dia" que veio do Bokun. Formata data na timezone do tenant.
     const d = new Date(epochMs);
     const fmt = new Intl.DateTimeFormat("en-CA", {
-        timeZone: "Europe/Madrid",
+        timeZone: tz,
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
@@ -70,11 +70,11 @@ function formatDateKeyEuropeMadrid(epochMs: number): string {
     return fmt.format(d); // en-CA -> YYYY-MM-DD
 }
 
-function formatDisplayEuropeMadrid(epochMs: number, startTimeHHmm: string): string {
+function formatDisplay(epochMs: number, startTimeHHmm: string, tz: string): string {
     // compõe dia + hora como texto. (A hora já vem "local" do produto, mas exibimos junto da data formatada)
     const d = new Date(epochMs);
     const parts = new Intl.DateTimeFormat("pt-BR", {
-        timeZone: "Europe/Madrid",
+        timeZone: tz,
         weekday: "short",
         day: "2-digit",
         month: "2-digit",
@@ -90,11 +90,11 @@ function formatDisplayEuropeMadrid(epochMs: number, startTimeHHmm: string): stri
 
 export function availabilityToOptionMap(args: {
     activityId: number;
-    tz?: "Europe/Madrid";
+    tz?: string;
     availabilities: BokunAvailability[];
     limit?: number; // ex: 9
 }): OptionMap {
-    const tz = args.tz ?? "Europe/Madrid";
+    const tz = args.tz ?? "Europe/Madrid"; // default preserved for backward compat
     const limit = Math.max(1, Math.min(args.limit ?? 9, 20));
 
     // 1) filtra só as que têm vaga e ordena por (date, startTime)
@@ -118,7 +118,7 @@ export function availabilityToOptionMap(args: {
             defaultRate?.pickupSelectionType ??
             a.rates?.[0]?.pickupSelectionType ??
             "UNKNOWN";
-        const baseDisplay = formatDisplayEuropeMadrid(a.date, a.startTime);
+        const baseDisplay = formatDisplay(a.date, a.startTime, tz);
         const display = rateTitle ? `${baseDisplay} (${rateTitle})` : baseDisplay;
 
         return {
@@ -126,7 +126,7 @@ export function availabilityToOptionMap(args: {
             availabilityId: a.id,
             activityId: a.activityId,
             startTimeId: a.startTimeId,
-            dateKey: formatDateKeyEuropeMadrid(a.date),
+            dateKey: formatDateKey(a.date, tz),
             display,
             meta: {
                 availabilityCount: a.availabilityCount,

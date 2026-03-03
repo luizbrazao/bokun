@@ -77,12 +77,21 @@ export async function handleListTimes(args: HandleListTimesArgs): Promise<Handle
   const filteredByRequestedDate = rawItems.filter(
     (item) => parseAvailabilityDateToYMD(item) === args.date
   ) as BokunAvailability[];
+
+  // Look up tenant timezone for availability formatting (PROF-02)
+  const convex = getConvexClient();
+  const tenantRecord = (await convex.query(
+    "tenants:getTenantById" as any,
+    { tenantId: args.tenantId } as any
+  )) as { timezone?: string } | null;
+  const tenantTimezone = tenantRecord?.timezone ?? "Europe/Madrid";
+
   const generatedOptionMap = availabilityToOptionMap({
     activityId: activityIdNumber,
     availabilities: filteredByRequestedDate,
     limit: 8,
+    tz: tenantTimezone, // use tenant's configured timezone instead of hardcoded default
   });
-  const convex = getConvexClient();
   const bookingDraftId = await convex.mutation(
     "bookingDrafts:upsertBookingDraftBase" as any,
     {

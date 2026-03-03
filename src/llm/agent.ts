@@ -59,11 +59,20 @@ export async function runLLMAgent(args: RunLLMAgentArgs): Promise<RunLLMAgentRes
         const openai = getOpenAIClientForKey(config.apiKey);
         const model = config.model;
 
-        // Build system prompt
-        const now = new Date().toLocaleString("en-GB", { timeZone: "Europe/Madrid" });
+        // Look up tenant language and timezone preferences for system prompt (PROF-03)
+        const convex = getConvexClient();
+        const tenantRecord = (await convex.query(
+            "tenants:getTenantById" as any,
+            { tenantId: args.tenantId } as any
+        )) as { language?: string; timezone?: string } | null;
+        const tenantLanguage = tenantRecord?.language ?? "pt";
+
+        // Build system prompt — use tenant timezone for current datetime display
+        const now = new Date().toLocaleString("en-GB", { timeZone: tenantRecord?.timezone ?? "Europe/Madrid" });
         const systemPrompt = buildSystemPrompt({
             tenantId: args.tenantId,
             currentDateTime: now,
+            language: tenantLanguage,
         });
 
         // Load conversation history
