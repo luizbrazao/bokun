@@ -26,3 +26,27 @@ export const inboundMessageLimiter: RateLimiter = {
     }
   },
 };
+
+// Server-to-server webhook rate limiter — much higher limits than end-user messages.
+// Stripe and Bokun are robust servers that handle 429 with exponential backoff.
+// Key is a constant string ("bokun" or "stripe") since traffic comes from a single source.
+const SERVER_WEBHOOK_MAX = Number(process.env.SERVER_WEBHOOK_RATE_MAX ?? "300");
+const SERVER_WEBHOOK_WINDOW_SEC = Math.ceil(
+  Number(process.env.SERVER_WEBHOOK_RATE_WINDOW_MS ?? "60000") / 1000
+);
+
+const _serverLimiter = new RateLimiterMemory({
+  points: SERVER_WEBHOOK_MAX,
+  duration: SERVER_WEBHOOK_WINDOW_SEC,
+});
+
+export const serverWebhookLimiter: RateLimiter = {
+  async check(key: string): Promise<{ allowed: boolean }> {
+    try {
+      await _serverLimiter.consume(key);
+      return { allowed: true };
+    } catch {
+      return { allowed: false };
+    }
+  },
+};
