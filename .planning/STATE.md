@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Dashboard, Launch & Testing
-status: defining_requirements
-last_updated: "2026-03-03T09:00:00.000Z"
+status: ready_to_plan
+last_updated: "2026-03-03T10:00:00.000Z"
 progress:
   total_phases: 2
   completed_phases: 0
-  total_plans: 0
+  total_plans: 6
   completed_plans: 0
 ---
 
@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: Not started (defining requirements for v1.1)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-03 — Milestone v1.1 started
+Phase: 4 — Dashboard, Landing Page & Profile
+Plan: Not started (roadmap finalized, ready for plan-phase)
+Status: Roadmap ready
+Last activity: 2026-03-03 — Roadmap finalized for v1.1 (phases 4 and 5 plans defined)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -94,21 +94,24 @@ Recent decisions affecting current work:
 - [Phase 03-billing-ops-hardening]: 03-02: Dead-letter writes are best-effort (.catch(() => {})) -- dead-letter failure must never mask original processing error
 - [Phase 03-billing-ops-hardening]: 03-02: Two-tier rate limiting: inboundMessageLimiter (per-user, 10/min) vs serverWebhookLimiter (per-source, 300/min)
 - [Phase 03-billing-ops-hardening]: 03-03: Sentry test endpoint kept permanently (not ephemeral) — admin-authenticated, serves as runbook tool for future health checks
+- [Phase 04-dashboard-landing-profile]: Roadmap finalized 2026-03-03 — 4 plans defined; 04-01-PLAN.md is next
 
 ### Roadmap Evolution
 
 - Phase 3 redefined: "Stripe Billing & Subscription Enforcement" → "Billing + Ops Hardening" (tighter scope: Stripe webhook foundations + ops hardening; full billing UI/enforcement moved to Phase 4)
+- Phase 4 plans finalized 2026-03-03: 4 plans (04-01 frontend scaffolding+overview+bot toggle, 04-02 conversation log+booking list+failed webhooks UI, 04-03 landing page, 04-04 profile+settings+billing UI with Stripe Checkout)
+- Phase 5 plans finalized 2026-03-03: 2 plans (05-01 booking state machine tests + cancellation flow, 05-02 tenant isolation tests + Stripe webhook unit tests + subscription gating)
 
 ### Pending Todos
 
-None yet.
+None.
 
 ### Blockers/Concerns
 
-None yet.
+None.
 
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 03-03-PLAN.md (POST /admin/sentry-test endpoint, .env.example Stripe runbook, Sentry E2E validated in production — Phase 3 complete)
+Stopped at: Roadmap finalized for v1.1 — phases 4 and 5 plan breakdown defined. Ready to start 04-01-PLAN.md.
 Resume file: None

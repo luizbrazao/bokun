@@ -73,35 +73,38 @@ Plans:
 - [x] 03-03-PLAN.md — /admin/sentry-test endpoint + .env.example Stripe runbook + Sentry E2E human checkpoint (OBS-06)
 
 ### Phase 4: Dashboard, Landing Page & Profile
-**Goal**: Vendors have a complete admin dashboard to monitor their bot, a public landing page attracts new vendors, and vendors can configure their business profile
+**Goal**: Vendors have a complete admin dashboard to monitor their bot, a public landing page attracts new vendors, and vendors can configure their business profile and billing
 **Depends on**: Phase 3
 **Requirements**: BILL-01, BILL-02, OBS-06b, DASH-01, DASH-02, DASH-03, DASH-04, LAND-01, LAND-02, LAND-03, LAND-04, PROF-01, PROF-02, PROF-03, PROF-04
 **Success Criteria** (what must be TRUE):
-  1. Dashboard overview shows total messages today, bookings this week, bot on/off status, and WhatsApp connection indicator
-  2. Vendor can toggle the bot on/off from the dashboard and the webhook router respects the toggle state immediately
-  3. Conversation log page shows chat messages with text search and date filter, and booking list page shows WhatsApp-originated bookings with confirmation code, status, customer phone, and activity date
-  4. Landing page communicates the value proposition with hero, features (4 benefits), pricing (plan tiers linked to Stripe Checkout), and is fully responsive on mobile
-  5. Vendor can save business info (name, logo, contact email), select timezone (replacing hardcoded Europe/Madrid), select language (PT/EN/ES), and view current subscription status on the settings pages
-**Plans**: TBD
+  1. Dashboard overview shows total messages today, bookings this week, bot on/off status, and WhatsApp connection indicator; bot toggle persists and the webhook router respects it immediately
+  2. Conversation log page shows chat messages with text search and date range filter (paginated), and booking list page shows WhatsApp-originated bookings with confirmation code, status, customer phone, and activity date
+  3. Failed webhooks page shows failed_webhooks records from Convex with manual retry capability
+  4. Landing page communicates the value proposition with hero, features (4 benefits with icons), pricing tiers linked to Stripe Checkout, and is fully responsive on mobile
+  5. Vendor can save business info (name, logo URL, contact email), select timezone (replacing hardcoded Europe/Madrid), select language (PT/EN/ES), and view current subscription plan, next billing date, and status — with a Stripe Checkout link to subscribe or upgrade
+**Plans**: 4 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
-- [ ] 04-03: TBD
+- [ ] 04-01-PLAN.md — Frontend scaffolding + dashboard overview page + bot toggle (DASH-01, DASH-02)
+- [ ] 04-02-PLAN.md — Conversation log page + booking list page + failed webhooks UI (DASH-03, DASH-04, OBS-06b)
+- [ ] 04-03-PLAN.md — Marketing landing page: hero, features section, pricing section, mobile responsiveness (LAND-01, LAND-02, LAND-03, LAND-04)
+- [ ] 04-04-PLAN.md — Profile & settings pages + billing UI: business info form, timezone/language selectors, subscription status page, Stripe Checkout integration (BILL-01, BILL-02, PROF-01, PROF-02, PROF-03, PROF-04)
 
 ### Phase 5: Automated Test Coverage
-**Goal**: Critical booking, isolation, and billing flows are verified by automated tests before the product scales
+**Goal**: Critical booking, isolation, and billing flows are verified by automated tests, and the bot is gated on active subscription status before the product scales
 **Depends on**: Phase 4
 **Requirements**: BILL-05, TEST-01, TEST-02, TEST-03, TEST-04
 **Success Criteria** (what must be TRUE):
   1. Automated tests cover the booking state machine happy path (select_time through confirm) and the cancellation flow triggered mid-booking
   2. Tests verify that tenant A cannot read or modify data belonging to tenant B across all critical Convex queries
   3. Unit tests cover Stripe webhook handlers for the three subscription lifecycle events (checkout.session.completed, customer.subscription.updated, customer.subscription.deleted)
-  4. All tests pass in CI on every push to main
-**Plans**: TBD
+  4. Vendors with cancelled or expired subscriptions receive a polite bot-disabled message instead of booking service; vendors in 7-day grace period (past_due) continue to receive service
+  5. All tests pass in CI on every push to main
+**Plans**: 2 plans
 
 Plans:
-- [ ] 05-01: TBD
+- [ ] 05-01-PLAN.md — Booking state machine tests (happy path + cancellation mid-booking) + test infrastructure setup (TEST-01, TEST-02)
+- [ ] 05-02-PLAN.md — Tenant isolation tests + Stripe webhook unit tests + subscription gating in webhook router (TEST-03, TEST-04, BILL-05)
 
 ## Progress
 
@@ -113,5 +116,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 1. Observability & Hardening | 3/4 | Complete    | 2026-03-01 |
 | 2. Production Deployment | 2/2 | Complete   | 2026-03-02 |
 | 3. Billing + Ops Hardening | 3/3 | Complete   | 2026-03-03 |
-| 4. Dashboard, Landing Page & Profile | 0/0 | Not started | - |
-| 5. Automated Test Coverage | 0/0 | Not started | - |
+| 4. Dashboard, Landing Page & Profile | 0/4 | Not started | - |
+| 5. Automated Test Coverage | 0/2 | Not started | - |
