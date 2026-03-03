@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@convex/api";
 import { useTenant } from "@/hooks/useTenant";
@@ -767,6 +767,311 @@ function IATab({ tenantId }: { tenantId: string }) {
   );
 }
 
+/* ─── Perfil Tab ─── */
+
+function PerfilTab({ tenantId }: { tenantId: string }) {
+  const profile = useQuery(api.tenants.getTenantProfile, { tenantId: tenantId as any });
+  const updateProfile = useMutation(api.tenants.updateTenantProfile);
+
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [form, setForm] = useState({
+    businessName: "",
+    logoUrl: "",
+    contactEmail: "",
+    timezone: "Europe/Madrid",
+    language: "pt",
+  });
+
+  // Sync form when profile loads
+  useEffect(() => {
+    if (profile) {
+      setForm({
+        businessName: profile.businessName ?? "",
+        logoUrl: profile.logoUrl ?? "",
+        contactEmail: profile.contactEmail ?? "",
+        timezone: profile.timezone ?? "Europe/Madrid",
+        language: profile.language ?? "pt",
+      });
+    }
+  }, [profile]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await updateProfile({
+        tenantId: tenantId as any,
+        businessName: form.businessName,
+        logoUrl: form.logoUrl,
+        contactEmail: form.contactEmail,
+        timezone: form.timezone,
+        language: form.language,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (profile === undefined) {
+    return (
+      <Card>
+        <CardHeader><CardTitle className="text-lg">Perfil da Empresa</CardTitle></CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">Perfil da Empresa</CardTitle>
+          {saved && <Badge variant="success">Salvo</Badge>}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Configure as informações da sua empresa e preferências do bot.
+          </p>
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="perfil-name">Nome da Empresa</Label>
+              <Input
+                id="perfil-name"
+                value={form.businessName}
+                onChange={(e) => setForm((f) => ({ ...f, businessName: e.target.value }))}
+                placeholder="Ex: Sondevela Barcelona"
+              />
+            </div>
+            <div>
+              <Label htmlFor="perfil-logo">URL do Logotipo</Label>
+              <Input
+                id="perfil-logo"
+                value={form.logoUrl}
+                onChange={(e) => setForm((f) => ({ ...f, logoUrl: e.target.value }))}
+                placeholder="https://exemplo.com/logo.png"
+              />
+            </div>
+            <div>
+              <Label htmlFor="perfil-email">Email de Contacto</Label>
+              <Input
+                id="perfil-email"
+                type="email"
+                value={form.contactEmail}
+                onChange={(e) => setForm((f) => ({ ...f, contactEmail: e.target.value }))}
+                placeholder="contacto@empresa.com"
+              />
+            </div>
+            <div>
+              <Label htmlFor="perfil-tz">Fuso Horário</Label>
+              <select
+                id="perfil-tz"
+                value={form.timezone}
+                onChange={(e) => setForm((f) => ({ ...f, timezone: e.target.value }))}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="Europe/Lisbon">Europe/Lisbon (Portugal)</option>
+                <option value="Europe/Madrid">Europe/Madrid (Espanha)</option>
+                <option value="America/Sao_Paulo">America/Sao_Paulo (Brasil)</option>
+                <option value="America/New_York">America/New_York (EUA - Leste)</option>
+                <option value="Europe/London">Europe/London (Reino Unido)</option>
+                <option value="UTC">UTC</option>
+              </select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Usado para formatar horários de disponibilidade nas mensagens WhatsApp.
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="perfil-lang">Idioma do Bot</Label>
+              <select
+                id="perfil-lang"
+                value={form.language}
+                onChange={(e) => setForm((f) => ({ ...f, language: e.target.value }))}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="pt">Português (PT)</option>
+                <option value="en">English (EN)</option>
+                <option value="es">Español (ES)</option>
+              </select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Idioma padrão do assistente IA. O bot adapta-se ao idioma do cliente se for diferente.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={handleSave} disabled={saving}>
+              <Save className="h-4 w-4 mr-1" />
+              {saving ? "Salvando..." : "Salvar"}
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ─── Assinatura Tab ─── */
+
+function AssinaturaTab({ tenantId }: { tenantId: string }) {
+  const profile = useQuery(api.tenants.getTenantProfile, { tenantId: tenantId as any });
+  const [loadingCheckout, setLoadingCheckout] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  // Read ?checkout=success or ?checkout=cancelled from URL
+  const searchParams = new URLSearchParams(window.location.search);
+  const checkoutState = searchParams.get("checkout");
+
+  const handleCheckout = async (plan: "monthly" | "annual") => {
+    setLoadingCheckout(true);
+    setCheckoutError(null);
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
+      const res = await fetch(`${apiBase}/api/create-checkout-session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan, tenantId }),
+      });
+      const data = await res.json();
+      if (data.ok && data.url) {
+        window.location.href = data.url;
+      } else {
+        setCheckoutError(data.error ?? "Erro ao iniciar checkout");
+      }
+    } catch {
+      setCheckoutError("Falha de rede. Tente novamente.");
+    } finally {
+      setLoadingCheckout(false);
+    }
+  };
+
+  const statusLabel = (status: string | null) => {
+    switch (status) {
+      case "active":
+        return <Badge variant="success">Ativo</Badge>;
+      case "trialing":
+        return <Badge variant="default" className="bg-blue-500">Em teste</Badge>;
+      case "past_due":
+        return <Badge variant="warning">Pagamento pendente</Badge>;
+      case "canceled":
+        return <Badge variant="destructive">Cancelado</Badge>;
+      default:
+        return <Badge variant="outline">Sem plano</Badge>;
+    }
+  };
+
+  if (profile === undefined) {
+    return (
+      <Card>
+        <CardHeader><CardTitle className="text-lg">Assinatura</CardTitle></CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Checkout result banners */}
+      {checkoutState === "success" && (
+        <div className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+          Assinatura ativada com sucesso! Obrigado por assinar o Bokun Bot.
+        </div>
+      )}
+      {checkoutState === "cancelled" && (
+        <div className="rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
+          Checkout cancelado. Pode tentar novamente quando quiser.
+        </div>
+      )}
+
+      {/* Current plan status */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Plano Atual</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <InfoRow label="Estado" value={statusLabel(profile?.stripeStatus ?? null)} />
+          {profile?.stripeCurrentPeriodEnd && (
+            <InfoRow
+              label={profile?.stripeStatus === "trialing" ? "Fim do período de teste" : "Próxima fatura"}
+              value={new Date(profile.stripeCurrentPeriodEnd * 1000).toLocaleDateString("pt-BR")}
+            />
+          )}
+          {profile?.stripeSubscriptionId && (
+            <InfoRow
+              label="ID da Assinatura"
+              value={
+                <span className="font-mono text-xs">
+                  ...{profile.stripeSubscriptionId.slice(-8)}
+                </span>
+              }
+            />
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Plan selection */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Escolher Plano</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            Todos os planos incluem 7 dias de teste grátis. Cancele a qualquer momento.
+          </p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {/* Monthly plan */}
+            <div className="rounded-lg border p-4 space-y-3">
+              <div>
+                <p className="font-semibold text-lg">Mensal</p>
+                <p className="text-2xl font-bold mt-1">€29<span className="text-sm font-normal text-muted-foreground">/mês</span></p>
+              </div>
+              <Button
+                className="w-full"
+                variant="outline"
+                onClick={() => handleCheckout("monthly")}
+                disabled={loadingCheckout}
+              >
+                Começar teste grátis (7 dias)
+              </Button>
+            </div>
+
+            {/* Annual plan */}
+            <div className="rounded-lg border border-primary p-4 space-y-3 relative">
+              <Badge className="absolute -top-2 right-4 bg-primary text-primary-foreground">Recomendado</Badge>
+              <div>
+                <p className="font-semibold text-lg">Anual</p>
+                <p className="text-2xl font-bold mt-1">€290<span className="text-sm font-normal text-muted-foreground">/ano</span></p>
+                <p className="text-xs text-green-600 mt-1">Poupa ~2 meses vs. mensal</p>
+              </div>
+              <Button
+                className="w-full"
+                onClick={() => handleCheckout("annual")}
+                disabled={loadingCheckout}
+              >
+                Começar teste grátis (7 dias)
+              </Button>
+            </div>
+          </div>
+
+          {checkoutError && (
+            <p className="mt-3 text-sm text-destructive">{checkoutError}</p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 /* ─── Main Page ─── */
 
 const SettingsPage = () => {
@@ -784,6 +1089,8 @@ const SettingsPage = () => {
           <TabsTrigger value="bokun">Bokun</TabsTrigger>
           <TabsTrigger value="ia">IA</TabsTrigger>
           <TabsTrigger value="equipe">Equipe</TabsTrigger>
+          <TabsTrigger value="perfil">Perfil</TabsTrigger>
+          <TabsTrigger value="assinatura">Assinatura</TabsTrigger>
         </TabsList>
 
         <TabsContent value="whatsapp">
@@ -804,6 +1111,14 @@ const SettingsPage = () => {
 
         <TabsContent value="equipe" className="space-y-4">
           {tenantId && <TeamTab tenantId={tenantId} />}
+        </TabsContent>
+
+        <TabsContent value="perfil">
+          {tenantId && <PerfilTab tenantId={tenantId} />}
+        </TabsContent>
+
+        <TabsContent value="assinatura" className="space-y-4">
+          {tenantId && <AssinaturaTab tenantId={tenantId} />}
         </TabsContent>
       </Tabs>
     </div>
