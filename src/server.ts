@@ -3,6 +3,7 @@ import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto
 import { pathToFileURL } from "node:url";
 import { rootLogger, createRequestLogger } from "./lib/logger.ts";
 import { initSentry, captureError } from "./lib/sentry.ts";
+import * as Sentry from "@sentry/node";
 import { inboundMessageLimiter, serverWebhookLimiter } from "./middleware/rateLimiter.ts";
 import { verifyAndParseStripeWebhook, handleStripeEvent } from "./stripe/webhookHandler.ts";
 import { getConvexClient } from "./convex/client.ts";
@@ -1327,6 +1328,29 @@ async function handleAdminWhatsappChannelLookupRoute(req: IncomingMessage, res: 
   }
 }
 
+async function handleAdminSentryTestRoute(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  if (!requireAdminApiKey(req, res)) {
+    return;
+  }
+
+  // Fire a test exception to Sentry for E2E validation.
+  // Pitfall: Sentry sends events asynchronously — call flush() to ensure delivery before responding.
+  const testError = new Error("Sentry E2E validation test — Phase 3");
+  Sentry.captureException(testError);
+
+  try {
+    await Sentry.flush(2000); // wait up to 2s for event to be sent to Sentry
+  } catch {
+    // flush() timeout is non-fatal — event may still arrive later
+  }
+
+  rootLogger.info({ handler: "admin_sentry_test" }, "sentry_test_fired");
+  sendJson(res, 200, {
+    ok: true,
+    message: "Test error sent to Sentry. Check Sentry Dashboard > Issues for 'Sentry E2E validation test — Phase 3'.",
+  });
+}
+
 async function handleBokunWebhookPost(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const appSecret = process.env.BOKUN_APP_CLIENT_SECRET;
   if (!appSecret || appSecret.trim().length === 0) {
@@ -1602,6 +1626,11 @@ export function createAppServer() {
 
       if (pathname === "/admin/whatsapp/channel" && method === "GET") {
         await handleAdminWhatsappChannelLookupRoute(req, res);
+        return;
+      }
+
+      if (pathname === "/admin/sentry-test" && method === "POST") {
+        await handleAdminSentryTestRoute(req, res);
         return;
       }
 
