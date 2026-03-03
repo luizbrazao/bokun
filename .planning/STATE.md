@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: unknown
-last_updated: "2026-03-02T17:47:05.123Z"
+status: in_progress
+last_updated: "2026-03-03T07:19:36Z"
 progress:
-  total_phases: 2
+  total_phases: 5
   completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 9
+  completed_plans: 7
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** Vendors close bookings through WhatsApp without building or managing any chatbot infrastructure -- install once via Bokun, configure channel, it works.
-**Current focus:** Phase 2: Production Deployment
+**Current focus:** Phase 3: Billing + Ops Hardening
 
 ## Current Position
 
-Phase: 2 of 5 (Production Deployment) -- IN PROGRESS
-Plan: 2 of 4 in current phase (02-02 complete)
-Status: Phase 2 Plan 2 complete (production deployment verified: health + HMAC validation active)
-Last activity: 2026-03-02 -- Completed 02-02 (production curl verification: /health 200, WhatsApp HMAC 403, Bokun HMAC 403)
+Phase: 3 of 5 (Billing + Ops Hardening) -- IN PROGRESS
+Plan: 1 of 3 in current phase (03-01 complete)
+Status: Phase 3 Plan 1 complete (Convex data layer: Stripe schema + dedup + failed webhooks + cleanup crons deployed)
+Last activity: 2026-03-03 -- Completed 03-01 (schema extended, 3 mutation files created, cleanup+crons updated, deployed to prod)
 
-Progress: [█████░░░░░] 48%
+Progress: [██████░░░░] 57%
 
 ## Performance Metrics
 
@@ -42,9 +42,10 @@ Progress: [█████░░░░░] 48%
 |-------|-------|-------|----------|
 | 01-observability-hardening | 4 | ~11 min | ~2.8 min |
 | 02-production-deployment | 2 | ~7 min | ~3.5 min |
+| 03-billing-ops-hardening | 1 (in progress) | ~2 min | ~2 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (~2min), 01-03 (~3min), 01-04 (~4min), 02-01 (~2min), 02-02 (~5min)
+- Last 5 plans: 01-04 (~4min), 02-01 (~2min), 02-02 (~5min), 03-01 (~2min)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -52,6 +53,7 @@ Progress: [█████░░░░░] 48%
 | Phase 01-observability-hardening P04 | 4 | 2 tasks | 6 files |
 | Phase 02-production-deployment P01 | 1 | 2 tasks | 3 files |
 | Phase 02-production-deployment P02 | 2 | 2 tasks | 0 files |
+| Phase 03-billing-ops-hardening P01 | 2 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -81,6 +83,10 @@ Recent decisions affecting current work:
 - [Phase 02-production-deployment]: 02-01: Stripe placeholder vars included now in render.yaml and .env.example to avoid future IaC edits in Phase 3
 - [Phase 02-production-deployment]: 02-01: WHATSAPP_APP_SECRET is canonical name; META_APP_SECRET documented as accepted alias
 - [Phase 02-production-deployment]: 02-02: Checks 2+5 manual (require WHATSAPP_VERIFY_TOKEN and Convex Dashboard access); Checks 1/3/4 automated -- all passed confirming DEPLOY-04
+- [Phase 03-billing-ops-hardening]: 03-01: stripe_event_dedup has no tenantId -- Stripe events arrive before tenant resolution, so we claim by global Stripe event ID
+- [Phase 03-billing-ops-hardening]: 03-01: failed_webhooks stores payloadHash (SHA256) only, never raw body -- hard PII protection requirement for all three sources
+- [Phase 03-billing-ops-hardening]: 03-01: cleanupFailedWebhooks uses 30-day retention vs 7-day for dedup records -- failed webhooks have operational debugging value beyond dedup period
+- [Phase 03-billing-ops-hardening]: 03-01: stripeCurrentPeriodEnd stored as Unix timestamp in SECONDS (Stripe format) -- no conversion at storage layer
 
 ### Roadmap Evolution
 
@@ -96,6 +102,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-02
-Stopped at: Completed 02-02-PLAN.md (production deployment verification: /health 200, WhatsApp+Bokun HMAC active)
+Last session: 2026-03-03
+Stopped at: Completed 03-01-PLAN.md (Convex data layer: Stripe schema + claimStripeEvent + upsertTenantSubscription + recordFailedWebhook + cleanup crons deployed)
 Resume file: None

@@ -15,7 +15,7 @@ Requirements for commercial launch. Each maps to roadmap phases.
 - [x] **OBS-04**: Audit log entries are written for booking confirmation and cancellation events (confirmationCode, tenantId, waUserId, timestamp)
 - [x] **OBS-05**: All console.log statements replaced with Pino structured equivalents
 - [ ] **OBS-06**: Failed webhook events (WhatsApp, Bokun, Stripe) are persisted to Convex with error details; admin dashboard provides a simple view and manual retry capability
-  - [ ] **OBS-06a** (Phase 3 — storage): failed_webhooks Convex table + write sites in all three webhook handlers + cleanup cron. Storage layer only.
+  - [x] **OBS-06a** (Phase 3 — storage): failed_webhooks Convex table + write sites in all three webhook handlers + cleanup cron. Storage layer only.
   - [ ] **OBS-06b** (Phase 4 — UI): Admin dashboard page showing failed_webhooks records with manual retry capability. Depends on OBS-06a.
 
 ### Infrastructure & Reliability
@@ -39,8 +39,8 @@ Requirements for commercial launch. Each maps to roadmap phases.
 
 - [ ] **BILL-01**: Vendor can select a Monthly or Annual subscription plan via Stripe Checkout
 - [ ] **BILL-02**: New subscription includes a 14-day free trial before first charge
-- [ ] **BILL-03**: Stripe webhook events checkout.session.completed, customer.subscription.updated, and customer.subscription.deleted activate/deactivate the tenant subscription status in Convex
-- [ ] **BILL-04**: Stripe webhook processing is idempotent — duplicate Stripe event delivery produces no duplicate state changes
+- [x] **BILL-03**: Stripe webhook events checkout.session.completed, customer.subscription.updated, and customer.subscription.deleted activate/deactivate the tenant subscription status in Convex
+- [x] **BILL-04**: Stripe webhook processing is idempotent — duplicate Stripe event delivery produces no duplicate state changes
 - [ ] **BILL-05**: Bot service is gated on active subscription status — vendors with cancelled or expired subscriptions receive a polite message instead of booking service (with 7-day grace period for past_due)
 
 ### Admin Dashboard
@@ -140,8 +140,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEPLOY-04 | Phase 2 | Complete |
 | BILL-01 | Phase 3 | Pending |
 | BILL-02 | Phase 3 | Pending |
-| BILL-03 | Phase 3 | Pending |
-| BILL-04 | Phase 3 | Pending |
+| BILL-03 | Phase 3 | Complete |
+| BILL-04 | Phase 3 | Complete |
 | BILL-05 | Phase 3 | Pending |
 | DASH-01 | Phase 4 | Pending |
 | DASH-02 | Phase 4 | Pending |
