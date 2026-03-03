@@ -7,6 +7,22 @@ export const getDashboardStats = query({
   handler: async (ctx, args) => {
     await requireTenantMembership(ctx, args.tenantId);
 
+    // Compute time windows
+    const now = Date.now();
+    const d = new Date(now);
+    d.setHours(0, 0, 0, 0);
+    const startOfTodayMs = d.getTime();
+
+    const d2 = new Date(now);
+    const dow = d2.getDay();
+    const diff = d2.getDate() - dow;
+    const weekStart = new Date(d2.setDate(diff));
+    weekStart.setHours(0, 0, 0, 0);
+    const startOfWeekMs = weekStart.getTime();
+
+    // Fetch tenant for bot status
+    const tenant = await ctx.db.get(args.tenantId);
+
     const bookings = await ctx.db
       .query("booking_drafts")
       .withIndex("by_tenantId_waUserId", (q) =>
@@ -17,10 +33,18 @@ export const getDashboardStats = query({
     let confirmedCount = 0;
     let pendingCount = 0;
     let abandonedCount = 0;
+    let bookingsThisWeek = 0;
     for (const b of bookings) {
-      if (b.status === "confirmed") confirmedCount++;
-      else if (b.status === "abandoned") abandonedCount++;
-      else pendingCount++;
+      if (b.status === "confirmed") {
+        confirmedCount++;
+        if (b.confirmedAt != null && b.confirmedAt >= startOfWeekMs) {
+          bookingsThisWeek++;
+        }
+      } else if (b.status === "abandoned") {
+        abandonedCount++;
+      } else {
+        pendingCount++;
+      }
     }
 
     const completed = confirmedCount + abandonedCount;
@@ -33,6 +57,17 @@ export const getDashboardStats = query({
         q.eq("tenantId", args.tenantId),
       )
       .collect();
+
+    // messagesToday: count chat_messages for this tenant created today
+    const tenantMessages = await ctx.db
+      .query("chat_messages")
+      .withIndex("by_tenantId_waUserId", (q) =>
+        q.eq("tenantId", args.tenantId),
+      )
+      .collect();
+    const messagesToday = tenantMessages.filter(
+      (m) => m.createdAt >= startOfTodayMs,
+    ).length;
 
     const whatsappChannel = await ctx.db
       .query("whatsapp_channels")
@@ -66,6 +101,9 @@ export const getDashboardStats = query({
       whatsappConnected: whatsappChannel !== null,
       bokunConnected: bokunInstallation !== null,
       recentBookings,
+      messagesToday,
+      bookingsThisWeek,
+      botStatus: (tenant?.status ?? "active") as "active" | "disabled",
     };
   },
 });
