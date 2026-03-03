@@ -37,8 +37,8 @@ Requirements for commercial launch. Each maps to roadmap phases.
 
 ### Billing
 
-- [ ] **BILL-01**: Vendor can select a Monthly or Annual subscription plan via Stripe Checkout
-- [ ] **BILL-02**: New subscription includes a 7-day free trial before first charge
+- [x] **BILL-01**: Vendor can select a Monthly or Annual subscription plan via Stripe Checkout
+- [x] **BILL-02**: New subscription includes a 7-day free trial before first charge
 - [x] **BILL-03**: Stripe webhook events checkout.session.completed, customer.subscription.updated, and customer.subscription.deleted activate/deactivate the tenant subscription status in Convex
 - [x] **BILL-04**: Stripe webhook processing is idempotent — duplicate Stripe event delivery produces no duplicate state changes
 - [ ] **BILL-05**: Bot service is gated on active subscription status — vendors with cancelled or expired subscriptions receive a polite message instead of booking service (with 7-day grace period for past_due)
@@ -59,10 +59,10 @@ Requirements for commercial launch. Each maps to roadmap phases.
 
 ### Profile & Settings
 
-- [ ] **PROF-01**: Vendor can save business info (name, logo URL, contact email) through a settings form; changes persist to the tenants table
-- [ ] **PROF-02**: Vendor can select their timezone from a dropdown; selected timezone replaces the hardcoded Europe/Madrid value used in availability formatting
-- [ ] **PROF-03**: Vendor can select their preferred language (Portuguese, English, or Spanish); preference is stored and used in the LLM system prompt and hardcoded bot messages
-- [ ] **PROF-04**: Settings billing page shows current subscription plan, next billing date, and subscription status (active/trial/past_due/cancelled)
+- [x] **PROF-01**: Vendor can save business info (name, logo URL, contact email) through a settings form; changes persist to the tenants table
+- [x] **PROF-02**: Vendor can select their timezone from a dropdown; selected timezone replaces the hardcoded Europe/Madrid value used in availability formatting
+- [x] **PROF-03**: Vendor can select their preferred language (Portuguese, English, or Spanish); preference is stored and used in the LLM system prompt and hardcoded bot messages
+- [x] **PROF-04**: Settings billing page shows current subscription plan, next billing date, and subscription status (active/trial/past_due/cancelled)
 
 ### Testing
 
@@ -138,8 +138,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEPLOY-02 | Phase 2 | Complete |
 | DEPLOY-03 | Phase 2 | Complete |
 | DEPLOY-04 | Phase 2 | Complete |
-| BILL-01 | Phase 4 | Pending |
-| BILL-02 | Phase 4 | Pending |
+| BILL-01 | Phase 4 | Complete |
+| BILL-02 | Phase 4 | Complete |
 | BILL-03 | Phase 3 | Complete |
 | BILL-04 | Phase 3 | Complete |
 | BILL-05 | Phase 5 | Pending |
@@ -151,10 +151,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LAND-02 | Phase 4 | Pending |
 | LAND-03 | Phase 4 | Pending |
 | LAND-04 | Phase 4 | Pending |
-| PROF-01 | Phase 4 | Pending |
-| PROF-02 | Phase 4 | Pending |
-| PROF-03 | Phase 4 | Pending |
-| PROF-04 | Phase 4 | Pending |
+| PROF-01 | Phase 4 | Complete |
+| PROF-02 | Phase 4 | Complete |
+| PROF-03 | Phase 4 | Complete |
+| PROF-04 | Phase 4 | Complete |
 | TEST-01 | Phase 5 | Pending |
 | TEST-02 | Phase 5 | Pending |
 | TEST-03 | Phase 5 | Pending |

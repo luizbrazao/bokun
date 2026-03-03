@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-03T16:22:27.089Z"
+last_updated: "2026-03-03T16:28:16.950Z"
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 13
-  completed_plans: 12
+  completed_plans: 13
 ---
 
 # Project State
@@ -58,6 +58,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 03-billing-ops-hardening P03 | ~10min | 2 tasks | 2 files |
 | Phase 04-dashboard-landing-profile P01 | 5 | 2 tasks | 7 files |
 | Phase 04-dashboard-landing-profile P02 | 2min | 2 tasks | 3 files |
+| Phase 04-dashboard-landing-profile P04 | 8 | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -99,6 +100,9 @@ Recent decisions affecting current work:
 - [Phase 04-dashboard-landing-profile]: Roadmap finalized 2026-03-03 — 4 plans defined; 04-01-PLAN.md is next
 - [Phase 04-dashboard-landing-profile]: 04-01: Bot toggle calls existing updateTenantStatus mutation; FailedWebhooksPage created as stub for 04-02; failed_webhooks global ops table gated by requireTenantMembership but no tenantId column; router.ts bot-disable check uses tenants:getTenantById with same as-any pattern as handoff check
 - [Phase 04-dashboard-landing-profile]: 04-02: Client-side pagination (50/page) for conversations avoids server query changes; date range filter uses updatedAt client-side; payloadHash shown as first 12 chars only per PII protection policy
+- [Phase 04-dashboard-landing-profile]: 04-04: 7-day free trial in Stripe Checkout (trial_period_days: 7) per CONTEXT.md locked decision
+- [Phase 04-dashboard-landing-profile]: 04-04: booking_drafts.lastOptionMap.tz changed from v.literal to v.string to support runtime tenant timezone
+- [Phase 04-dashboard-landing-profile]: 04-04: FRONTEND_URL env var added for Checkout redirect; getTenantById (no auth) used in server-side handlers
 
 ### Roadmap Evolution
 
