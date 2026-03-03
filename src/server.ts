@@ -967,6 +967,26 @@ async function handleWebhookPost(req: IncomingMessage, res: ServerResponse): Pro
       error: "Could not extract messages from webhook payload.",
     });
   } catch (error) {
+    // Best-effort dead-letter record for unhandled WhatsApp processing errors.
+    // rawBody is declared with `let` before the inner try, so it may be undefined
+    // if the error occurred before readRawBody succeeded. Guard with nullish coalescing.
+    try {
+      const convex = getConvexClient();
+      const bodyForHash = typeof rawBody !== "undefined" ? rawBody : Buffer.alloc(0);
+      const payloadHash = createHash("sha256").update(bodyForHash).digest("hex");
+      await convex.mutation(
+        "failedWebhooks:recordFailedWebhook" as any,
+        {
+          source: "whatsapp",
+          payloadHash,
+          errorReason: error instanceof Error ? error.message : String(error),
+          eventType: undefined,
+        } as any
+      );
+    } catch {
+      // Dead-letter write failed — do not mask the original error
+    }
+
     rootLogger.error(
       {
         handler: "whatsapp_webhook",
@@ -1367,8 +1387,27 @@ async function handleBokunWebhookPost(req: IncomingMessage, res: ServerResponse)
   }
 
   // Bokun has 5-second timeout - respond quickly
-  const result = await handleBokunWebhookEvent(webhookHeaders, body);
-  sendJson(res, 200, { ok: result.ok, topic: result.topic });
+  try {
+    const result = await handleBokunWebhookEvent(webhookHeaders, body);
+    sendJson(res, 200, { ok: result.ok, topic: result.topic });
+  } catch (err) {
+    const convex = getConvexClient();
+    const payloadHash = createHash("sha256").update(rawBody).digest("hex");
+    await convex.mutation(
+      "failedWebhooks:recordFailedWebhook" as any,
+      {
+        source: "bokun",
+        payloadHash,
+        errorReason: err instanceof Error ? err.message : String(err),
+        eventType: webhookHeaders.topic,
+      } as any
+    ).catch(() => {});
+    rootLogger.error(
+      { handler: "bokun_webhook", topic: webhookHeaders.topic, error: err instanceof Error ? err.message : String(err) },
+      "bokun_event_handler_error"
+    );
+    sendJson(res, 500, { ok: false, error: "Internal server error." });
+  }
 }
 
 async function handleStripeWebhookPost(req: IncomingMessage, res: ServerResponse): Promise<void> {
