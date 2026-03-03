@@ -90,7 +90,7 @@ Each task was committed atomically:
 1. **Task 1: Extend convex/schema.ts with Stripe and ops tables** - `2dbc4ec` (feat)
 2. **Task 2: Create Convex mutations for Stripe dedup, subscription upsert, failed webhook recording, and cleanup** - `99fd06d` (feat)
 
-**Plan metadata:** (docs commit below)
+**Plan metadata:** `dc36edc` (docs)
 
 ## Files Created/Modified
 - `convex/schema.ts` - Added stripeCustomerId/SubscriptionId/Status/CurrentPeriodEnd to tenants; added stripe_event_dedup table; added failed_webhooks table
@@ -120,6 +120,21 @@ None - no external service configuration required. Schema changes are additive (
 - Convex data layer is fully deployed and ready for Plan 02 (Node.js Stripe webhook handler)
 - claimStripeEvent, upsertTenantSubscription, and recordFailedWebhook can be called from server-side handlers via internal API
 - No blockers
+
+## Self-Check: PASSED
+
+All files verified present. All commits verified in git log.
+
+- FOUND: convex/schema.ts
+- FOUND: convex/stripeDedup.ts
+- FOUND: convex/subscriptions.ts
+- FOUND: convex/failedWebhooks.ts
+- FOUND: convex/cleanup.ts
+- FOUND: convex/crons.ts
+- FOUND: .planning/phases/03-billing-ops-hardening/03-01-SUMMARY.md
+- FOUND: commit 2dbc4ec (Task 1)
+- FOUND: commit 99fd06d (Task 2)
+- FOUND: commit dc36edc (docs)
 
 ---
 *Phase: 03-billing-ops-hardening*

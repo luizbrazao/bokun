@@ -658,6 +658,7 @@ async function handleTelegramWebhookPost(req: IncomingMessage, res: ServerRespon
 }
 
 async function handleWebhookPost(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  let rawBody: Buffer | undefined;
   try {
     const appSecret = process.env.WHATSAPP_APP_SECRET ?? process.env.META_APP_SECRET;
     if (!appSecret || appSecret.trim().length === 0) {
@@ -668,7 +669,6 @@ async function handleWebhookPost(req: IncomingMessage, res: ServerResponse): Pro
       return;
     }
 
-    let rawBody: Buffer;
     try {
       rawBody = await readRawBody(req);
     } catch (error) {
@@ -973,7 +973,7 @@ async function handleWebhookPost(req: IncomingMessage, res: ServerResponse): Pro
     // if the error occurred before readRawBody succeeded. Guard with nullish coalescing.
     try {
       const convex = getConvexClient();
-      const bodyForHash = typeof rawBody !== "undefined" ? rawBody : Buffer.alloc(0);
+      const bodyForHash = rawBody ?? Buffer.alloc(0);
       const payloadHash = createHash("sha256").update(bodyForHash).digest("hex");
       await convex.mutation(
         "failedWebhooks:recordFailedWebhook" as any,
@@ -1127,13 +1127,13 @@ async function handleAdminBootstrapRoute(req: IncomingMessage, res: ServerRespon
 
   const hasChannelInputs = Boolean(
     bodyPhoneNumberId ||
-      asNonEmptyString(body.accessToken) ||
-      asNonEmptyString(body.wabaId) ||
-      asNonEmptyString(body.verifyToken) ||
-      asNonEmptyString(whatsapp?.phoneNumberId) ||
-      asNonEmptyString(whatsapp?.accessToken) ||
-      asNonEmptyString(whatsapp?.wabaId) ||
-      asNonEmptyString(whatsapp?.verifyToken)
+    asNonEmptyString(body.accessToken) ||
+    asNonEmptyString(body.wabaId) ||
+    asNonEmptyString(body.verifyToken) ||
+    asNonEmptyString(whatsapp?.phoneNumberId) ||
+    asNonEmptyString(whatsapp?.accessToken) ||
+    asNonEmptyString(whatsapp?.wabaId) ||
+    asNonEmptyString(whatsapp?.verifyToken)
   );
   const createWhatsappChannel = asBoolean(body.createWhatsappChannel) ?? asBoolean(whatsapp?.enabled) ?? hasChannelInputs;
 
@@ -1148,12 +1148,12 @@ async function handleAdminBootstrapRoute(req: IncomingMessage, res: ServerRespon
     let channelResponse:
       | { configured: false }
       | {
-          configured: true;
-          channelId: string;
-          created: boolean;
-          phoneNumberId: string;
-          status: "active";
-        } = { configured: false };
+        configured: true;
+        channelId: string;
+        created: boolean;
+        phoneNumberId: string;
+        status: "active";
+      } = { configured: false };
 
     if (createWhatsappChannel) {
       if (!phoneNumberId) {
@@ -1425,7 +1425,7 @@ async function handleBokunWebhookPost(req: IncomingMessage, res: ServerResponse)
         errorReason: err instanceof Error ? err.message : String(err),
         eventType: webhookHeaders.topic,
       } as any
-    ).catch(() => {});
+    ).catch(() => { });
     rootLogger.error(
       { handler: "bokun_webhook", topic: webhookHeaders.topic, error: err instanceof Error ? err.message : String(err) },
       "bokun_event_handler_error"
@@ -1496,7 +1496,7 @@ async function handleStripeWebhookPost(req: IncomingMessage, res: ServerResponse
         errorReason: err instanceof Error ? err.message : String(err),
         eventType: event.type,
       } as any
-    ).catch(() => {}); // best-effort — don't fail the response over dead-letter write
+    ).catch(() => { }); // best-effort — don't fail the response over dead-letter write
 
     rootLogger.error(
       { handler: "stripe_webhook", eventId: event.id, eventType: event.type, error: err instanceof Error ? err.message : String(err) },
