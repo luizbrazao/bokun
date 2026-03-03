@@ -19,4 +19,18 @@ crons.monthly(
   {}
 );
 
+crons.daily(
+  "cleanup failed webhooks",
+  { hourUTC: 3, minuteUTC: 45 },
+  internal.cleanup.cleanupFailedWebhooks,
+  {}
+);
+
+crons.daily(
+  "cleanup stripe event dedup",
+  { hourUTC: 4, minuteUTC: 0 },
+  internal.cleanup.cleanupStripeEventDedup,
+  {}
+);
+
 export default crons;

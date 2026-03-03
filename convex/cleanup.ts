@@ -78,3 +78,31 @@ export const cleanupAuditLog = internalMutation({
     return { deleted: stale.length, cutoff };
   },
 });
+
+const RETENTION_30_DAYS_MS = 30 * 24 * 60 * 60_000;
+
+export const cleanupFailedWebhooks = internalMutation({
+  args: { olderThanMs: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const cutoff = Date.now() - (args.olderThanMs ?? RETENTION_30_DAYS_MS);
+    const stale = await ctx.db
+      .query("failed_webhooks")
+      .withIndex("by_createdAt", (q) => q.lt("createdAt", cutoff))
+      .take(DELETE_BATCH_SIZE);
+    for (const row of stale) await ctx.db.delete(row._id);
+    return { deleted: stale.length, cutoff };
+  },
+});
+
+export const cleanupStripeEventDedup = internalMutation({
+  args: { olderThanMs: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const cutoff = Date.now() - (args.olderThanMs ?? DEFAULT_RETENTION_MS);
+    const stale = await ctx.db
+      .query("stripe_event_dedup")
+      .withIndex("by_createdAt", (q) => q.lt("createdAt", cutoff))
+      .take(DELETE_BATCH_SIZE);
+    for (const row of stale) await ctx.db.delete(row._id);
+    return { deleted: stale.length, cutoff };
+  },
+});
