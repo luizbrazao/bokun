@@ -1,3 +1,4 @@
+// DASH-04: All required columns present — confirmation code (bokunConfirmationCode), status, customer phone (waUserId), activity date (date).
 import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@convex/api";
