@@ -27,6 +27,18 @@ export async function routeWhatsAppMessage(
   const channel = args.channel ?? "wa";
   const convex = getConvexClient();
 
+  // -1. Check if bot is enabled for this tenant
+  const tenant = await convex.query(
+    "tenants:getTenantById" as any,
+    { tenantId: args.tenantId } as any
+  ) as { status: string } | null;
+  if (tenant?.status === "disabled") {
+    return {
+      handled: true,
+      text: "O bot está temporariamente desativado. Por favor, contacte o operador para mais informações.",
+    };
+  }
+
   // 0. Check if conversation is in active handoff
   const conversation = (await convex.query(
     "conversations:getConversationByWaUserId" as any,

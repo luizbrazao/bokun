@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery } from "convex/react";
 import { api } from "@convex/api";
-import { LayoutDashboard, BookOpen, MessageSquare, Headset, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, BookOpen, MessageSquare, Headset, Settings, LogOut, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +10,7 @@ const navItems = [
   { to: "/overview", label: "Visão Geral", icon: LayoutDashboard },
   { to: "/reservas", label: "Reservas", icon: BookOpen },
   { to: "/conversas", label: "Conversas", icon: MessageSquare },
+  { to: "/webhooks", label: "Webhooks", icon: AlertTriangle },
   { to: "/atendimento", label: "Atendimento", icon: Headset, showBadge: true },
   { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];

@@ -1,7 +1,8 @@
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@convex/api";
 import { useTenant } from "@/hooks/useTenant";
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -11,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  CalendarCheck,
   CheckCircle,
   Clock,
   MessageSquare,
@@ -47,6 +49,21 @@ export default function OverviewPage() {
     api.dashboardStats.getDashboardStats,
     tenantId ? { tenantId } : "skip",
   );
+  const toggleBot = useMutation(api.tenants.updateTenantStatus);
+  const [isToggling, setIsToggling] = useState(false);
+
+  const handleBotToggle = async () => {
+    if (!tenantId || !stats || isToggling) return;
+    setIsToggling(true);
+    try {
+      await toggleBot({
+        tenantId,
+        status: stats.botStatus === "active" ? "disabled" : "active",
+      });
+    } finally {
+      setIsToggling(false);
+    }
+  };
 
   if (!stats) {
     return (
@@ -70,40 +87,15 @@ export default function OverviewPage() {
     );
   }
 
+  const botActive = stats.botStatus === "active";
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Visão Geral</h1>
 
-      {/* KPI Cards */}
+      {/* Primary Metrics Row — DASH-01 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-emerald-100 p-2">
-                <CheckCircle className="h-5 w-5 text-emerald-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.confirmedCount}</p>
-                <p className="text-xs text-muted-foreground">Confirmadas</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-amber-100 p-2">
-                <Clock className="h-5 w-5 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stats.pendingCount}</p>
-                <p className="text-xs text-muted-foreground">Pendentes</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
+        {/* Card 1: Mensagens Hoje */}
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
@@ -111,29 +103,146 @@ export default function OverviewPage() {
                 <MessageSquare className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats.totalConversations}</p>
-                <p className="text-xs text-muted-foreground">Conversas</p>
+                <p className="text-2xl font-bold">{stats.messagesToday}</p>
+                <p className="text-xs text-muted-foreground">Mensagens Hoje</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
+        {/* Card 2: Reservas Esta Semana */}
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-violet-100 p-2">
-                <TrendingUp className="h-5 w-5 text-violet-600" />
+              <div className="rounded-lg bg-emerald-100 p-2">
+                <CalendarCheck className="h-5 w-5 text-emerald-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{stats.conversionRate}%</p>
-                <p className="text-xs text-muted-foreground">Conversão</p>
+                <p className="text-2xl font-bold">{stats.bookingsThisWeek}</p>
+                <p className="text-xs text-muted-foreground">Reservas Esta Semana</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Card 3: Bot Status + Toggle — DASH-02 */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Bot Status</p>
+                <Badge
+                  variant={botActive ? "default" : "secondary"}
+                  className={botActive ? "bg-emerald-600" : "bg-slate-200 text-slate-600"}
+                >
+                  {botActive ? "Ativo" : "Desativado"}
+                </Badge>
+              </div>
+              {/* Toggle switch */}
+              <button
+                role="switch"
+                aria-checked={botActive}
+                aria-label="Alternar bot"
+                disabled={isToggling}
+                onClick={handleBotToggle}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  botActive ? "bg-emerald-500" : "bg-slate-300"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                    botActive ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Card 4: WhatsApp Connection */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div
+                className={`rounded-lg p-2 ${stats.whatsappConnected ? "bg-emerald-100" : "bg-slate-100"}`}
+              >
+                {stats.whatsappConnected ? (
+                  <Wifi className="h-5 w-5 text-emerald-600" />
+                ) : (
+                  <WifiOff className="h-5 w-5 text-slate-400" />
+                )}
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">WhatsApp</p>
+                <Badge
+                  variant={stats.whatsappConnected ? "default" : "secondary"}
+                  className={stats.whatsappConnected ? "bg-emerald-600" : ""}
+                >
+                  {stats.whatsappConnected ? "Conectado" : "Desconectado"}
+                </Badge>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Second Row */}
+      {/* Secondary Metrics Row — Insights */}
+      <div>
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+          Insights
+        </h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-emerald-600 shrink-0" />
+                <div>
+                  <p className="text-xl font-bold">{stats.confirmedCount}</p>
+                  <p className="text-xs text-muted-foreground">Confirmadas</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-amber-600 shrink-0" />
+                <div>
+                  <p className="text-xl font-bold">{stats.pendingCount}</p>
+                  <p className="text-xs text-muted-foreground">Pendentes</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-blue-600 shrink-0" />
+                <div>
+                  <p className="text-xl font-bold">{stats.totalConversations}</p>
+                  <p className="text-xs text-muted-foreground">Conversas</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-violet-600 shrink-0" />
+                <div>
+                  <p className="text-xl font-bold">{stats.conversionRate}%</p>
+                  <p className="text-xs text-muted-foreground">Conversão</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Bottom Row: Integration Status + Recent Bookings */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Integration Status */}
         <Card>

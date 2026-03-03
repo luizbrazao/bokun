@@ -10,6 +10,7 @@ import ConversationsPage from "./pages/ConversationsPage";
 import ConversationDetailPage from "./pages/ConversationDetailPage";
 import SettingsPage from "./pages/SettingsPage";
 import OperatorInboxPage from "./pages/OperatorInboxPage";
+import FailedWebhooksPage from "./pages/FailedWebhooksPage";
 import { useTenant } from "./hooks/useTenant";
 
 const Spinner = () => (
@@ -76,6 +77,7 @@ function App() {
               path="/conversas/:waUserId"
               element={<ConversationDetailPage />}
             />
+            <Route path="/webhooks" element={<FailedWebhooksPage />} />
             <Route path="/atendimento" element={<OperatorInboxPage />} />
             <Route path="/configuracoes" element={<SettingsPage />} />
           </Route>
