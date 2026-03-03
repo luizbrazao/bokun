@@ -11,6 +11,10 @@ export default defineSchema({
     inviteCode: v.optional(v.string()),
     openaiApiKey: v.optional(v.string()),
     openaiModel: v.optional(v.string()),
+    stripeCustomerId: v.optional(v.string()),
+    stripeSubscriptionId: v.optional(v.string()),
+    stripeStatus: v.optional(v.string()), // "active" | "past_due" | "canceled" | "trialing" etc. (Stripe uses American English "canceled" — one L)
+    stripeCurrentPeriodEnd: v.optional(v.number()), // Unix timestamp in SECONDS from Stripe (not milliseconds)
     createdAt: v.number(),
   }),
 
@@ -190,6 +194,32 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_tenantId_key", ["tenantId", "key"])
+    .index("by_createdAt", ["createdAt"]),
+
+  stripe_event_dedup: defineTable({
+    eventId: v.string(), // Stripe event.id (e.g., "evt_abc123")
+    createdAt: v.number(),
+  })
+    .index("by_eventId", ["eventId"])
+    .index("by_createdAt", ["createdAt"]),
+
+  failed_webhooks: defineTable({
+    source: v.union(v.literal("whatsapp"), v.literal("bokun"), v.literal("stripe")),
+    payloadHash: v.string(), // SHA256 of raw body — never store raw payload (may contain PII)
+    errorReason: v.string(), // human-readable error message or error class name
+    eventType: v.optional(v.string()), // e.g., "checkout.session.completed" or Bokun topic
+    retryCount: v.number(), // starts at 0; incremented on manual retry
+    status: v.union(
+      v.literal("failed"),
+      v.literal("retried"),
+      v.literal("resolved")
+    ),
+    resolvedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_source", ["source"])
+    .index("by_status", ["status"])
     .index("by_createdAt", ["createdAt"]),
 
   audit_log: defineTable({
