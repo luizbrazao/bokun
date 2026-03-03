@@ -45,8 +45,8 @@ Requirements for commercial launch. Each maps to roadmap phases.
 
 ### Admin Dashboard
 
-- [ ] **DASH-01**: Dashboard overview page displays: total messages today, total bookings this week, bot on/off status, and WhatsApp channel connection indicator
-- [ ] **DASH-02**: Vendor can toggle the bot on or off from the dashboard; toggle state is persisted and the webhook router respects it
+- [x] **DASH-01**: Dashboard overview page displays: total messages today, total bookings this week, bot on/off status, and WhatsApp channel connection indicator
+- [x] **DASH-02**: Vendor can toggle the bot on or off from the dashboard; toggle state is persisted and the webhook router respects it
 - [ ] **DASH-03**: Conversation log page displays chat_messages for the authenticated tenant, supports text search and date range filter, and is paginated
 - [ ] **DASH-04**: Booking list page displays WhatsApp-originated bookings with confirmation code, booking status, customer phone number, and activity date
 
@@ -143,8 +143,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BILL-03 | Phase 3 | Complete |
 | BILL-04 | Phase 3 | Complete |
 | BILL-05 | Phase 5 | Pending |
-| DASH-01 | Phase 4 | Pending |
-| DASH-02 | Phase 4 | Pending |
+| DASH-01 | Phase 4 | Complete |
+| DASH-02 | Phase 4 | Complete |
 | DASH-03 | Phase 4 | Pending |
 | DASH-04 | Phase 4 | Pending |
 | LAND-01 | Phase 4 | Pending |

@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Dashboard, Launch & Testing
-status: ready_to_plan
-last_updated: "2026-03-03T10:00:00.000Z"
+milestone: v1.0
+milestone_name: milestone
+status: unknown
+last_updated: "2026-03-03T16:18:51.746Z"
 progress:
-  total_phases: 2
-  completed_phases: 0
-  total_plans: 6
-  completed_plans: 0
+  total_phases: 4
+  completed_phases: 3
+  total_plans: 13
+  completed_plans: 11
 ---
 
 # Project State
@@ -56,6 +56,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 03-billing-ops-hardening P01 | 2 | 2 tasks | 6 files |
 | Phase 03-billing-ops-hardening P02 | 4 | 3 tasks | 5 files |
 | Phase 03-billing-ops-hardening P03 | ~10min | 2 tasks | 2 files |
+| Phase 04-dashboard-landing-profile P01 | 5 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -95,6 +96,7 @@ Recent decisions affecting current work:
 - [Phase 03-billing-ops-hardening]: 03-02: Two-tier rate limiting: inboundMessageLimiter (per-user, 10/min) vs serverWebhookLimiter (per-source, 300/min)
 - [Phase 03-billing-ops-hardening]: 03-03: Sentry test endpoint kept permanently (not ephemeral) — admin-authenticated, serves as runbook tool for future health checks
 - [Phase 04-dashboard-landing-profile]: Roadmap finalized 2026-03-03 — 4 plans defined; 04-01-PLAN.md is next
+- [Phase 04-dashboard-landing-profile]: 04-01: Bot toggle calls existing updateTenantStatus mutation; FailedWebhooksPage created as stub for 04-02; failed_webhooks global ops table gated by requireTenantMembership but no tenantId column; router.ts bot-disable check uses tenants:getTenantById with same as-any pattern as handoff check
 
 ### Roadmap Evolution
 
