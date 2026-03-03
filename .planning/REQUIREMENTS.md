@@ -52,10 +52,10 @@ Requirements for commercial launch. Each maps to roadmap phases.
 
 ### Landing Page
 
-- [ ] **LAND-01**: Landing page hero section communicates the core value proposition and includes a primary CTA button linking to the Bokun marketplace listing
-- [ ] **LAND-02**: Landing page features section describes 4 key product benefits with icons
-- [ ] **LAND-03**: Landing page pricing section shows plan tiers with feature comparison and links each tier to the Stripe Checkout flow
-- [ ] **LAND-04**: Landing page is fully responsive and readable on mobile devices
+- [x] **LAND-01**: Landing page hero section communicates the core value proposition and includes a primary CTA button linking to the Bokun marketplace listing
+- [x] **LAND-02**: Landing page features section describes 4 key product benefits with icons
+- [x] **LAND-03**: Landing page pricing section shows plan tiers with feature comparison and links each tier to the Stripe Checkout flow
+- [x] **LAND-04**: Landing page is fully responsive and readable on mobile devices
 
 ### Profile & Settings
 
@@ -147,10 +147,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DASH-02 | Phase 4 | Complete |
 | DASH-03 | Phase 4 | Complete |
 | DASH-04 | Phase 4 | Complete |
-| LAND-01 | Phase 4 | Pending |
-| LAND-02 | Phase 4 | Pending |
-| LAND-03 | Phase 4 | Pending |
-| LAND-04 | Phase 4 | Pending |
+| LAND-01 | Phase 4 | Complete |
+| LAND-02 | Phase 4 | Complete |
+| LAND-03 | Phase 4 | Complete |
+| LAND-04 | Phase 4 | Complete |
 | PROF-01 | Phase 4 | Complete |
 | PROF-02 | Phase 4 | Complete |
 | PROF-03 | Phase 4 | Complete |
