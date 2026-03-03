@@ -12,7 +12,9 @@
         "convex:deploy": "convex deploy",
         "ping": "node --experimental-strip-types scripts/pingConvex.ts",
         "demo:ttl": "node --experimental-strip-types scripts/demoOptionMapTTL_noNetwork.ts",
-        "diagnose:bokun": "node --experimental-strip-types scripts/diagnoseBokunFlow.ts"
+        "diagnose:bokun": "node --experimental-strip-types scripts/diagnoseBokunFlow.ts",
+        "test": "vitest run",
+        "test:watch": "vitest"
     },
     "dependencies": {
         "@auth/core": "^0.37.4",
@@ -28,7 +30,9 @@
     "devDependencies": {
         "@types/node": "^20.11.0",
         "@types/pino": "^7.0.4",
+        "@vitest/coverage-v8": "^4.0.18",
         "tsx": "^4.21.0",
-        "typescript": "^5.4.0"
+        "typescript": "^5.4.0",
+        "vitest": "^4.0.18"
     }
 }
