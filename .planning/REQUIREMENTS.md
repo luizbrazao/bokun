@@ -15,6 +15,8 @@ Requirements for commercial launch. Each maps to roadmap phases.
 - [x] **OBS-04**: Audit log entries are written for booking confirmation and cancellation events (confirmationCode, tenantId, waUserId, timestamp)
 - [x] **OBS-05**: All console.log statements replaced with Pino structured equivalents
 - [ ] **OBS-06**: Failed webhook events (WhatsApp, Bokun, Stripe) are persisted to Convex with error details; admin dashboard provides a simple view and manual retry capability
+  - [ ] **OBS-06a** (Phase 3 — storage): failed_webhooks Convex table + write sites in all three webhook handlers + cleanup cron. Storage layer only.
+  - [ ] **OBS-06b** (Phase 4 — UI): Admin dashboard page showing failed_webhooks records with manual retry capability. Depends on OBS-06a.
 
 ### Infrastructure & Reliability
 
@@ -123,7 +125,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | OBS-03 | Phase 1 | Complete |
 | OBS-04 | Phase 1 | Complete |
 | OBS-05 | Phase 1 | Complete |
-| OBS-06 | Phase 4 | Pending |
+| OBS-06a (storage layer) | Phase 3 | Pending |
+| OBS-06b (admin UI + retry) | Phase 4 | Pending |
 | INFRA-01 | Phase 1 | Complete |
 | INFRA-02 | Phase 1 | Complete |
 | INFRA-03 | Phase 1 | Complete |
@@ -158,10 +161,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TEST-04 | Phase 5 | Pending |
 
 **Coverage:**
-- v1 requirements: 38 total
+- v1 requirements: 38 total (OBS-06 spans two phases via sub-requirements OBS-06a and OBS-06b)
 - Mapped to phases: 38
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-01*
-*Last updated: 2026-03-01 after roadmap revision (BILL-05 moved to Phase 3 — billing and enforcement ship together)*
+*Last updated: 2026-03-03 — OBS-06 split into OBS-06a (Phase 3 storage) and OBS-06b (Phase 4 UI) for accurate traceability*
