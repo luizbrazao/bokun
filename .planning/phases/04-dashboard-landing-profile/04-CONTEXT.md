@@ -26,9 +26,9 @@ Complete the vendor admin UI (bot monitoring, toggle, conversation search, faile
 4. **Controle e auditoria** — dashboard com logs de conversa, lista de reservas e retry de webhooks falhos
 
 ### Landing Page — Pricing
-- **Monthly:** €49/mês
-- **Annual:** €490/ano (≈2 meses grátis)
-- **Free trial:** 14 dias incluídos em ambos os planos
+- **Monthly:** €29/mês
+- **Annual:** €290/ano (≈2 meses grátis)
+- **Free trial:** 7 dias incluídos em ambos os planos
 - Pricing section links each tier directly to Stripe Checkout
 
 ### Dashboard — Overview Metrics
@@ -46,9 +46,16 @@ Complete the vendor admin UI (bot monitoring, toggle, conversation search, faile
 - Add **"Assinatura"** tab to existing Settings page: current plan name, status (active/trial/past_due/cancelled), trial end date, next billing date, and a Stripe Checkout button to subscribe or upgrade
 
 ### Billing Flow
-- Stripe-hosted Checkout for plan selection (monthly or annual), with 14-day trial automatically applied
+- Stripe-hosted Checkout for plan selection (monthly or annual), with 07-day trial automatically applied
 - After Checkout success: redirect back to `/configuracoes` (Assinatura tab) with success state shown
 - After Checkout cancel: redirect back to same page with neutral state (no error, just back to subscription view)
+
+### Settings — IA (OpenAI Key per Tenant)
+- Each vendor provides their own OpenAI API key
+- Key is stored per-tenant and never logged
+- Dashboard must show key status (configured / missing / invalid)
+- Include "Test key" button
+- Platform does not pay LLM costs
 
 ### Failed Webhooks UI
 - Exposed as a **sidebar nav item "Webhooks"** (ops area — alongside Visão Geral, Reservas, Conversas, Atendimento)
