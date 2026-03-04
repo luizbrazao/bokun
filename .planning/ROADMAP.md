@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Production Deployment** - Render.com infrastructure, environment config, Convex production deployment (completed 2026-03-02)
 - [x] **Phase 3: Billing + Ops Hardening** - Stripe webhook foundations, basic subscription state, ops hardening (Sentry validated, dead-letter/retry, rate limiting)
 - [x] **Phase 4: Dashboard, Landing Page & Profile** - Complete vendor admin UI, marketing landing page, vendor settings (completed 2026-03-03)
-- [ ] **Phase 5: Automated Test Coverage** - Automated test suite covering critical booking, isolation, and billing flows
+- [x] **Phase 5: Automated Test Coverage** - Automated test suite covering critical booking, isolation, and billing flows (completed 2026-03-04)
 
 ## Phase Details
 
@@ -117,4 +117,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 2. Production Deployment | 2/2 | Complete   | 2026-03-02 |
 | 3. Billing + Ops Hardening | 3/3 | Complete   | 2026-03-03 |
 | 4. Dashboard, Landing Page & Profile | 4/4 | Complete   | 2026-03-03 |
-| 5. Automated Test Coverage | 0/2 | Not started | - |
+| 5. Automated Test Coverage | 2/2 | Complete   | 2026-03-04 |

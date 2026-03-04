@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-03T16:40:00.988Z"
+last_updated: "2026-03-04T09:45:34Z"
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 13
-  completed_plans: 13
+  total_phases: 5
+  completed_phases: 5
+  total_plans: 15
+  completed_plans: 15
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 4 — Dashboard, Landing Page & Profile
-Plan: Not started (roadmap finalized, ready for plan-phase)
-Status: Roadmap ready
-Last activity: 2026-03-03 — Roadmap finalized for v1.1 (phases 4 and 5 plans defined)
+Phase: 5 — Automated Test Coverage
+Plan: 02 (COMPLETE — all plans complete)
+Status: Phase 5 complete, all v1.1 milestone phases done
+Last activity: 2026-03-04 — Phase 05-02 complete: subscription gating + 24 new tests, 50 total
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -59,6 +59,8 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 04-dashboard-landing-profile P01 | 5 | 2 tasks | 7 files |
 | Phase 04-dashboard-landing-profile P02 | 2min | 2 tasks | 3 files |
 | Phase 04-dashboard-landing-profile P04 | 8 | 3 tasks | 10 files |
+| Phase 05-automated-test-coverage P01 | ~4min | 3 tasks | 5 files |
+| Phase 05-automated-test-coverage P02 | ~5min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -103,6 +105,10 @@ Recent decisions affecting current work:
 - [Phase 04-dashboard-landing-profile]: 04-04: 7-day free trial in Stripe Checkout (trial_period_days: 7) per CONTEXT.md locked decision
 - [Phase 04-dashboard-landing-profile]: 04-04: booking_drafts.lastOptionMap.tz changed from v.literal to v.string to support runtime tenant timezone
 - [Phase 04-dashboard-landing-profile]: 04-04: FRONTEND_URL env var added for Checkout redirect; getTenantById (no auth) used in server-side handlers
+- [Phase 05-automated-test-coverage]: 05-02: vi.hoisted() required when mock spy refs must be accessible inside vi.mock() factory — regular variable declarations are not available at hoist time
+- [Phase 05-automated-test-coverage]: 05-02: Stripe mock must use regular function constructor (not arrow) so `new Stripe()` works in module singleton initialization
+- [Phase 05-automated-test-coverage]: 05-02: isSubscriptionGated exported as named export for isolated unit testing without mocking full router dependencies
+- [Phase 05-automated-test-coverage]: 05-02: vitest.config.ts include glob extended to convex/**/*.test.ts to support Convex-side unit tests
 
 ### Roadmap Evolution
 
@@ -120,6 +126,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-03
-Stopped at: Roadmap finalized for v1.1 — phases 4 and 5 plan breakdown defined. Ready to start 04-01-PLAN.md.
+Last session: 2026-03-04
+Stopped at: Completed 05-02-PLAN.md — subscription gating + full test suite. All v1.1 milestone phases complete.
 Resume file: None

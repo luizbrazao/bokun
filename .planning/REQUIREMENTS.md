@@ -41,7 +41,7 @@ Requirements for commercial launch. Each maps to roadmap phases.
 - [x] **BILL-02**: New subscription includes a 7-day free trial before first charge
 - [x] **BILL-03**: Stripe webhook events checkout.session.completed, customer.subscription.updated, and customer.subscription.deleted activate/deactivate the tenant subscription status in Convex
 - [x] **BILL-04**: Stripe webhook processing is idempotent — duplicate Stripe event delivery produces no duplicate state changes
-- [ ] **BILL-05**: Bot service is gated on active subscription status — vendors with cancelled or expired subscriptions receive a polite message instead of booking service (with 7-day grace period for past_due)
+- [x] **BILL-05**: Bot service is gated on active subscription status — vendors with cancelled or expired subscriptions receive a polite message instead of booking service (with 7-day grace period for past_due)
 
 ### Admin Dashboard
 
@@ -68,8 +68,8 @@ Requirements for commercial launch. Each maps to roadmap phases.
 
 - [ ] **TEST-01**: Automated tests cover the booking state machine happy path: select_time → select_pickup → ask_participants → confirm
 - [ ] **TEST-02**: Automated tests cover the cancellation flow triggered mid-booking
-- [ ] **TEST-03**: Tests verify that tenant A cannot read or modify data belonging to tenant B across all critical Convex queries
-- [ ] **TEST-04**: Unit tests cover Stripe webhook handlers for the three subscription lifecycle events
+- [x] **TEST-03**: Tests verify that tenant A cannot read or modify data belonging to tenant B across all critical Convex queries
+- [x] **TEST-04**: Unit tests cover Stripe webhook handlers for the three subscription lifecycle events
 
 ## v2 Requirements
 
@@ -142,7 +142,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BILL-02 | Phase 4 | Complete |
 | BILL-03 | Phase 3 | Complete |
 | BILL-04 | Phase 3 | Complete |
-| BILL-05 | Phase 5 | Pending |
+| BILL-05 | Phase 5 | Complete |
 | DASH-01 | Phase 4 | Complete |
 | DASH-02 | Phase 4 | Complete |
 | DASH-03 | Phase 4 | Complete |
@@ -157,8 +157,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PROF-04 | Phase 4 | Complete |
 | TEST-01 | Phase 5 | Pending |
 | TEST-02 | Phase 5 | Pending |
-| TEST-03 | Phase 5 | Pending |
-| TEST-04 | Phase 5 | Pending |
+| TEST-03 | Phase 5 | Complete |
+| TEST-04 | Phase 5 | Complete |
 
 **Coverage:**
 - v1 requirements: 38 total (OBS-06 spans two phases via sub-requirements OBS-06a and OBS-06b)
