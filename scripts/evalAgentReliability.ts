@@ -15,7 +15,10 @@
 import { config } from "dotenv";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { mkdir, writeFile } from "node:fs/promises";
 import { runLLMAgent } from "../src/llm/agent.ts";
+import { getConvexClient, getConvexServiceToken } from "../src/convex/client.ts";
+import { classifyLLMError } from "../src/llm/errorClassifier.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = join(__dirname, "..");
@@ -33,6 +36,22 @@ type EvalResult = {
   pass: boolean;
   reply: string;
   reason?: string;
+  infraFailure: boolean;
+};
+
+type EvalSummaryRow = {
+  caseId: string;
+  passed: number;
+  total: number;
+  passRate: number;
+  p50Len: number;
+  p90Len: number;
+};
+
+type PreflightResult = {
+  ok: boolean;
+  reason?: string;
+  replyPreview?: string;
 };
 
 const NON_EMPTY_MIN_LEN = 8;
@@ -86,6 +105,7 @@ function percentile(values: number[], p: number): number {
 async function main(): Promise<void> {
   const tenantId = process.env.AGENT_EVAL_TENANT_ID ?? "test-tenant";
   const runs = Number.parseInt(process.env.AGENT_EVAL_RUNS ?? "5", 10);
+  const outputDir = process.env.AGENT_EVAL_OUTPUT_DIR?.trim() || join(projectRoot, "docs", "evals");
   if (!Number.isInteger(runs) || runs < 1) {
     throw new Error("AGENT_EVAL_RUNS must be an integer >= 1");
   }
@@ -94,9 +114,62 @@ async function main(): Promise<void> {
   console.log(`Tenant: ${tenantId}`);
   console.log(`Runs per case: ${runs}`);
   console.log(`Cases: ${evalCases.length}`);
+  console.log(`Output dir: ${outputDir}`);
   console.log("");
 
   const allResults: EvalResult[] = [];
+  const startedAt = new Date().toISOString();
+
+  // Preflight: detects infra failures before running full matrix.
+  let preflight: PreflightResult = { ok: true };
+  {
+    try {
+      const convex = getConvexClient();
+      const serviceToken = getConvexServiceToken();
+      const tenant = await convex.query(
+        "tenants:getTenantByIdForService" as any,
+        { tenantId, serviceToken } as any
+      );
+      if (!tenant) {
+        preflight = { ok: false, reason: "tenant_not_found" };
+        console.log("Preflight: FAILED(tenant_not_found)");
+        console.log("Tip: passe um AGENT_EVAL_TENANT_ID válido da tabela tenants.");
+        process.exit(1);
+      }
+    } catch (error) {
+      const classified = classifyLLMError(error);
+      preflight = { ok: false, reason: `tenant_lookup_${classified.category}` };
+      console.log(`Preflight: FAILED(tenant_lookup_${classified.category})`);
+      console.log(`Tenant lookup error: ${classified.message}`);
+      process.exit(1);
+    }
+
+    const probe = await runLLMAgent({
+      tenantId,
+      waUserId: `eval-preflight-${Date.now()}`,
+      userMessage: "Preflight check",
+    });
+    const normalized = probe.text.toLowerCase();
+    const infraFailure =
+      normalized.includes("dificuldades técnicas") ||
+      normalized.includes("difficulties") ||
+      normalized.includes("technical difficulties");
+
+    preflight = infraFailure
+      ? {
+          ok: false,
+          reason: "infra_unavailable",
+          replyPreview: probe.text.slice(0, 200),
+        }
+      : { ok: true, replyPreview: probe.text.slice(0, 200) };
+
+    const preflightLabel = preflight.ok ? "OK" : `FAILED(${preflight.reason})`;
+    console.log(`Preflight: ${preflightLabel}`);
+    if (preflight.replyPreview) {
+      console.log(`Preflight reply: "${preflight.replyPreview.replace(/\s+/g, " ").trim()}"`);
+    }
+    console.log("");
+  }
 
   for (const evalCase of evalCases) {
     console.log(`--- Case: ${evalCase.id} ---`);
@@ -108,13 +181,22 @@ async function main(): Promise<void> {
         userMessage: evalCase.prompt,
       });
 
-      const verdict = evalCase.validate(response.text);
+      const normalizedReply = response.text.toLowerCase();
+      const infraFailure =
+        normalizedReply.includes("dificuldades técnicas") ||
+        normalizedReply.includes("difficulties") ||
+        normalizedReply.includes("technical difficulties");
+
+      const verdict = infraFailure
+        ? { pass: false, reason: "infra_unavailable" }
+        : evalCase.validate(response.text);
       const result: EvalResult = {
         caseId: evalCase.id,
         run,
         pass: verdict.pass,
         reply: response.text,
         reason: verdict.reason,
+        infraFailure,
       };
       allResults.push(result);
 
@@ -124,7 +206,7 @@ async function main(): Promise<void> {
     console.log("");
   }
 
-  const perCase = evalCases.map((c) => {
+  const perCase: EvalSummaryRow[] = evalCases.map((c) => {
     const rows = allResults.filter((r) => r.caseId === c.id);
     const passed = rows.filter((r) => r.pass).length;
     const passRate = rows.length > 0 ? (passed / rows.length) * 100 : 0;
@@ -142,6 +224,7 @@ async function main(): Promise<void> {
   const totalPass = allResults.filter((r) => r.pass).length;
   const total = allResults.length;
   const overall = total > 0 ? (totalPass / total) * 100 : 0;
+  const infraFailures = allResults.filter((r) => r.infraFailure).length;
 
   console.log("=== Summary ===");
   for (const row of perCase) {
@@ -150,6 +233,7 @@ async function main(): Promise<void> {
     );
   }
   console.log(`Overall: ${totalPass}/${total} (${overall.toFixed(1)}%)`);
+  console.log(`Infra failures: ${infraFailures}/${total} (${((infraFailures / Math.max(1, total)) * 100).toFixed(1)}%)`);
 
   const failures = allResults.filter((r) => !r.pass);
   if (failures.length > 0) {
@@ -164,6 +248,34 @@ async function main(): Promise<void> {
       );
     }
   }
+
+  const finishedAt = new Date().toISOString();
+  const report = {
+    meta: {
+      startedAt,
+      finishedAt,
+      tenantId,
+      runsPerCase: runs,
+      cases: evalCases.map((c) => c.id),
+      preflight,
+    },
+    summary: {
+      perCase,
+      totalPass,
+      total,
+      overallPassRate: overall,
+      infraFailures,
+      infraFailureRate: (infraFailures / Math.max(1, total)) * 100,
+    },
+    results: allResults,
+  };
+
+  await mkdir(outputDir, { recursive: true });
+  const timestamp = finishedAt.replace(/[:.]/g, "-");
+  const reportPath = join(outputDir, `agent-reliability-${timestamp}.json`);
+  await writeFile(reportPath, JSON.stringify(report, null, 2), "utf8");
+  console.log("");
+  console.log(`Report saved: ${reportPath}`);
 }
 
 main().catch((err) => {

@@ -27,6 +27,7 @@ import type * as oauthStates from "../oauthStates.js";
 import type * as operatorInbox from "../operatorInbox.js";
 import type * as ping from "../ping.js";
 import type * as providerInstallations from "../providerInstallations.js";
+import type * as serviceAuth from "../serviceAuth.js";
 import type * as stripeDedup from "../stripeDedup.js";
 import type * as subscriptions from "../subscriptions.js";
 import type * as telegramChannels from "../telegramChannels.js";
@@ -60,6 +61,7 @@ declare const fullApi: ApiFromModules<{
   operatorInbox: typeof operatorInbox;
   ping: typeof ping;
   providerInstallations: typeof providerInstallations;
+  serviceAuth: typeof serviceAuth;
   stripeDedup: typeof stripeDedup;
   subscriptions: typeof subscriptions;
   telegramChannels: typeof telegramChannels;

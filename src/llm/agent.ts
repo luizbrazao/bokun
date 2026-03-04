@@ -4,6 +4,7 @@ import { toolDefinitions, executeTool } from "./tools.ts";
 import { loadHistory, saveMessages, type ChatMessage } from "./memory.ts";
 import { getConvexClient, getConvexServiceToken } from "../convex/client.ts";
 import { rootLogger } from "../lib/logger.ts";
+import { classifyLLMError } from "./errorClassifier.ts";
 import type OpenAI from "openai";
 
 export type RunLLMAgentArgs = {
@@ -211,10 +212,29 @@ export async function runLLMAgent(args: RunLLMAgentArgs): Promise<RunLLMAgentRes
             handled: true,
         };
     } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        rootLogger.error({ tenantId: args.tenantId, waUserId: args.waUserId, handler: "llm_agent", err: message }, "llm_agent_error");
+        const classified = classifyLLMError(error);
+        rootLogger.error(
+            {
+                tenantId: args.tenantId,
+                waUserId: args.waUserId,
+                handler: "llm_agent",
+                err: classified.message,
+                errorCategory: classified.category,
+                retryable: classified.retryable,
+                statusCode: classified.statusCode,
+                errorCode: classified.code,
+            },
+            "llm_agent_error"
+        );
 
         // Graceful degradation: return a generic message instead of crashing
+        if (classified.category === "auth" || classified.category === "config") {
+            return {
+                text: "O assistente de IA está temporariamente indisponível por configuração. Peça ao administrador para revisar a integração OpenAI.",
+                handled: true,
+            };
+        }
+
         return {
             text: "Desculpe, estou com dificuldades técnicas no momento. Tente novamente em alguns minutos.",
             handled: true,

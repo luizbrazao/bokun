@@ -1,0 +1,173 @@
+{
+  "meta": {
+    "startedAt": "2026-03-04T20:26:51.778Z",
+    "finishedAt": "2026-03-04T20:26:51.855Z",
+    "tenantId": "test-tenant",
+    "runsPerCase": 5,
+    "cases": [
+      "greeting_pt",
+      "handoff_request_pt",
+      "language_en"
+    ],
+    "preflight": {
+      "ok": false,
+      "reason": "infra_unavailable",
+      "replyPreview": "Desculpe, estou com dificuldades técnicas no momento. Tente novamente em alguns minutos."
+    }
+  },
+  "summary": {
+    "perCase": [
+      {
+        "caseId": "greeting_pt",
+        "passed": 0,
+        "total": 5,
+        "passRate": 0,
+        "p50Len": 88,
+        "p90Len": 88
+      },
+      {
+        "caseId": "handoff_request_pt",
+        "passed": 0,
+        "total": 5,
+        "passRate": 0,
+        "p50Len": 88,
+        "p90Len": 88
+      },
+      {
+        "caseId": "language_en",
+        "passed": 0,
+        "total": 5,
+        "passRate": 0,
+        "p50Len": 88,
+        "p90Len": 88
+      }
+    ],
+    "totalPass": 0,
+    "total": 15,
+    "overallPassRate": 0,
+    "infraFailures": 15,
+    "infraFailureRate": 100
+  },
+  "results": [
+    {
+      "caseId": "greeting_pt",
+      "run": 1,
+      "pass": false,
+      "reply": "Desculpe, estou com dificuldades técnicas no momento. Tente novamente em alguns minutos.",
+      "reason": "infra_unavailable",
+      "infraFailure": true
+    },
+    {
+      "caseId": "greeting_pt",
+      "run": 2,
+      "pass": false,
+      "reply": "Desculpe, estou com dificuldades técnicas no momento. Tente novamente em alguns minutos.",
+      "reason": "infra_unavailable",
+      "infraFailure": true
+    },
+    {
+      "caseId": "greeting_pt",
+      "run": 3,
+      "pass": false,
+      "reply": "Desculpe, estou com dificuldades técnicas no momento. Tente novamente em alguns minutos.",
+      "reason": "infra_unavailable",
+      "infraFailure": true
+    },
+    {
+      "caseId": "greeting_pt",
+      "run": 4,
+      "pass": false,
+      "reply": "Desculpe, estou com dificuldades técnicas no momento. Tente novamente em alguns minutos.",
+      "reason": "infra_unavailable",
+      "infraFailure": true
+    },
+    {
+      "caseId": "greeting_pt",
+      "run": 5,
+      "pass": false,
+      "reply": "Desculpe, estou com dificuldades técnicas no momento. Tente novamente em alguns minutos.",
+      "reason": "infra_unavailable",
+      "infraFailure": true
+    },
+    {
+      "caseId": "handoff_request_pt",
+      "run": 1,
+      "pass": false,
+      "reply": "Desculpe, estou com dificuldades técnicas no momento. Tente novamente em alguns minutos.",
+      "reason": "infra_unavailable",
+      "infraFailure": true
+    },
+    {
+      "caseId": "handoff_request_pt",
+      "run": 2,
+      "pass": false,
+      "reply": "Desculpe, estou com dificuldades técnicas no momento. Tente novamente em alguns minutos.",
+      "reason": "infra_unavailable",
+      "infraFailure": true
+    },
+    {
+      "caseId": "handoff_request_pt",
+      "run": 3,
+      "pass": false,
+      "reply": "Desculpe, estou com dificuldades técnicas no momento. Tente novamente em alguns minutos.",
+      "reason": "infra_unavailable",
+      "infraFailure": true
+    },
+    {
+      "caseId": "handoff_request_pt",
+      "run": 4,
+      "pass": false,
+      "reply": "Desculpe, estou com dificuldades técnicas no momento. Tente novamente em alguns minutos.",
+      "reason": "infra_unavailable",
+      "infraFailure": true
+    },
+    {
+      "caseId": "handoff_request_pt",
+      "run": 5,
+      "pass": false,
+      "reply": "Desculpe, estou com dificuldades técnicas no momento. Tente novamente em alguns minutos.",
+      "reason": "infra_unavailable",
+      "infraFailure": true
+    },
+    {
+      "caseId": "language_en",
+      "run": 1,
+      "pass": false,
+      "reply": "Desculpe, estou com dificuldades técnicas no momento. Tente novamente em alguns minutos.",
+      "reason": "infra_unavailable",
+      "infraFailure": true
+    },
+    {
+      "caseId": "language_en",
+      "run": 2,
+      "pass": false,
+      "reply": "Desculpe, estou com dificuldades técnicas no momento. Tente novamente em alguns minutos.",
+      "reason": "infra_unavailable",
+      "infraFailure": true
+    },
+    {
+      "caseId": "language_en",
+      "run": 3,
+      "pass": false,
+      "reply": "Desculpe, estou com dificuldades técnicas no momento. Tente novamente em alguns minutos.",
+      "reason": "infra_unavailable",
+      "infraFailure": true
+    },
+    {
+      "caseId": "language_en",
+      "run": 4,
+      "pass": false,
+      "reply": "Desculpe, estou com dificuldades técnicas no momento. Tente novamente em alguns minutos.",
+      "reason": "infra_unavailable",
+      "infraFailure": true
+    },
+    {
+      "caseId": "language_en",
+      "run": 5,
+      "pass": false,
+      "reply": "Desculpe, estou com dificuldades técnicas no momento. Tente novamente em alguns minutos.",
+      "reason": "infra_unavailable",
+      "infraFailure": true
+    }
+  ]
+}

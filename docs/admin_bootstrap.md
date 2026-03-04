@@ -9,6 +9,7 @@ Defina no Render (serviço `bokun-bot-api`):
 - `ADMIN_API_KEY` (obrigatório para endpoints `/admin/*`)
 - `CONVEX_URL`
 - `CONVEX_SERVICE_TOKEN` (deve ser igual ao valor configurado no Convex)
+- `CONVEX_SERVICE_TOKEN_V2` (opcional, para rotação sem downtime)
 - `WHATSAPP_APP_SECRET`
 - `WHATSAPP_VERIFY_TOKEN`
 - `WHATSAPP_ACCESS_TOKEN` ou `META_ACCESS_TOKEN` (opcional, mas recomendado para não enviar token no body)
@@ -18,6 +19,7 @@ Defina no Render (serviço `bokun-bot-api`):
 Defina também no Convex (Deployment Settings > Environment Variables):
 
 - `CONVEX_SERVICE_TOKEN` (mesmo valor do Render)
+- `CONVEX_SERVICE_TOKEN_V2` (opcional, mesmo valor do Render quando estiver em rotação)
 
 ## 1) Criar/encontrar tenant + usuário admin
 

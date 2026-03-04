@@ -2,15 +2,20 @@ import { QueryCtx } from "./_generated/server";
 
 /**
  * Validates service-to-service calls from the Node backend to Convex.
- * Requires CONVEX_SERVICE_TOKEN configured in Convex environment variables.
+ * Accepts either CONVEX_SERVICE_TOKEN or CONVEX_SERVICE_TOKEN_V2.
  */
 export async function requireServiceToken(_ctx: QueryCtx, providedToken: string): Promise<void> {
-  const expected = process.env.CONVEX_SERVICE_TOKEN?.trim();
-  if (!expected) {
-    throw new Error("CONVEX_SERVICE_TOKEN is not configured on Convex.");
+  const expectedV1 = process.env.CONVEX_SERVICE_TOKEN?.trim();
+  const expectedV2 = process.env.CONVEX_SERVICE_TOKEN_V2?.trim();
+  const accepted = [expectedV2, expectedV1].filter(
+    (token): token is string => Boolean(token && token.length > 0)
+  );
+
+  if (accepted.length === 0) {
+    throw new Error("CONVEX_SERVICE_TOKEN (or CONVEX_SERVICE_TOKEN_V2) is not configured on Convex.");
   }
 
-  if (!providedToken || providedToken !== expected) {
+  if (!providedToken || !accepted.includes(providedToken)) {
     throw new Error("Invalid service token.");
   }
 }

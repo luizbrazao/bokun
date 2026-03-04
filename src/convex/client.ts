@@ -50,10 +50,13 @@ export function getConvexClient(): ConvexHttpClientLike {
 }
 
 export function getConvexServiceToken(): string {
-  const token = process.env.CONVEX_SERVICE_TOKEN?.trim();
+  // During token rotation, prefer V2 from backend while Convex accepts V1+V2.
+  const token =
+    process.env.CONVEX_SERVICE_TOKEN_V2?.trim() ||
+    process.env.CONVEX_SERVICE_TOKEN?.trim();
   if (!token) {
     throw new Error(
-      "Missing CONVEX_SERVICE_TOKEN. Set the same token in Node backend and Convex environment."
+      "Missing CONVEX_SERVICE_TOKEN (or CONVEX_SERVICE_TOKEN_V2). Set the same token in Node backend and Convex environment."
     );
   }
   return token;
