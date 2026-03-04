@@ -1,9 +1,9 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.0
-milestone_name: milestone
-status: unknown
-last_updated: "2026-03-04T09:45:34Z"
+milestone_name: MVP
+status: complete
+last_updated: "2026-03-04"
 progress:
   total_phases: 5
   completed_phases: 5
@@ -15,17 +15,17 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-03)
+See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Core value:** Vendors close bookings through WhatsApp without building or managing any chatbot infrastructure — install once via Bokun, configure channel, it works.
-**Current focus:** Milestone v1.1 — Phase 4: Dashboard, Landing Page & Profile
+**Current focus:** v1.0 milestone shipped — planning next milestone
 
 ## Current Position
 
-Phase: 5 — Automated Test Coverage
+Phase: 5 — Automated Test Coverage (COMPLETE)
 Plan: 02 (COMPLETE — all plans complete)
-Status: Phase 5 complete, all v1.1 milestone phases done
-Last activity: 2026-03-04 — Phase 05-02 complete: subscription gating + 24 new tests, 50 total
+Status: v1.0 milestone shipped 2026-03-04
+Last activity: 2026-03-04 — v1.0 milestone archived, ROADMAP/REQUIREMENTS archived to .planning/milestones/
 
 Progress: [██████████] 100%
 
