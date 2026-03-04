@@ -1,0 +1,119 @@
+{
+  "meta": {
+    "startedAt": "2026-03-04T20:51:48.842Z",
+    "finishedAt": "2026-03-04T20:52:15.750Z",
+    "tenantId": "md7c779x0c68q1tfqjt4q6gkjd824tvh",
+    "runsPerCase": 3,
+    "cases": [
+      "greeting_pt",
+      "handoff_request_pt",
+      "language_en"
+    ],
+    "preflight": {
+      "ok": true,
+      "replyPreview": "Parece que você mencionou \"Preflight check\", mas não ficou claro o que você precisa. Você está procurando por atividades específicas, disponibilidade ou reservas? Por favor, me forneça mais detalhes p"
+    }
+  },
+  "summary": {
+    "perCase": [
+      {
+        "caseId": "greeting_pt",
+        "passed": 2,
+        "total": 3,
+        "passRate": 66.66666666666666,
+        "p50Len": 176,
+        "p90Len": 219
+      },
+      {
+        "caseId": "handoff_request_pt",
+        "passed": 1,
+        "total": 3,
+        "passRate": 33.33333333333333,
+        "p50Len": 161,
+        "p90Len": 210
+      },
+      {
+        "caseId": "language_en",
+        "passed": 2,
+        "total": 3,
+        "passRate": 66.66666666666666,
+        "p50Len": 127,
+        "p90Len": 165
+      }
+    ],
+    "totalPass": 5,
+    "total": 9,
+    "overallPassRate": 55.55555555555556,
+    "infraFailures": 3,
+    "infraFailureRate": 33.33333333333333
+  },
+  "results": [
+    {
+      "caseId": "greeting_pt",
+      "run": 1,
+      "pass": true,
+      "reply": "Olá, boa tarde! Parece que houve um problema ao buscar informações sobre os passeios disponíveis. \n\nVocê tem algum tipo específico de atividade em mente?",
+      "infraFailure": false
+    },
+    {
+      "caseId": "greeting_pt",
+      "run": 2,
+      "pass": false,
+      "reply": "Olá! Boa tarde. Estou tendo dificuldades técnicas para acessar as informações sobre os passeios disponíveis no momento. Você pode me informar qual tipo de passeio tem em mente? Assim, posso tentar ajudar de outra forma.",
+      "reason": "infra_unavailable",
+      "infraFailure": true
+    },
+    {
+      "caseId": "greeting_pt",
+      "run": 3,
+      "pass": true,
+      "reply": "Opa, boa tarde! Parece que estou tendo dificuldades para buscar as informações sobre os passeios no momento. Você poderia me informar qual tipo de passeio você está procurando?",
+      "infraFailure": false
+    },
+    {
+      "caseId": "handoff_request_pt",
+      "run": 1,
+      "pass": true,
+      "reply": "Não consegui transferir você para um atendente humano no momento. Se precisar de ajuda, posso tentar resolver alguma questão específica.",
+      "infraFailure": false
+    },
+    {
+      "caseId": "handoff_request_pt",
+      "run": 2,
+      "pass": false,
+      "reply": "Parece que estou enfrentando dificuldades técnicas para transferir você a um atendente humano. Posso ajudar com alguma outra informação ou dúvida que você tenha?",
+      "reason": "infra_unavailable",
+      "infraFailure": true
+    },
+    {
+      "caseId": "handoff_request_pt",
+      "run": 3,
+      "pass": false,
+      "reply": "Parece que estou tendo dificuldades técnicas para transferi-lo a um atendente humano. Você pode me informar o motivo pelo qual deseja falar com um atendente? Assim, posso tentar ajudar da melhor forma possível.",
+      "reason": "infra_unavailable",
+      "infraFailure": true
+    },
+    {
+      "caseId": "language_en",
+      "run": 1,
+      "pass": false,
+      "reply": "Olá! Para te ajudar a verificar os passeios disponíveis amanhã, preciso saber qual atividade você gostaria de fazer e quantas pessoas participarão. Pode me informar?",
+      "reason": "missing_english_signal",
+      "infraFailure": false
+    },
+    {
+      "caseId": "language_en",
+      "run": 2,
+      "pass": true,
+      "reply": "Claro! Para isso, preciso saber qual atividade você gostaria de fazer e quantas pessoas participarão do tour.",
+      "infraFailure": false
+    },
+    {
+      "caseId": "language_en",
+      "run": 3,
+      "pass": true,
+      "reply": "Posso ajudar com isso! Qual atividade ou tipo de tour você gostaria de verificar para amanhã? E quantas pessoas vão participar?",
+      "infraFailure": false
+    }
+  ]
+}

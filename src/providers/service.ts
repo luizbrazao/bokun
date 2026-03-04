@@ -1,4 +1,4 @@
-import { getConvexClient } from "../convex/client.ts";
+import { getConvexClient, getConvexServiceToken } from "../convex/client.ts";
 import { getProviderAdapterOrThrow } from "./registry.ts";
 import type {
   ProviderCheckAvailabilityArgs,
@@ -18,9 +18,10 @@ export async function resolveTenantProvider(args: ResolveTenantProviderArgs): Pr
   }
 
   const convex = getConvexClient();
+  const serviceToken = getConvexServiceToken();
   const provider = (await convex.query(
-    "providerInstallations:getPrimaryProvider" as any,
-    { tenantId: args.tenantId } as any
+    "providerInstallations:getPrimaryProviderForService" as any,
+    { tenantId: args.tenantId, serviceToken } as any
   )) as string | null;
 
   // Backward compatibility: default to bokun for old tenants/flows.

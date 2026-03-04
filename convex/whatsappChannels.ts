@@ -37,6 +37,17 @@ export const getByTenantId = query({
   },
 });
 
+export const getByTenantIdForService = query({
+  args: { tenantId: v.id("tenants"), serviceToken: v.string() },
+  handler: async (ctx, args) => {
+    await requireServiceToken(ctx, args.serviceToken);
+    return ctx.db
+      .query("whatsapp_channels")
+      .withIndex("by_tenantId", (q) => q.eq("tenantId", args.tenantId))
+      .first();
+  },
+});
+
 export const upsert = mutation({
   args: {
     tenantId: v.id("tenants"),

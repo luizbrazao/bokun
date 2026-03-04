@@ -147,6 +147,38 @@ export const getPrimaryProvider = query({
   },
 });
 
+export const getPrimaryProviderForService = query({
+  args: {
+    tenantId: v.id("tenants"),
+    serviceToken: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await requireServiceToken(ctx, args.serviceToken);
+
+    const installations = await ctx.db
+      .query("provider_installations")
+      .withIndex("by_tenantId", (q) => q.eq("tenantId", args.tenantId))
+      .collect();
+
+    const active = installations.filter((item) => item.status === "active");
+    if (active.length > 0) {
+      active.sort((a, b) => b.updatedAt - a.updatedAt);
+      return active[0].provider;
+    }
+
+    const legacyBokun = await ctx.db
+      .query("bokun_installations")
+      .withIndex("by_tenantId", (q) => q.eq("tenantId", args.tenantId))
+      .first();
+
+    if (legacyBokun) {
+      return "bokun";
+    }
+
+    return null;
+  },
+});
+
 export const listByTenant = query({
   args: {
     tenantId: v.id("tenants"),

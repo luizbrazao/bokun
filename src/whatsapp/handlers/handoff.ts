@@ -1,4 +1,5 @@
 import { getConvexClient } from "../../convex/client.ts";
+import { getConvexServiceToken } from "../../convex/client.ts";
 import { sendTelegramMessage } from "../../telegram/botClient.ts";
 import { rootLogger } from "../../lib/logger.ts";
 
@@ -54,11 +55,12 @@ export async function handleStartHandoff(
   args: HandleHandoffArgs
 ): Promise<HandleHandoffResult> {
   const convex = getConvexClient();
+  const serviceToken = getConvexServiceToken();
 
   // Get telegram channel config for this tenant
   const tgChannel = (await convex.query(
-    "telegramChannels:getByTenantId" as any,
-    { tenantId: args.tenantId } as any
+    "telegramChannels:getByTenantIdForService" as any,
+    { tenantId: args.tenantId, serviceToken } as any
   )) as TelegramChannelRecord;
 
   if (!tgChannel?.operatorGroupChatId || !tgChannel.botToken) {
@@ -128,10 +130,11 @@ export async function handleHandoffUserMessage(
   args: HandleHandoffArgs
 ): Promise<HandleHandoffResult> {
   const convex = getConvexClient();
+  const serviceToken = getConvexServiceToken();
 
   const tgChannel = (await convex.query(
-    "telegramChannels:getByTenantId" as any,
-    { tenantId: args.tenantId } as any
+    "telegramChannels:getByTenantIdForService" as any,
+    { tenantId: args.tenantId, serviceToken } as any
   )) as TelegramChannelRecord;
 
   if (!tgChannel?.operatorGroupChatId || !tgChannel.botToken) {

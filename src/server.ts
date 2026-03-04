@@ -463,6 +463,7 @@ async function handleOperatorGroupMessage(
   parsed: { text: string; replyToMessageId?: number; chatId: number; messageId: number }
 ): Promise<void> {
   const convex = getConvexClient();
+  const serviceToken = getConvexServiceToken();
 
   // Only process replies to bot messages (operator replies to forwarded user messages)
   if (!parsed.replyToMessageId) {
@@ -505,8 +506,8 @@ async function handleOperatorGroupMessage(
     } else {
       // Reply to WhatsApp user
       const waChannel = (await convex.query(
-        "whatsappChannels:getByTenantId" as any,
-        { tenantId: channel.tenantId } as any
+        "whatsappChannels:getByTenantIdForService" as any,
+        { tenantId: channel.tenantId, serviceToken } as any
       )) as { phoneNumberId: string; accessToken: string } | null;
 
       if (waChannel) {
@@ -538,8 +539,8 @@ async function handleOperatorGroupMessage(
     }
   } else {
     const waChannel = (await convex.query(
-      "whatsappChannels:getByTenantId" as any,
-      { tenantId: channel.tenantId } as any
+      "whatsappChannels:getByTenantIdForService" as any,
+      { tenantId: channel.tenantId, serviceToken } as any
     )) as { phoneNumberId: string; accessToken: string } | null;
 
     if (waChannel) {

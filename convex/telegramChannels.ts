@@ -25,6 +25,17 @@ export const getByTenantId = query({
   },
 });
 
+export const getByTenantIdForService = query({
+  args: { tenantId: v.id("tenants"), serviceToken: v.string() },
+  handler: async (ctx, args) => {
+    await requireServiceToken(ctx, args.serviceToken);
+    return ctx.db
+      .query("telegram_channels")
+      .withIndex("by_tenantId", (q) => q.eq("tenantId", args.tenantId))
+      .first();
+  },
+});
+
 export const getByOperatorGroupChatId = query({
   args: { tenantId: v.id("tenants"), chatId: v.number() },
   handler: async (ctx, args) => {
