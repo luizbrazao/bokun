@@ -106,8 +106,20 @@ async function main(): Promise<void> {
   const tenantId = process.env.AGENT_EVAL_TENANT_ID ?? "test-tenant";
   const runs = Number.parseInt(process.env.AGENT_EVAL_RUNS ?? "5", 10);
   const outputDir = process.env.AGENT_EVAL_OUTPUT_DIR?.trim() || join(projectRoot, "docs", "evals");
+  const minOverallPassRate = process.env.AGENT_EVAL_MIN_OVERALL_PASS_RATE
+    ? Number.parseFloat(process.env.AGENT_EVAL_MIN_OVERALL_PASS_RATE)
+    : null;
+  const maxInfraFailureRate = process.env.AGENT_EVAL_MAX_INFRA_FAILURE_RATE
+    ? Number.parseFloat(process.env.AGENT_EVAL_MAX_INFRA_FAILURE_RATE)
+    : null;
   if (!Number.isInteger(runs) || runs < 1) {
     throw new Error("AGENT_EVAL_RUNS must be an integer >= 1");
+  }
+  if (minOverallPassRate !== null && (Number.isNaN(minOverallPassRate) || minOverallPassRate < 0 || minOverallPassRate > 100)) {
+    throw new Error("AGENT_EVAL_MIN_OVERALL_PASS_RATE must be a number between 0 and 100");
+  }
+  if (maxInfraFailureRate !== null && (Number.isNaN(maxInfraFailureRate) || maxInfraFailureRate < 0 || maxInfraFailureRate > 100)) {
+    throw new Error("AGENT_EVAL_MAX_INFRA_FAILURE_RATE must be a number between 0 and 100");
   }
 
   console.log("=== Agent Reliability Evaluation ===");
@@ -115,6 +127,11 @@ async function main(): Promise<void> {
   console.log(`Runs per case: ${runs}`);
   console.log(`Cases: ${evalCases.length}`);
   console.log(`Output dir: ${outputDir}`);
+  if (minOverallPassRate !== null || maxInfraFailureRate !== null) {
+    const minLabel = minOverallPassRate === null ? "disabled" : `${minOverallPassRate.toFixed(1)}%`;
+    const maxLabel = maxInfraFailureRate === null ? "disabled" : `${maxInfraFailureRate.toFixed(1)}%`;
+    console.log(`Gate thresholds: min overall=${minLabel}, max infra=${maxLabel}`);
+  }
   console.log("");
 
   const allResults: EvalResult[] = [];
@@ -225,6 +242,7 @@ async function main(): Promise<void> {
   const total = allResults.length;
   const overall = total > 0 ? (totalPass / total) * 100 : 0;
   const infraFailures = allResults.filter((r) => r.infraFailure).length;
+  const infraFailureRate = (infraFailures / Math.max(1, total)) * 100;
 
   console.log("=== Summary ===");
   for (const row of perCase) {
@@ -233,7 +251,7 @@ async function main(): Promise<void> {
     );
   }
   console.log(`Overall: ${totalPass}/${total} (${overall.toFixed(1)}%)`);
-  console.log(`Infra failures: ${infraFailures}/${total} (${((infraFailures / Math.max(1, total)) * 100).toFixed(1)}%)`);
+  console.log(`Infra failures: ${infraFailures}/${total} (${infraFailureRate.toFixed(1)}%)`);
 
   const failures = allResults.filter((r) => !r.pass);
   if (failures.length > 0) {
@@ -265,7 +283,7 @@ async function main(): Promise<void> {
       total,
       overallPassRate: overall,
       infraFailures,
-      infraFailureRate: (infraFailures / Math.max(1, total)) * 100,
+      infraFailureRate,
     },
     results: allResults,
   };
@@ -276,6 +294,22 @@ async function main(): Promise<void> {
   await writeFile(reportPath, JSON.stringify(report, null, 2), "utf8");
   console.log("");
   console.log(`Report saved: ${reportPath}`);
+
+  const gateFailures: string[] = [];
+  if (minOverallPassRate !== null && overall < minOverallPassRate) {
+    gateFailures.push(`overall pass rate ${overall.toFixed(1)}% < required ${minOverallPassRate.toFixed(1)}%`);
+  }
+  if (maxInfraFailureRate !== null && infraFailureRate > maxInfraFailureRate) {
+    gateFailures.push(`infra failure rate ${infraFailureRate.toFixed(1)}% > allowed ${maxInfraFailureRate.toFixed(1)}%`);
+  }
+  if (gateFailures.length > 0) {
+    console.error("");
+    console.error("Evaluation gate failed:");
+    for (const failure of gateFailures) {
+      console.error(`- ${failure}`);
+    }
+    process.exit(2);
+  }
 }
 
 main().catch((err) => {

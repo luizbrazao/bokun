@@ -1,0 +1,115 @@
+{
+  "meta": {
+    "startedAt": "2026-03-04T21:01:44.603Z",
+    "finishedAt": "2026-03-04T21:02:15.548Z",
+    "tenantId": "md7c779x0c68q1tfqjt4q6gkjd824tvh",
+    "runsPerCase": 3,
+    "cases": [
+      "greeting_pt",
+      "handoff_request_pt",
+      "language_en"
+    ],
+    "preflight": {
+      "ok": true,
+      "replyPreview": "Parece que você está interessado em uma checagem pré-voo. Poderia me informar a data, o número de pessoas e se deseja alguma atividade específica relacionada ao check-in ou ao voo?"
+    }
+  },
+  "summary": {
+    "perCase": [
+      {
+        "caseId": "greeting_pt",
+        "passed": 3,
+        "total": 3,
+        "passRate": 100,
+        "p50Len": 106,
+        "p90Len": 158
+      },
+      {
+        "caseId": "handoff_request_pt",
+        "passed": 3,
+        "total": 3,
+        "passRate": 100,
+        "p50Len": 111,
+        "p90Len": 112
+      },
+      {
+        "caseId": "language_en",
+        "passed": 3,
+        "total": 3,
+        "passRate": 100,
+        "p50Len": 137,
+        "p90Len": 173
+      }
+    ],
+    "totalPass": 9,
+    "total": 9,
+    "overallPassRate": 100,
+    "infraFailures": 0,
+    "infraFailureRate": 0
+  },
+  "results": [
+    {
+      "caseId": "greeting_pt",
+      "run": 1,
+      "pass": true,
+      "reply": "Boa tarde! Que tipo de passeio você está interessado? Pode me informar a data e o número de pessoas?",
+      "infraFailure": false
+    },
+    {
+      "caseId": "greeting_pt",
+      "run": 2,
+      "pass": true,
+      "reply": "Boa tarde! Que tipo de passeios você gostaria de conhecer? Poderia me informar a data e o número de pessoas para que eu possa verificar as opções disponíveis?",
+      "infraFailure": false
+    },
+    {
+      "caseId": "greeting_pt",
+      "run": 3,
+      "pass": true,
+      "reply": "Boa tarde! Que tipo de passeio você gostaria de saber mais? Pode me informar a data e o número de pessoas?",
+      "infraFailure": false
+    },
+    {
+      "caseId": "handoff_request_pt",
+      "run": 1,
+      "pass": true,
+      "reply": "Desculpe, o atendimento humano não está disponível no momento. Posso ajudar com alguma outra questão?",
+      "infraFailure": false
+    },
+    {
+      "caseId": "handoff_request_pt",
+      "run": 2,
+      "pass": true,
+      "reply": "Desculpe, o atendimento humano não está disponível no momento. Posso tentar ajudar com alguma outra informação?",
+      "infraFailure": false
+    },
+    {
+      "caseId": "handoff_request_pt",
+      "run": 3,
+      "pass": true,
+      "reply": "Desculpe, o atendimento humano não está disponível no momento. Posso tentar ajudar com suas dúvidas ou reservas?",
+      "infraFailure": false
+    },
+    {
+      "caseId": "language_en",
+      "run": 1,
+      "pass": true,
+      "reply": "I'm sorry, but it looks like there are no available tours for tomorrow. Would you like to check for another date or a different activity?",
+      "infraFailure": false
+    },
+    {
+      "caseId": "language_en",
+      "run": 2,
+      "pass": true,
+      "reply": "I'm sorry, but it seems there are no available tours for tomorrow. Would you like to check availability for another date?",
+      "infraFailure": false
+    },
+    {
+      "caseId": "language_en",
+      "run": 3,
+      "pass": true,
+      "reply": "I'm sorry, but there are no available tours for the private luxury catamaran in Málaga tomorrow, March 5th. Would you like to check for another date or a different activity?",
+      "infraFailure": false
+    }
+  ]
+}

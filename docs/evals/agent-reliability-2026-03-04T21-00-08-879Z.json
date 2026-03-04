@@ -1,0 +1,117 @@
+{
+  "meta": {
+    "startedAt": "2026-03-04T20:59:33.463Z",
+    "finishedAt": "2026-03-04T21:00:08.879Z",
+    "tenantId": "md7c779x0c68q1tfqjt4q6gkjd824tvh",
+    "runsPerCase": 3,
+    "cases": [
+      "greeting_pt",
+      "handoff_request_pt",
+      "language_en"
+    ],
+    "preflight": {
+      "ok": true,
+      "replyPreview": "Para ajudar com o \"preflight check\", preciso de mais informações. Você está se referindo a alguma atividade específica? Qual a data e quantas pessoas participarão?"
+    }
+  },
+  "summary": {
+    "perCase": [
+      {
+        "caseId": "greeting_pt",
+        "passed": 3,
+        "total": 3,
+        "passRate": 100,
+        "p50Len": 198,
+        "p90Len": 204
+      },
+      {
+        "caseId": "handoff_request_pt",
+        "passed": 3,
+        "total": 3,
+        "passRate": 100,
+        "p50Len": 98,
+        "p90Len": 121
+      },
+      {
+        "caseId": "language_en",
+        "passed": 1,
+        "total": 3,
+        "passRate": 33.33333333333333,
+        "p50Len": 168,
+        "p90Len": 175
+      }
+    ],
+    "totalPass": 7,
+    "total": 9,
+    "overallPassRate": 77.77777777777779,
+    "infraFailures": 0,
+    "infraFailureRate": 0
+  },
+  "results": [
+    {
+      "caseId": "greeting_pt",
+      "run": 1,
+      "pass": true,
+      "reply": "Olá, boa tarde! Temos um passeio disponível:\n\n- **2 HOURS (BALI 4.1)** - catamarã de luxo privado em Málaga (duração: 1 hora).\n\nSe precisar de mais informações ou se quiser reservar, é só me avisar!",
+      "infraFailure": false
+    },
+    {
+      "caseId": "greeting_pt",
+      "run": 2,
+      "pass": true,
+      "reply": "Olá! Temos um passeio disponível: \n\n**Catamarã de luxo privado em Málaga** - Duração: 1 hora.\n\nSe você estiver interessado, posso verificar a disponibilidade para você. Qual data e quantas pessoas?",
+      "infraFailure": false
+    },
+    {
+      "caseId": "greeting_pt",
+      "run": 3,
+      "pass": true,
+      "reply": "Olá! Temos disponível o passeio \"2 HOURS (BALI 4.1) - private luxury catamaran Málaga\", com duração de 1 hora. \n\nGostaria de saber mais sobre a data e o número de pessoas para verificar a disponibilidade?",
+      "infraFailure": false
+    },
+    {
+      "caseId": "handoff_request_pt",
+      "run": 1,
+      "pass": true,
+      "reply": "Desculpe, o atendimento humano não está disponível no momento. Posso tentar ajudar de outra forma?",
+      "infraFailure": false
+    },
+    {
+      "caseId": "handoff_request_pt",
+      "run": 2,
+      "pass": true,
+      "reply": "Desculpe, o atendimento humano não está disponível no momento. Posso tentar ajudar de outra forma?",
+      "infraFailure": false
+    },
+    {
+      "caseId": "handoff_request_pt",
+      "run": 3,
+      "pass": true,
+      "reply": "Desculpe, o atendimento humano não está disponível no momento. Posso tentar ajudar com alguma outra informação ou dúvida?",
+      "infraFailure": false
+    },
+    {
+      "caseId": "language_en",
+      "run": 1,
+      "pass": false,
+      "reply": "Parece que não há disponibilidade para o passeio \"2 HOURS (BALI 4.1) - private luxury catamaran Málaga\" amanhã (05/03/2026). \n\nPosso ajudar com outra data ou atividade?",
+      "reason": "missing_english_signal",
+      "infraFailure": false
+    },
+    {
+      "caseId": "language_en",
+      "run": 2,
+      "pass": true,
+      "reply": "Claro! Por favor, me informe o tipo de tour que você gostaria de fazer e quantas pessoas participarão.",
+      "infraFailure": false
+    },
+    {
+      "caseId": "language_en",
+      "run": 3,
+      "pass": false,
+      "reply": "Desculpe, mas não consegui encontrar informações sobre disponibilidade para o passeio de catamarã privado em Málaga amanhã. Você gostaria de verificar outra data ou atividade?",
+      "reason": "missing_english_signal",
+      "infraFailure": false
+    }
+  ]
+}

@@ -2,6 +2,7 @@ export type BuildSystemPromptArgs = {
     tenantId: string;
     currentDateTime: string;
     language?: string; // "pt" | "en" | "es" — tenant's configured language preference
+    userLanguageHint?: "pt" | "en" | "es" | null;
 };
 
 export function buildSystemPrompt(args: BuildSystemPromptArgs): string {
@@ -12,6 +13,9 @@ export function buildSystemPrompt(args: BuildSystemPromptArgs): string {
         es: "El idioma predeterminado de este bot es el **Español**. Responde en español a menos que el cliente inicie claramente en otro idioma.",
     };
     const defaultLanguageInstruction = languageMap[args.language ?? "pt"] ?? languageMap["pt"];
+    const userLanguageHintInstruction = args.userLanguageHint
+        ? `- O idioma da mensagem atual do usuário foi detectado como **${args.userLanguageHint.toUpperCase()}**.\n- Para esta resposta, use **${args.userLanguageHint.toUpperCase()}** com prioridade máxima.`
+        : "- Se não houver sinal claro do idioma do usuário, use o idioma padrão do tenant.";
 
     return `# SYSTEM PROMPT — WhatsApp Booking Assistant
 
@@ -23,6 +27,8 @@ Você ajuda clientes a encontrar atividades, verificar disponibilidade, preços 
 
 ### IDIOMA
 ${defaultLanguageInstruction}
+- Prioridade de idioma por mensagem:
+${userLanguageHintInstruction}
 - Se o usuário mudar de idioma de forma consistente, adapte-se.
 - **NUNCA** misture idiomas.
 - **NUNCA** pergunte "em que idioma prefere?".

@@ -5,6 +5,7 @@ import { loadHistory, saveMessages, type ChatMessage } from "./memory.ts";
 import { getConvexClient, getConvexServiceToken } from "../convex/client.ts";
 import { rootLogger } from "../lib/logger.ts";
 import { classifyLLMError } from "./errorClassifier.ts";
+import { detectReplyLanguageFromUserMessage } from "./language.ts";
 import type OpenAI from "openai";
 
 export type RunLLMAgentArgs = {
@@ -20,6 +21,18 @@ export type RunLLMAgentResult = {
 };
 
 const MAX_TOOL_ITERATIONS = 3;
+
+function buildLanguageLockInstruction(language: "pt" | "en" | "es" | null): string | null {
+    if (!language) return null;
+
+    if (language === "en") {
+        return "LANGUAGE LOCK: For this turn, respond strictly in English only. Do not reply in Portuguese or Spanish.";
+    }
+    if (language === "pt") {
+        return "TRAVA DE IDIOMA: Nesta resposta, responda estritamente em Português. Não responda em inglês ou espanhol.";
+    }
+    return "BLOQUEO DE IDIOMA: En este turno, responde estrictamente en Español. No respondas en portugués ni inglés.";
+}
 
 async function resolveOpenAIConfig(tenantId: string): Promise<{ apiKey: string; model: string } | null> {
     const convex = getConvexClient();
@@ -69,6 +82,8 @@ export async function runLLMAgent(args: RunLLMAgentArgs): Promise<RunLLMAgentRes
             { tenantId: args.tenantId, serviceToken } as any
         )) as { language?: string; timezone?: string } | null;
         const tenantLanguage = tenantRecord?.language ?? "pt";
+        const userLanguageHint = detectReplyLanguageFromUserMessage(args.userMessage);
+        const languageLockInstruction = buildLanguageLockInstruction(userLanguageHint);
 
         // Build system prompt — use tenant timezone for current datetime display
         const now = new Date().toLocaleString("en-GB", { timeZone: tenantRecord?.timezone ?? "Europe/Madrid" });
@@ -76,6 +91,7 @@ export async function runLLMAgent(args: RunLLMAgentArgs): Promise<RunLLMAgentRes
             tenantId: args.tenantId,
             currentDateTime: now,
             language: tenantLanguage,
+            userLanguageHint,
         });
 
         // Load conversation history
@@ -90,6 +106,7 @@ export async function runLLMAgent(args: RunLLMAgentArgs): Promise<RunLLMAgentRes
         // Build messages array
         const messages: OpenAI.ChatCompletionMessageParam[] = [
             { role: "system", content: systemPrompt },
+            ...(languageLockInstruction ? [{ role: "system" as const, content: languageLockInstruction }] : []),
             ...history,
             { role: "user", content: args.userMessage },
         ];

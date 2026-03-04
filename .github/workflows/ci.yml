@@ -17,3 +17,25 @@ jobs:
           cache: "npm"
       - run: npm ci
       - run: npm test
+
+  agent-eval:
+    runs-on: ubuntu-latest
+    needs: test
+    if: ${{ secrets.CONVEX_URL != '' && secrets.CONVEX_SERVICE_TOKEN != '' && secrets.AGENT_EVAL_TENANT_ID != '' && secrets.OPENAI_API_KEY != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+      - run: npm ci
+      - name: Run reliability evaluation gate
+        run: npm run eval:agent
+        env:
+          CONVEX_URL: ${{ secrets.CONVEX_URL }}
+          CONVEX_SERVICE_TOKEN: ${{ secrets.CONVEX_SERVICE_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AGENT_EVAL_TENANT_ID: ${{ secrets.AGENT_EVAL_TENANT_ID }}
+          AGENT_EVAL_RUNS: "3"
+          AGENT_EVAL_MIN_OVERALL_PASS_RATE: "90"
+          AGENT_EVAL_MAX_INFRA_FAILURE_RATE: "5"
