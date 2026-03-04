@@ -21,7 +21,6 @@ jobs:
   agent-eval:
     runs-on: ubuntu-latest
     needs: test
-    if: ${{ secrets.CONVEX_URL != '' && secrets.CONVEX_SERVICE_TOKEN != '' && secrets.AGENT_EVAL_TENANT_ID != '' && secrets.OPENAI_API_KEY != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -29,13 +28,26 @@ jobs:
           node-version: "20"
           cache: "npm"
       - run: npm ci
-      - name: Run reliability evaluation gate
-        run: npm run eval:agent
+      - name: Run reliability evaluation gate (if configured)
         env:
           CONVEX_URL: ${{ secrets.CONVEX_URL }}
           CONVEX_SERVICE_TOKEN: ${{ secrets.CONVEX_SERVICE_TOKEN }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           AGENT_EVAL_TENANT_ID: ${{ secrets.AGENT_EVAL_TENANT_ID }}
-          AGENT_EVAL_RUNS: "3"
-          AGENT_EVAL_MIN_OVERALL_PASS_RATE: "90"
-          AGENT_EVAL_MAX_INFRA_FAILURE_RATE: "5"
+        run: |
+          missing=()
+          for key in CONVEX_URL CONVEX_SERVICE_TOKEN OPENAI_API_KEY AGENT_EVAL_TENANT_ID; do
+            if [ -z "${!key}" ]; then
+              missing+=("$key")
+            fi
+          done
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "Skipping agent-eval: missing required secrets: ${missing[*]}"
+            exit 0
+          fi
+
+          AGENT_EVAL_RUNS=3 \
+          AGENT_EVAL_MIN_OVERALL_PASS_RATE=90 \
+          AGENT_EVAL_MAX_INFRA_FAILURE_RATE=5 \
+          npm run eval:agent
