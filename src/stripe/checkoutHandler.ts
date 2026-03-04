@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { getConvexClient } from "../convex/client.ts";
+import { getConvexClient, getConvexServiceToken } from "../convex/client.ts";
 
 // Lazy singleton — avoids throwing at module load time when STRIPE_SECRET_KEY is not set.
 let _stripe: Stripe | null = null;
@@ -22,6 +22,7 @@ export type CreateCheckoutSessionArgs = {
 export async function createCheckoutSession(args: CreateCheckoutSessionArgs): Promise<{ url: string }> {
   const stripe = getStripe();
   const convex = getConvexClient();
+  const serviceToken = getConvexServiceToken();
 
   const monthlyPriceId = process.env.STRIPE_MONTHLY_PRICE_ID;
   const annualPriceId = process.env.STRIPE_ANNUAL_PRICE_ID;
@@ -32,7 +33,10 @@ export async function createCheckoutSession(args: CreateCheckoutSessionArgs): Pr
   const priceId = args.plan === "monthly" ? monthlyPriceId : annualPriceId;
 
   // Look up tenant to get or create Stripe customer
-  const tenant = (await convex.query("tenants:getTenantById" as any, { tenantId: args.tenantId } as any)) as {
+  const tenant = (await convex.query(
+    "tenants:getTenantByIdForService" as any,
+    { tenantId: args.tenantId, serviceToken } as any
+  )) as {
     stripeCustomerId?: string;
     name: string;
   } | null;

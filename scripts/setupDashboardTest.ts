@@ -11,25 +11,31 @@ import { ConvexHttpClient } from "convex/browser";
 
 async function main() {
   const url = process.env.CONVEX_URL;
+  const serviceToken = process.env.CONVEX_SERVICE_TOKEN?.trim();
   if (!url) {
     throw new Error("CONVEX_URL não definido. Verifique .env.local.");
+  }
+  if (!serviceToken) {
+    throw new Error("CONVEX_SERVICE_TOKEN não definido. Verifique .env.local.");
   }
 
   const client = new ConvexHttpClient(url);
 
   // 1. Listar tenants
   console.log("📋 Listando tenants...\n");
-  const tenants = (await client.query("tenants:listTenants" as any, {})) as any[];
+  const tenants = (await client.query("tenants:listTenantsForService" as any, { serviceToken })) as any[];
 
   if (tenants.length === 0) {
     console.log("⚠️  Nenhum tenant encontrado. Criando tenant de teste...\n");
     const tenantId = await client.mutation("tenants:createTenant" as any, {
       name: "Tenant Teste Dashboard",
+      serviceToken,
     });
     console.log(`✅ Tenant criado: ${tenantId}\n`);
 
-    const code = await client.mutation("tenants:generateInviteCode" as any, {
+    const code = await client.mutation("tenants:generateInviteCodeForService" as any, {
       tenantId,
+      serviceToken,
     });
     console.log("═══════════════════════════════════════════");
     console.log(`  INVITE CODE: ${code}`);
@@ -47,8 +53,9 @@ async function main() {
   const target = tenants.find((t: any) => !t.inviteCode) ?? tenants[0];
   console.log(`\n🔑 Gerando invite code para "${target.name}"...\n`);
 
-  const code = await client.mutation("tenants:generateInviteCode" as any, {
+  const code = await client.mutation("tenants:generateInviteCodeForService" as any, {
     tenantId: target._id,
+    serviceToken,
   });
 
   console.log("═══════════════════════════════════════════");

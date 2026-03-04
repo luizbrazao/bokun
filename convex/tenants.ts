@@ -1,13 +1,17 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { requireTenantMembership } from "./userTenants";
+import { requireServiceToken } from "./serviceAuth";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 export const createTenant = mutation({
   args: {
     name: v.string(),
     status: v.optional(v.union(v.literal("active"), v.literal("disabled"))),
+    serviceToken: v.string(),
   },
   handler: async (ctx, args) => {
+    await requireServiceToken(ctx, args.serviceToken);
     const tenantId = await ctx.db.insert("tenants", {
       name: args.name,
       status: args.status ?? "active",
@@ -21,6 +25,7 @@ export const createTenant = mutation({
 export const getTenantById = query({
   args: { tenantId: v.id("tenants") },
   handler: async (ctx, args) => {
+    await requireTenantMembership(ctx, args.tenantId);
     return ctx.db.get(args.tenantId);
   },
 });
@@ -28,6 +33,36 @@ export const getTenantById = query({
 export const listTenants = query({
   args: {},
   handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    const memberships = await ctx.db
+      .query("user_tenants")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .collect();
+
+    const tenants = await Promise.all(memberships.map((m) => ctx.db.get(m.tenantId)));
+    return tenants.filter((tenant): tenant is NonNullable<typeof tenant> => tenant !== null);
+  },
+});
+
+export const getTenantByIdForService = query({
+  args: {
+    tenantId: v.id("tenants"),
+    serviceToken: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await requireServiceToken(ctx, args.serviceToken);
+    return ctx.db.get(args.tenantId);
+  },
+});
+
+export const listTenantsForService = query({
+  args: {
+    serviceToken: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await requireServiceToken(ctx, args.serviceToken);
     return ctx.db.query("tenants").collect();
   },
 });
@@ -36,6 +71,21 @@ export const generateInviteCode = mutation({
   args: { tenantId: v.id("tenants") },
   handler: async (ctx, args) => {
     await requireTenantMembership(ctx, args.tenantId);
+    const tenant = await ctx.db.get(args.tenantId);
+    if (!tenant) throw new Error("Tenant not found.");
+    const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+    await ctx.db.patch(args.tenantId, { inviteCode: code });
+    return code;
+  },
+});
+
+export const generateInviteCodeForService = mutation({
+  args: {
+    tenantId: v.id("tenants"),
+    serviceToken: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await requireServiceToken(ctx, args.serviceToken);
     const tenant = await ctx.db.get(args.tenantId);
     if (!tenant) throw new Error("Tenant not found.");
     const code = Math.random().toString(36).substring(2, 10).toUpperCase();
@@ -80,8 +130,12 @@ export const getOpenAISettings = query({
 
 /** Server-side query (no auth check — called from webhook handler). */
 export const getOpenAIKeyForTenant = query({
-  args: { tenantId: v.id("tenants") },
+  args: {
+    tenantId: v.id("tenants"),
+    serviceToken: v.string(),
+  },
   handler: async (ctx, args) => {
+    await requireServiceToken(ctx, args.serviceToken);
     const tenant = await ctx.db.get(args.tenantId);
     if (!tenant) return null;
     return {
@@ -143,6 +197,11 @@ export const updateTenantStatus = mutation({
     status: v.union(v.literal("active"), v.literal("disabled")),
   },
   handler: async (ctx, args) => {
+    const membership = await requireTenantMembership(ctx, args.tenantId);
+    if (membership.role !== "owner" && membership.role !== "admin") {
+      throw new Error("Apenas donos ou admins podem alterar o status do bot.");
+    }
+
     const tenant = await ctx.db.get(args.tenantId);
     if (!tenant) {
       throw new Error("Tenant not found.");

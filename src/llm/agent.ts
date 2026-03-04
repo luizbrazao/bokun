@@ -2,7 +2,7 @@ import { getOpenAIClientForKey, resolveModel } from "./client.ts";
 import { buildSystemPrompt } from "./systemPrompt.ts";
 import { toolDefinitions, executeTool } from "./tools.ts";
 import { loadHistory, saveMessages, type ChatMessage } from "./memory.ts";
-import { getConvexClient } from "../convex/client.ts";
+import { getConvexClient, getConvexServiceToken } from "../convex/client.ts";
 import { rootLogger } from "../lib/logger.ts";
 import type OpenAI from "openai";
 
@@ -22,7 +22,8 @@ const MAX_TOOL_ITERATIONS = 3;
 
 async function resolveOpenAIConfig(tenantId: string): Promise<{ apiKey: string; model: string } | null> {
     const convex = getConvexClient();
-    const settings = await convex.query("tenants:getOpenAIKeyForTenant", { tenantId }) as {
+    const serviceToken = getConvexServiceToken();
+    const settings = await convex.query("tenants:getOpenAIKeyForTenant", { tenantId, serviceToken }) as {
         openaiApiKey: string | null;
         openaiModel: string | null;
     } | null;
@@ -61,9 +62,10 @@ export async function runLLMAgent(args: RunLLMAgentArgs): Promise<RunLLMAgentRes
 
         // Look up tenant language and timezone preferences for system prompt (PROF-03)
         const convex = getConvexClient();
+        const serviceToken = getConvexServiceToken();
         const tenantRecord = (await convex.query(
-            "tenants:getTenantById" as any,
-            { tenantId: args.tenantId } as any
+            "tenants:getTenantByIdForService" as any,
+            { tenantId: args.tenantId, serviceToken } as any
         )) as { language?: string; timezone?: string } | null;
         const tenantLanguage = tenantRecord?.language ?? "pt";
 

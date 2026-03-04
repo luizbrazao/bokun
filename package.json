@@ -13,6 +13,7 @@
         "ping": "node --experimental-strip-types scripts/pingConvex.ts",
         "demo:ttl": "node --experimental-strip-types scripts/demoOptionMapTTL_noNetwork.ts",
         "diagnose:bokun": "node --experimental-strip-types scripts/diagnoseBokunFlow.ts",
+        "eval:agent": "node --experimental-strip-types scripts/evalAgentReliability.ts",
         "test": "vitest run",
         "test:watch": "vitest"
     },

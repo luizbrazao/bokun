@@ -48,6 +48,14 @@ function requireConvexUrl(): string {
   return value;
 }
 
+function requireServiceToken(): string {
+  const value = process.env.CONVEX_SERVICE_TOKEN?.trim();
+  if (!value) {
+    throw new Error("CONVEX_SERVICE_TOKEN ausente. Configure no .env.local e no Convex.");
+  }
+  return value;
+}
+
 function extractActivities(raw: unknown): Array<Record<string, unknown>> {
   if (Array.isArray(raw)) {
     return raw.filter(
@@ -92,12 +100,14 @@ async function main(): Promise<void> {
   }
 
   const convexUrl = requireConvexUrl();
+  const serviceToken = requireServiceToken();
   const convex = new ConvexHttpClient(convexUrl);
 
   let tenantId = args.tenantId;
   if (!tenantId && args.phoneNumberId) {
     const channel = (await convex.query("whatsappChannels:getByPhoneNumberId" as any, {
       phoneNumberId: args.phoneNumberId,
+      serviceToken,
     } as any)) as
       | {
           tenantId: string;
@@ -122,9 +132,10 @@ async function main(): Promise<void> {
   const context = (await convex.query("bokunInstallations:getBokunContext" as any, {
     tenantId,
   } as any)) as { baseUrl?: string; headers?: Record<string, string> } | null;
-  const providerContext = (await convex.query("providerInstallations:getProviderContext" as any, {
+  const providerContext = (await convex.query("providerInstallations:getProviderContextForService" as any, {
     tenantId,
     provider: "bokun",
+    serviceToken,
   } as any)) as { baseUrl?: string; headers?: Record<string, string>; provider?: string } | null;
   const primaryProvider = (await convex.query("providerInstallations:getPrimaryProvider" as any, {
     tenantId,

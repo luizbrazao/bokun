@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { getConvexClient } from "../convex/client.ts";
+import { getConvexClient, getConvexServiceToken } from "../convex/client.ts";
 import { resolveBokunHosts, type BokunEnvironment } from "../bokun/env.ts";
 
 type OAuthConfig = {
@@ -84,6 +84,7 @@ export async function handleOAuthCallback(params: {
 }): Promise<{ tenantId: string; vendorId: string }> {
   const config = getOAuthConfig();
   const convex = getConvexClient();
+  const serviceToken = getConvexServiceToken();
 
   // Atomically validate + consume state (CSRF protection, strong consistency)
   const STATE_TTL_MS = 10 * 60 * 1000; // 10 minutes
@@ -136,6 +137,7 @@ export async function handleOAuthCallback(params: {
     {
       name: `vendor-${tokenData.vendor_id}`,
       status: "active",
+      serviceToken,
     } as any
   )) as string;
 
@@ -147,7 +149,7 @@ export async function handleOAuthCallback(params: {
 
   // New multi-provider installation record
   await convex.mutation(
-    "providerInstallations:upsertInstallation" as any,
+    "providerInstallations:upsertInstallationForService" as any,
     {
       tenantId,
       provider: "bokun",
@@ -155,6 +157,7 @@ export async function handleOAuthCallback(params: {
       baseUrl: hosts.apiBaseUrl,
       authHeaders: oauthHeaders,
       scopes,
+      serviceToken,
     } as any
   );
 

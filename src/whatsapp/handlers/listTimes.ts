@@ -7,7 +7,7 @@ import {
   bokunGetActivityByIdForTenant,
   bokunGetAvailabilitiesForTenant,
 } from "../../bokun/gateway.ts";
-import { getConvexClient } from "../../convex/client.ts";
+import { getConvexClient, getConvexServiceToken } from "../../convex/client.ts";
 import { formatAvailabilityOptions } from "../formatAvailabilityOptions.ts";
 import rootLogger from "../../lib/logger.ts";
 import { captureError } from "../../lib/sentry.ts";
@@ -80,9 +80,10 @@ export async function handleListTimes(args: HandleListTimesArgs): Promise<Handle
 
   // Look up tenant timezone for availability formatting (PROF-02)
   const convex = getConvexClient();
+  const serviceToken = getConvexServiceToken();
   const tenantRecord = (await convex.query(
-    "tenants:getTenantById" as any,
-    { tenantId: args.tenantId } as any
+    "tenants:getTenantByIdForService" as any,
+    { tenantId: args.tenantId, serviceToken } as any
   )) as { timezone?: string } | null;
   const tenantTimezone = tenantRecord?.timezone ?? "Europe/Madrid";
 

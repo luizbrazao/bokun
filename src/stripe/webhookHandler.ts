@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 import { createHash } from "node:crypto";
 import { rootLogger } from "../lib/logger.ts";
-import { getConvexClient } from "../convex/client.ts";
+import { getConvexClient, getConvexServiceToken } from "../convex/client.ts";
 
 // Lazy singleton — avoids throwing at module load time when STRIPE_SECRET_KEY is not set.
 // The key is validated at request time in handleStripeWebhookPost before calling these functions.
@@ -103,8 +103,8 @@ export async function handleStripeEvent(
  * Finds the tenant by stripeCustomerId and upserts their subscription state.
  * If no tenant matches, logs a warning and stores nothing (tenant will be linked when they complete checkout via Phase 4 UI).
  *
- * IMPORTANT: Uses convex.query("tenants:listTenants" as any, {} as any).
- * The function name "listTenants" was verified by reading convex/tenants.ts before
+ * IMPORTANT: Uses convex.query("tenants:listTenantsForService" as any, { serviceToken } as any).
+ * The function name "listTenantsForService" was verified by reading convex/tenants.ts before
  * writing this file. If no such query exists, add it to convex/tenants.ts first.
  */
 async function persistSubscription(
@@ -112,13 +112,12 @@ async function persistSubscription(
   customerId: string,
   subscription: Stripe.Subscription
 ): Promise<void> {
+  const serviceToken = getConvexServiceToken();
   // Find tenant by stripeCustomerId. No index yet — linear scan acceptable for Phase 3 volume.
-  // VERIFIED: "listTenants" is the exact exported query name in convex/tenants.ts.
-  // Full list of exports in tenants.ts: createTenant, getTenantById, listTenants,
-  // generateInviteCode, updateOpenAISettings, getOpenAISettings, getOpenAIKeyForTenant, updateTenantStatus.
+  // VERIFIED: "listTenantsForService" is the exact exported query name in convex/tenants.ts.
   const tenants = (await convex.query(
-    "tenants:listTenants" as any,
-    {} as any
+    "tenants:listTenantsForService" as any,
+    { serviceToken } as any
   )) as Array<{ _id: string; stripeCustomerId?: string }>;
 
   const tenant = tenants.find((t) => t.stripeCustomerId === customerId);

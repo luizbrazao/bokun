@@ -1,5 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { requireTenantMembership } from "./userTenants";
+import { requireServiceToken } from "./serviceAuth";
 
 function assertValidBaseUrl(baseUrl: string): void {
   try {
@@ -42,6 +44,7 @@ export const upsertInstallation = mutation({
     scopes: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
+    await requireTenantMembership(ctx, args.tenantId);
     assertProviderName(args.provider);
     assertValidBaseUrl(args.baseUrl);
     assertStringRecord(args.authHeaders);
@@ -92,6 +95,7 @@ export const getProviderContext = query({
     provider: v.string(),
   },
   handler: async (ctx, args) => {
+    await requireTenantMembership(ctx, args.tenantId);
     const provider = args.provider.trim().toLowerCase();
     const installation = await ctx.db
       .query("provider_installations")
@@ -117,6 +121,7 @@ export const getPrimaryProvider = query({
     tenantId: v.id("tenants"),
   },
   handler: async (ctx, args) => {
+    await requireTenantMembership(ctx, args.tenantId);
     const installations = await ctx.db
       .query("provider_installations")
       .withIndex("by_tenantId", (q) => q.eq("tenantId", args.tenantId))
@@ -147,9 +152,94 @@ export const listByTenant = query({
     tenantId: v.id("tenants"),
   },
   handler: async (ctx, args) => {
+    await requireTenantMembership(ctx, args.tenantId);
     return ctx.db
       .query("provider_installations")
       .withIndex("by_tenantId", (q) => q.eq("tenantId", args.tenantId))
       .collect();
+  },
+});
+
+export const upsertInstallationForService = mutation({
+  args: {
+    tenantId: v.id("tenants"),
+    provider: v.string(),
+    status: v.optional(v.union(v.literal("active"), v.literal("disabled"))),
+    baseUrl: v.string(),
+    authHeaders: v.record(v.string(), v.string()),
+    scopes: v.optional(v.array(v.string())),
+    serviceToken: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await requireServiceToken(ctx, args.serviceToken);
+    assertProviderName(args.provider);
+    assertValidBaseUrl(args.baseUrl);
+    assertStringRecord(args.authHeaders);
+    assertStringArray(args.scopes);
+
+    const tenant = await ctx.db.get(args.tenantId);
+    if (!tenant) {
+      throw new Error("Tenant not found.");
+    }
+
+    const now = Date.now();
+    const provider = args.provider.trim().toLowerCase();
+    const status = args.status ?? "active";
+    const existing = await ctx.db
+      .query("provider_installations")
+      .withIndex("by_tenantId_provider", (q) =>
+        q.eq("tenantId", args.tenantId).eq("provider", provider)
+      )
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        status,
+        baseUrl: args.baseUrl,
+        authHeaders: args.authHeaders,
+        scopes: args.scopes,
+        updatedAt: now,
+      });
+      return existing._id;
+    }
+
+    return ctx.db.insert("provider_installations", {
+      tenantId: args.tenantId,
+      provider,
+      status,
+      baseUrl: args.baseUrl,
+      authHeaders: args.authHeaders,
+      scopes: args.scopes,
+      createdAt: now,
+      updatedAt: now,
+    });
+  },
+});
+
+export const getProviderContextForService = query({
+  args: {
+    tenantId: v.id("tenants"),
+    provider: v.string(),
+    serviceToken: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await requireServiceToken(ctx, args.serviceToken);
+    const provider = args.provider.trim().toLowerCase();
+    const installation = await ctx.db
+      .query("provider_installations")
+      .withIndex("by_tenantId_provider", (q) =>
+        q.eq("tenantId", args.tenantId).eq("provider", provider)
+      )
+      .first();
+
+    if (!installation || installation.status !== "active") {
+      return null;
+    }
+
+    return {
+      provider: installation.provider,
+      baseUrl: installation.baseUrl,
+      headers: installation.authHeaders ?? {},
+    };
   },
 });

@@ -48,3 +48,13 @@ export function getConvexClient(): ConvexHttpClientLike {
   cachedClient = new ClientClass(convexUrl);
   return cachedClient;
 }
+
+export function getConvexServiceToken(): string {
+  const token = process.env.CONVEX_SERVICE_TOKEN?.trim();
+  if (!token) {
+    throw new Error(
+      "Missing CONVEX_SERVICE_TOKEN. Set the same token in Node backend and Convex environment."
+    );
+  }
+  return token;
+}

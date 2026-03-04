@@ -15,6 +15,7 @@ beforeAll(() => {
 // Mock the Convex client
 vi.mock("../convex/client.ts", () => ({
   getConvexClient: vi.fn(),
+  getConvexServiceToken: vi.fn(() => "test-service-token"),
 }));
 
 // Mock the logger to avoid stdout noise in tests

@@ -1,4 +1,4 @@
-import { getConvexClient } from "../convex/client.ts";
+import { getConvexClient, getConvexServiceToken } from "../convex/client.ts";
 
 export type BokunContext = {
   baseUrl: string;
@@ -31,9 +31,10 @@ function getEnvFallbackContext(): BokunContext | null {
 
 export async function getBokunContextOrThrow(args: { tenantId: string }): Promise<BokunContext> {
   const convex = getConvexClient();
+  const serviceToken = getConvexServiceToken();
   const providerContext = (await convex.query(
-    "providerInstallations:getProviderContext" as any,
-    { tenantId: args.tenantId, provider: "bokun" } as any
+    "providerInstallations:getProviderContextForService" as any,
+    { tenantId: args.tenantId, provider: "bokun", serviceToken } as any
   )) as BokunContextQueryResult;
 
   if (providerContext) {

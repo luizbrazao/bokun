@@ -7,7 +7,7 @@ import * as Sentry from "@sentry/node";
 import { inboundMessageLimiter, serverWebhookLimiter } from "./middleware/rateLimiter.ts";
 import { verifyAndParseStripeWebhook, handleStripeEvent } from "./stripe/webhookHandler.ts";
 import { createCheckoutSession } from "./stripe/checkoutHandler.ts";
-import { getConvexClient } from "./convex/client.ts";
+import { getConvexClient, getConvexServiceToken } from "./convex/client.ts";
 import { handleWhatsAppWebhookMessage } from "./whatsapp/webhook.ts";
 import { parseMetaWebhook, isStatusUpdate } from "./whatsapp/parseMetaWebhook.ts";
 import { sendWhatsAppMessage } from "./whatsapp/metaClient.ts";
@@ -259,6 +259,11 @@ async function readRawBody(req: IncomingMessage): Promise<Buffer> {
   return Buffer.concat(chunks);
 }
 
+function assertServerRuntimeConfig(): void {
+  // Fail fast for backend->Convex service calls used by webhooks/orchestrators.
+  getConvexServiceToken();
+}
+
 function parseJsonBody(rawBody: Buffer): unknown {
   const raw = rawBody.toString("utf8").trim();
   if (raw.length === 0) {
@@ -289,6 +294,7 @@ export type ProcessWebhookWithDedupArgs = {
   waUserId: string;
   text: string;
   body: unknown;
+  messageId?: string;
   channelPrefix?: string;
 };
 
@@ -315,7 +321,7 @@ export async function processWebhookWithDedup(
   deps: ProcessWebhookWithDedupDeps
 ): Promise<ProcessWebhookWithDedupResult> {
   const prefix = args.channelPrefix ?? "wa";
-  const messageId = extractMessageId(args.body);
+  const messageId = args.messageId ?? extractMessageId(args.body);
   const key = messageId ? `${prefix}:${messageId}` : createFallbackDedupKey(args.body, args.tenantId, args.waUserId, prefix);
   const claim = await deps.claimDedup({
     tenantId: args.tenantId,
@@ -380,6 +386,7 @@ type WhatsAppChannelRecord = {
 
 async function resolveChannelByPhoneNumberId(phoneNumberId: string): Promise<WhatsAppChannelRecord> {
   const convex = getConvexClient();
+  const serviceToken = getConvexServiceToken();
   const convexUrl = process.env.CONVEX_URL ?? "missing";
   const nodeEnv = process.env.NODE_ENV ?? "development";
 
@@ -396,7 +403,7 @@ async function resolveChannelByPhoneNumberId(phoneNumberId: string): Promise<Wha
 
   const channel = (await convex.query(
     "whatsappChannels:getByPhoneNumberId" as any,
-    { phoneNumberId } as any
+    { phoneNumberId, serviceToken } as any
   )) as WhatsAppChannelRecord;
 
   if (!channel) {
@@ -444,9 +451,10 @@ type OperatorGroupChannelRecord = {
 
 async function resolveTelegramChannelByBotUsername(botUsername: string): Promise<TelegramChannelRecord> {
   const convex = getConvexClient();
+  const serviceToken = getConvexServiceToken();
   return (await convex.query(
     "telegramChannels:getByBotUsername" as any,
-    { botUsername } as any
+    { botUsername, serviceToken } as any
   )) as TelegramChannelRecord;
 }
 
@@ -626,6 +634,7 @@ async function handleTelegramWebhookPost(req: IncomingMessage, res: ServerRespon
       waUserId: tgUserId,
       text: parsed.text,
       body: { messageId: String(parsed.updateId) },
+      messageId: String(parsed.updateId),
       channelPrefix: "tg",
     },
     {
@@ -865,7 +874,8 @@ async function handleWebhookPost(req: IncomingMessage, res: ServerResponse): Pro
             tenantId: channel.tenantId,
             waUserId: msg.from,
             text: msg.text,
-            body,
+            body: msg,
+            messageId: msg.messageId,
           },
           {
             claimDedup: claimDedupPersisted,
@@ -1286,9 +1296,10 @@ async function handleAdminWhatsappChannelLookupRoute(req: IncomingMessage, res: 
 
   try {
     const convex = getConvexClient();
+    const serviceToken = getConvexServiceToken();
     const channel = (await convex.query(
       "whatsappChannels:getByPhoneNumberId" as any,
-      { phoneNumberId } as any
+      { phoneNumberId, serviceToken } as any
     )) as {
       tenantId: string;
       phoneNumberId: string;
@@ -1750,6 +1761,7 @@ export function createAppServer() {
 }
 
 export async function startServer(port: number): Promise<void> {
+  assertServerRuntimeConfig();
   const server = createAppServer();
   await new Promise<void>((resolve) => {
     server.listen(port, () => resolve());

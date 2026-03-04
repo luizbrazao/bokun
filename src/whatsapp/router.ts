@@ -10,6 +10,7 @@ import {
   handleStartHandoff,
   handleHandoffUserMessage,
 } from "./handlers/handoff.ts";
+import { getConvexServiceToken } from "../convex/client.ts";
 
 export type RouteWhatsAppMessageArgs = OrchestrateBookingArgs & {
   channel?: "wa" | "tg";
@@ -53,11 +54,12 @@ export async function routeWhatsAppMessage(
 ): Promise<RouteWhatsAppMessageResult> {
   const channel = args.channel ?? "wa";
   const convex = getConvexClient();
+  const serviceToken = getConvexServiceToken();
 
   // -1. Check if bot is enabled for this tenant
   const tenant = await convex.query(
-    "tenants:getTenantById" as any,
-    { tenantId: args.tenantId } as any
+    "tenants:getTenantByIdForService" as any,
+    { tenantId: args.tenantId, serviceToken } as any
   ) as { status: string; stripeStatus?: string; stripeCurrentPeriodEnd?: number } | null;
   if (tenant?.status === "disabled") {
     return {
