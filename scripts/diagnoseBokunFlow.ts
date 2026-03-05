@@ -137,8 +137,9 @@ async function main(): Promise<void> {
     provider: "bokun",
     serviceToken,
   } as any)) as { baseUrl?: string; headers?: Record<string, string>; provider?: string } | null;
-  const primaryProvider = (await convex.query("providerInstallations:getPrimaryProvider" as any, {
+  const primaryProvider = (await convex.query("providerInstallations:getPrimaryProviderForService" as any, {
     tenantId,
+    serviceToken,
   } as any)) as string | null;
 
   console.log(`Primary provider: ${primaryProvider ?? "(none)"}`);
@@ -215,7 +216,19 @@ async function main(): Promise<void> {
 
 main().catch((error) => {
   const message = error instanceof Error ? error.message : String(error);
+  const cause =
+    error instanceof Error && error.cause instanceof Error
+      ? error.cause.message
+      : error instanceof Error && error.cause
+        ? String(error.cause)
+        : "";
   console.error("\nDiagnóstico falhou:");
   console.error(message);
+  if (cause) {
+    console.error(`cause: ${cause}`);
+  }
+  if (error instanceof Error && error.stack) {
+    console.error(error.stack.split("\n").slice(0, 4).join("\n"));
+  }
   process.exit(1);
 });

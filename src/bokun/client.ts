@@ -107,6 +107,12 @@ function applySignatureAuth(args: {
   pathWithQuery: string;
 }): Record<string, string> {
   const signed = { ...args.headers };
+  // Normalize Bokun auth headers to a single canonical set.
+  // This avoids duplicate case-variant headers (e.g., x-bokun-accesskey + X-Bokun-AccessKey)
+  // that can be combined by HTTP clients and break auth.
+  deleteHeader(signed, "x-bokun-date");
+  deleteHeader(signed, "x-bokun-signature");
+  deleteHeader(signed, "x-bokun-accesskey");
   const date = formatBokunDateUTC(new Date());
   const signature = makeBokunSignature({
     date,
