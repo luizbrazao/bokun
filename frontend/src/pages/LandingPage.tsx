@@ -128,18 +128,18 @@ export default function LandingPage() {
           </nav>
 
           <div className="flex items-center gap-2">
-            <a
-              href="/auth?mode=signin"
+            <Link
+              to="/auth?mode=signin"
               className="rounded-full px-3 py-2 text-sm font-medium text-text-secondary transition-colors hover:text-text-primary"
             >
               Login
-            </a>
-            <a
-              href="/auth?mode=signup"
+            </Link>
+            <Link
+              to="/auth?mode=signup"
               className="rounded-full bg-lime-accent px-4 py-2 text-sm font-semibold text-slate-900 transition-transform hover:-translate-y-0.5"
             >
               Teste grátis
-            </a>
+            </Link>
           </div>
         </div>
       </header>
@@ -167,13 +167,13 @@ export default function LandingPage() {
             </p>
 
             <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <a
-                href="/auth?mode=signup"
+              <Link
+                to="/auth?mode=signup"
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#082d33] px-7 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#0c3f46]"
               >
                 Testar grátis por 7 dias
                 <ArrowRight className="h-4 w-4" />
-              </a>
+              </Link>
 
             </div>
 
@@ -345,12 +345,12 @@ export default function LandingPage() {
                   </ul>
                   <p className="font-display mt-7 text-5xl text-slate-900">€29</p>
                   <p className="mt-1 text-xs text-text-secondary">por mês</p>
-                  <a
-                    href="/auth?mode=signup&plan=monthly"
+                  <Link
+                    to="/auth?mode=signup&plan=monthly"
                     className="mt-4 inline-flex w-full justify-center rounded-full bg-black px-4 py-2.5 text-sm font-semibold text-white"
                   >
                     Iniciar teste grátis
-                  </a>
+                  </Link>
                   <p className="mt-2 text-center text-xs text-text-secondary">Sem cartão de crédito</p>
                 </article>
 
@@ -382,12 +382,12 @@ export default function LandingPage() {
                   </ul>
                   <p className="font-display mt-7 text-5xl">€290</p>
                   <p className="mt-1 text-xs text-white/70">cobrança anual</p>
-                  <a
-                    href="/auth?mode=signup&plan=annual"
+                  <Link
+                    to="/auth?mode=signup&plan=annual"
                     className="mt-4 inline-flex w-full justify-center rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-black"
                   >
                     Iniciar teste grátis
-                  </a>
+                  </Link>
                   <p className="mt-2 text-center text-xs text-white/70">Sem cartão de crédito</p>
                 </article>
               </div>
@@ -426,13 +426,13 @@ export default function LandingPage() {
               <h3 className="font-display max-w-xl text-4xl leading-tight text-slate-900 sm:text-5xl">
                 Pronto para automatizar seu atendimento com Bokun?
               </h3>
-              <a
-                href="/auth?mode=signup"
+              <Link
+                to="/auth?mode=signup"
                 className="inline-flex items-center gap-2 rounded-xl bg-[#082d33] px-5 py-3 text-sm font-semibold text-white"
               >
                 Testar grátis por 7 dias
                 <ArrowRight className="h-4 w-4" />
-              </a>
+              </Link>
             </div>
           </div>
         </section>
