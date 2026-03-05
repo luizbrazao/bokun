@@ -1,6 +1,15 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700;800&display=swap");
 @import "tailwindcss";
 
 @theme {
+  --color-warm-bg: #f7f4f0;
+  --color-surface: #ffffff;
+  --color-border-subtle: #e5e0d8;
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #6b665e;
+  --color-accent-cream: #ebe7e0;
+  --color-deep-ink: #052a2e;
+  --color-lime-accent: #ccf048;
   --color-background: oklch(1 0 0);
   --color-foreground: oklch(0.145 0 0);
   --color-card: oklch(1 0 0);
@@ -24,18 +33,31 @@
 }
 
 @layer base {
+  :root {
+    --font-body: "Inter", sans-serif;
+    --font-display: "Playfair Display", serif;
+  }
+
   *,
   *::before,
   *::after {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
-    font-family:
-      "Inter",
-      system-ui,
-      -apple-system,
-      sans-serif;
+    font-family: var(--font-body);
     margin: 0;
+    min-height: 100vh;
   }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-md border border-border-subtle rounded-2xl shadow-sm;
+  }
+}
+
+.font-display {
+  font-family: var(--font-display);
 }
