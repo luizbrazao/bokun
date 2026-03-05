@@ -1,4 +1,5 @@
 import { ArrowLeft } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function PrivacyPolicyPage() {
   return (
@@ -13,13 +14,13 @@ export default function PrivacyPolicyPage() {
       />
 
       <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
-        <a
-          href="/"
+        <Link
+          to="/"
           className="inline-flex items-center gap-2 text-sm font-medium text-[#062427] hover:opacity-75"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to home
-        </a>
+        </Link>
 
         <article className="mt-6 rounded-3xl border border-[#d9d4c9] bg-white/90 p-6 shadow-[0_18px_36px_rgba(6,36,39,0.10)] sm:p-8">
           <h1 className="font-display text-4xl font-semibold tracking-tight text-[#062427]">

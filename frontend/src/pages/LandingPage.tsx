@@ -9,6 +9,7 @@ import {
   Workflow,
   Zap,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const BRAND_LOGO_SRC = "/chatplug-newlogo.svg";
 
@@ -477,14 +478,14 @@ export default function LandingPage() {
                   </a>
                 </li>
                 <li>
-                  <a href="/terms" className="hover:text-text-primary">
+                  <Link to="/terms" className="hover:text-text-primary">
                     Termos e Condições
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="/privacy" className="hover:text-text-primary">
+                  <Link to="/privacy" className="hover:text-text-primary">
                     Política de Privacidade
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
