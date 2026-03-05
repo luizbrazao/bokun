@@ -126,6 +126,10 @@ function extractActivities(raw: unknown): JsonRecord[] {
     return [];
 }
 
+function toNumber(value: unknown): number | null {
+    return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
 export async function executeTool(args: ToolExecutorArgs): Promise<string> {
     rootLogger.info({ handler: "llm_tools", tenantId: args.tenantId, waUserId: args.waUserId, toolName: args.toolName }, "llm_tool_executing");
     try {
@@ -180,18 +184,17 @@ async function executeSearchActivities(tenantId: string): Promise<string> {
         return JSON.stringify({ message: "No activities found for this vendor." });
     }
 
-    const summary = activities.map((activity) => ({
+    const summary = activities.slice(0, 12).map((activity) => ({
         id: activity.id ?? activity.activityId,
         title: activity.title ?? activity.name ?? activity.activityName,
-        description: typeof activity.excerpt === "string"
-            ? activity.excerpt.slice(0, 200)
-            : typeof activity.description === "string"
-              ? activity.description.slice(0, 200)
-            : undefined,
         durationText: activity.durationText,
     }));
 
-    return JSON.stringify({ activities: summary });
+    return JSON.stringify({
+        activities: summary,
+        totalFound: activities.length,
+        returned: summary.length,
+    });
 }
 
 async function executeCheckAvailability(
@@ -208,7 +211,44 @@ async function executeCheckAvailability(
         return JSON.stringify({ message: "No availability data returned." });
     }
 
-    return JSON.stringify(result);
+    const condensed = result.slice(0, 12).map((slot) => {
+        const rec = isRecord(slot) ? slot : {};
+        const firstRate = Array.isArray(rec.rates) && rec.rates.length > 0 && isRecord(rec.rates[0])
+            ? rec.rates[0]
+            : {};
+
+        let minPrice: number | null = null;
+        const pricesByRate = Array.isArray(rec.pricesByRate) ? rec.pricesByRate : [];
+        for (const priceGroup of pricesByRate) {
+            if (!isRecord(priceGroup)) continue;
+            const perCategory = Array.isArray(priceGroup.pricePerCategoryUnit) ? priceGroup.pricePerCategoryUnit : [];
+            for (const item of perCategory) {
+                if (!isRecord(item) || !isRecord(item.amount)) continue;
+                const amount = toNumber(item.amount.amount);
+                if (amount === null) continue;
+                if (minPrice === null || amount < minPrice) {
+                    minPrice = amount;
+                }
+            }
+        }
+
+        return {
+            startTime: rec.startTime,
+            startTimeLabel: rec.startTimeLabel,
+            availabilityCount: rec.availabilityCount,
+            soldOut: rec.soldOut,
+            rateTitle: firstRate.title,
+            minPriceAmount: minPrice,
+        };
+    });
+
+    return JSON.stringify({
+        activityId: params.activityId,
+        date: params.date,
+        availabilities: condensed,
+        totalFound: result.length,
+        returned: condensed.length,
+    });
 }
 
 async function executeCheckBookingDetails(
