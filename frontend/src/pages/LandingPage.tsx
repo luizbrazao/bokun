@@ -1,4 +1,9 @@
-import { Clock, Plug, TrendingUp, LayoutDashboard } from "lucide-react";
+import {
+  CalendarCheck2,
+  MessageCircleMore,
+  ShieldCheck,
+  Workflow,
+} from "lucide-react";
 
 export default function LandingPage() {
   return (
@@ -24,11 +29,13 @@ export default function LandingPage() {
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 max-w-3xl mx-auto leading-tight">
-              Converta conversas do WhatsApp em reservas confirmadas no Bokun.
+              Automatize atendimento e agendamentos do seu Bokun no WhatsApp e
+              Telegram.
             </h1>
             <p className="mt-6 text-lg text-slate-600 max-w-xl mx-auto leading-relaxed">
-              Instale uma vez, conecte seu WhatsApp e deixe o bot capturar
-              horário, pickup e participantes — com confirmação e logs.
+              Conecte seus canais em minutos e transforme mensagens em reservas
+              com menos trabalho manual. Teste por 7 dias, sem cartão de
+              crédito.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center items-center">
               <a
@@ -37,82 +44,152 @@ export default function LandingPage() {
                 rel="noopener noreferrer"
                 className="w-full sm:w-auto bg-green-600 text-white hover:bg-green-700 px-6 py-3 rounded-lg font-semibold text-base transition-colors text-center"
               >
-                Começar teste grátis
+                Testar grátis por 7 dias
               </a>
-              <button
-                onClick={() =>
-                  document
-                    .getElementById("features")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
-                className="w-full sm:w-auto border border-slate-300 text-slate-700 hover:bg-slate-100 px-6 py-3 rounded-lg font-semibold text-base transition-colors"
+              <a
+                href="#integracao"
+                className="w-full sm:w-auto border border-slate-300 text-slate-700 hover:bg-slate-100 px-6 py-3 rounded-lg font-semibold text-base transition-colors text-center"
               >
-                Ver como funciona
-              </button>
+                Conectar Bokun ao WhatsApp ou Telegram
+              </a>
+            </div>
+            <p className="mt-3 text-sm text-slate-500">
+              Sem cartão de crédito
+            </p>
+          </div>
+        </section>
+
+        {/* Problem + Solution */}
+        <section id="problema" className="py-16 bg-white">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="rounded-2xl border border-slate-200 bg-white p-8 sm:p-10 shadow-sm">
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">
+                Sua operação perde tempo onde não deveria.
+              </h2>
+              <p className="mt-4 text-slate-600 leading-relaxed">
+                Se sua equipe responde mensagens manualmente o dia inteiro, você
+                já conhece o custo: atraso no atendimento, respostas
+                inconsistentes e oportunidades perdidas de reserva.
+              </p>
+              <p className="mt-4 text-slate-600 leading-relaxed">
+                O Bokun continua no centro da operação. Nós automatizamos o que
+                é repetitivo no WhatsApp e Telegram para sua equipe focar no
+                que realmente precisa de atenção humana.
+              </p>
             </div>
           </div>
         </section>
 
-        {/* Features Section */}
+        {/* Benefits */}
         <section id="features" className="py-20 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center mb-12">
-              Por que usar o Bokun Bot?
+              Um fluxo de reservas mais inteligente nos canais que seu cliente
+              já usa
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Card 1: 24/7 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 flex flex-col items-start">
                 <div className="bg-green-100 p-3 rounded-full inline-flex mb-4">
-                  <Clock className="h-6 w-6 text-green-600" />
+                  <MessageCircleMore className="h-6 w-6 text-green-600" />
                 </div>
                 <h3 className="font-semibold text-slate-900 mb-2">
-                  Reservas 24/7 no WhatsApp
+                  Atendimento mais rápido
                 </h3>
                 <p className="text-sm text-slate-600">
-                  Bot atende clientes a qualquer hora, sem agente humano
-                  disponível.
+                  Respostas automáticas para demandas frequentes, sem deixar
+                  cliente esperando.
                 </p>
               </div>
 
-              {/* Card 2: Native Integration */}
               <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 flex flex-col items-start">
                 <div className="bg-green-100 p-3 rounded-full inline-flex mb-4">
-                  <Plug className="h-6 w-6 text-green-600" />
+                  <Workflow className="h-6 w-6 text-green-600" />
                 </div>
                 <h3 className="font-semibold text-slate-900 mb-2">
-                  Integração nativa com Bokun
+                  Menos operação manual
                 </h3>
                 <p className="text-sm text-slate-600">
-                  Instala via marketplace, sem configuração técnica.
+                  Reduza tarefas repetitivas e libere o time para exceções e
+                  vendas.
                 </p>
               </div>
 
-              {/* Card 3: Conversion */}
               <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 flex flex-col items-start">
                 <div className="bg-green-100 p-3 rounded-full inline-flex mb-4">
-                  <TrendingUp className="h-6 w-6 text-green-600" />
+                  <CalendarCheck2 className="h-6 w-6 text-green-600" />
                 </div>
                 <h3 className="font-semibold text-slate-900 mb-2">
-                  Menos erros, mais conversão
+                  Mais reservas com menos fricção
                 </h3>
                 <p className="text-sm text-slate-600">
-                  Fluxo guiado captura horário, pickup e participantes com
-                  precisão.
+                  Facilite o caminho da conversa até o agendamento.
                 </p>
               </div>
+            </div>
+          </div>
+        </section>
 
-              {/* Card 4: Control */}
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 flex flex-col items-start">
-                <div className="bg-green-100 p-3 rounded-full inline-flex mb-4">
-                  <LayoutDashboard className="h-6 w-6 text-green-600" />
+        {/* How it works + Objections */}
+        <section id="integracao" className="py-20 bg-slate-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="bg-white rounded-2xl border border-slate-200 p-8">
+              <h2 className="text-2xl font-bold text-slate-900 mb-6">
+                Como funciona
+              </h2>
+              <ol className="space-y-5">
+                <li className="flex gap-3">
+                  <span className="mt-1 h-6 w-6 rounded-full bg-green-100 text-green-700 text-sm font-bold flex items-center justify-center">
+                    1
+                  </span>
+                  <p className="text-slate-700">Conecte sua conta Bokun.</p>
+                </li>
+                <li className="flex gap-3">
+                  <span className="mt-1 h-6 w-6 rounded-full bg-green-100 text-green-700 text-sm font-bold flex items-center justify-center">
+                    2
+                  </span>
+                  <p className="text-slate-700">Ative WhatsApp e/ou Telegram.</p>
+                </li>
+                <li className="flex gap-3">
+                  <span className="mt-1 h-6 w-6 rounded-full bg-green-100 text-green-700 text-sm font-bold flex items-center justify-center">
+                    3
+                  </span>
+                  <p className="text-slate-700">
+                    Publique seus fluxos e comece a operar.
+                  </p>
+                </li>
+              </ol>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200 p-8">
+              <h2 className="text-2xl font-bold text-slate-900 mb-6">
+                Perguntas comuns antes de começar
+              </h2>
+              <div className="space-y-5">
+                <div>
+                  <h3 className="font-semibold text-slate-900">
+                    Vai ser complicado de configurar?
+                  </h3>
+                  <p className="mt-1 text-slate-600">
+                    Não. O onboarding é simples para quem já opera com Bokun.
+                  </p>
                 </div>
-                <h3 className="font-semibold text-slate-900 mb-2">
-                  Controle e auditoria
-                </h3>
-                <p className="text-sm text-slate-600">
-                  Dashboard com logs de conversa, lista de reservas e retry de
-                  webhooks falhos.
-                </p>
+                <div>
+                  <h3 className="font-semibold text-slate-900">
+                    Vou perder controle do atendimento?
+                  </h3>
+                  <p className="mt-1 text-slate-600">
+                    Não. A automação cobre o repetitivo e o time atua nos casos
+                    estratégicos.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-900">
+                    Posso validar antes de contratar?
+                  </h3>
+                  <p className="mt-1 text-slate-600">
+                    Sim. Você testa por 7 dias grátis, sem cartão de crédito.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -122,10 +199,10 @@ export default function LandingPage() {
         <section id="pricing" className="py-20 bg-slate-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center mb-4">
-              Preços simples e transparentes
+              Escolha o plano que combina com sua operação
             </h2>
             <p className="text-slate-600 text-center mb-12 text-base">
-              Comece com 7 dias grátis — sem cartão de crédito.
+              Plano mensal para flexibilidade. Plano anual com 2 meses grátis.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
               {/* Monthly Plan */}
@@ -143,22 +220,22 @@ export default function LandingPage() {
                 <ul className="space-y-2 mb-8 flex-1">
                   <li className="flex items-center gap-2 text-sm text-slate-700">
                     <span className="text-green-500 font-bold">✓</span>
-                    Todas as funcionalidades
+                    Bot Bokun-first para WhatsApp e Telegram
                   </li>
                   <li className="flex items-center gap-2 text-sm text-slate-700">
                     <span className="text-green-500 font-bold">✓</span>
-                    Dashboard completo
+                    Fluxos de atendimento e agendamento
                   </li>
                   <li className="flex items-center gap-2 text-sm text-slate-700">
                     <span className="text-green-500 font-bold">✓</span>
-                    Suporte via email
+                    Suporte por email
                   </li>
                 </ul>
                 <a
                   href="/api/create-checkout-session?plan=monthly"
                   className="w-full text-center bg-green-600 text-white hover:bg-green-700 px-6 py-3 rounded-lg font-semibold text-base transition-colors"
                 >
-                  Começar teste grátis
+                  Testar grátis por 7 dias
                 </a>
               </div>
 
@@ -187,22 +264,57 @@ export default function LandingPage() {
                 <ul className="space-y-2 mb-8 flex-1">
                   <li className="flex items-center gap-2 text-sm text-slate-700">
                     <span className="text-green-500 font-bold">✓</span>
-                    Todas as funcionalidades
+                    Bot Bokun-first para WhatsApp e Telegram
                   </li>
                   <li className="flex items-center gap-2 text-sm text-slate-700">
                     <span className="text-green-500 font-bold">✓</span>
-                    Dashboard completo
+                    Fluxos de atendimento e agendamento
                   </li>
                   <li className="flex items-center gap-2 text-sm text-slate-700">
                     <span className="text-green-500 font-bold">✓</span>
-                    Suporte via email
+                    Suporte por email
                   </li>
                 </ul>
                 <a
                   href="/api/create-checkout-session?plan=annual"
                   className="w-full text-center bg-green-600 text-white hover:bg-green-700 px-6 py-3 rounded-lg font-semibold text-base transition-colors"
                 >
-                  Começar teste grátis
+                  Testar grátis por 7 dias
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className="py-20 bg-white">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-green-50 to-white p-8 sm:p-10 text-center">
+              <div className="inline-flex items-center gap-2 rounded-full border border-green-200 bg-white px-3 py-1 text-sm text-green-700 mb-4">
+                <ShieldCheck className="h-4 w-4" />
+                Sem cartão de crédito
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">
+                Pronto para automatizar seu atendimento com Bokun?
+              </h2>
+              <p className="mt-4 text-slate-600 max-w-2xl mx-auto">
+                Comece o teste gratuito e valide na prática como reduzir carga
+                operacional e acelerar respostas.
+              </p>
+              <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+                <a
+                  href="https://apps.bokun.io"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-green-600 text-white hover:bg-green-700 px-6 py-3 rounded-lg font-semibold text-base transition-colors"
+                >
+                  Testar grátis por 7 dias
+                </a>
+                <a
+                  href="#integracao"
+                  className="border border-slate-300 text-slate-700 hover:bg-slate-100 px-6 py-3 rounded-lg font-semibold text-base transition-colors"
+                >
+                  Conectar Bokun ao WhatsApp ou Telegram
                 </a>
               </div>
             </div>
