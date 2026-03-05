@@ -22,6 +22,50 @@ export type RunLLMAgentResult = {
 
 const MAX_TOOL_ITERATIONS = 3;
 
+function isCatalogIntent(message: string): boolean {
+    const text = message.toLowerCase();
+    return (
+        text.includes("lista de atividades") ||
+        text.includes("listar atividades") ||
+        text.includes("quais atividades") ||
+        text.includes("quais passeios") ||
+        text.includes("passeios vocês têm") ||
+        text.includes("passeios vcs tem") ||
+        text.includes("what activities") ||
+        text.includes("list activities") ||
+        text.includes("available tours")
+    );
+}
+
+function parseActivitiesFromToolResult(toolResult: string): Array<{ id?: string | number; title?: string }> {
+    try {
+        const parsed = JSON.parse(toolResult) as { activities?: Array<{ id?: string | number; title?: string }> };
+        return Array.isArray(parsed.activities) ? parsed.activities : [];
+    } catch {
+        return [];
+    }
+}
+
+function formatCatalogReply(
+    activities: Array<{ id?: string | number; title?: string }>,
+    language: "pt" | "en" | "es" | null
+): string {
+    const top = activities.slice(0, 8);
+    const lines = top.map((activity) => {
+        const id = activity.id ?? "?";
+        const title = activity.title ?? "Sem título";
+        return `- ${title} (ID: ${id})`;
+    });
+
+    if (language === "en") {
+        return `Here are some available activities:\n${lines.join("\n")}\n\nIf you want, I can check availability for a specific activity and date.`;
+    }
+    if (language === "es") {
+        return `Aquí tienes algunas actividades disponibles:\n${lines.join("\n")}\n\nSi quieres, puedo comprobar disponibilidad para una actividad y fecha específicas.`;
+    }
+    return `Aqui estão algumas atividades disponíveis:\n${lines.join("\n")}\n\nSe quiser, eu verifico disponibilidade para uma atividade e data específicas.`;
+}
+
 function buildLanguageLockInstruction(language: "pt" | "en" | "es" | null): string | null {
     if (!language) return null;
 
@@ -84,6 +128,7 @@ export async function runLLMAgent(args: RunLLMAgentArgs): Promise<RunLLMAgentRes
         const tenantLanguage = tenantRecord?.language ?? "pt";
         const userLanguageHint = detectReplyLanguageFromUserMessage(args.userMessage);
         const languageLockInstruction = buildLanguageLockInstruction(userLanguageHint);
+        const preferredReplyLanguage = userLanguageHint ?? (tenantLanguage === "en" || tenantLanguage === "es" ? tenantLanguage : "pt");
 
         // Build system prompt — use tenant timezone for current datetime display
         const now = new Date().toLocaleString("en-GB", { timeZone: tenantRecord?.timezone ?? "Europe/Madrid" });
@@ -115,6 +160,38 @@ export async function runLLMAgent(args: RunLLMAgentArgs): Promise<RunLLMAgentRes
         const messagesToSave: ChatMessage[] = [
             { role: "user", content: args.userMessage },
         ];
+
+        // Deterministic fast-path for catalog intent:
+        // always execute search_activities so the bot reliably returns the activity list.
+        if (isCatalogIntent(args.userMessage)) {
+            const toolResult = await executeTool({
+                tenantId: args.tenantId,
+                waUserId: args.waUserId,
+                channel: args.channel ?? "wa",
+                toolName: "search_activities",
+                toolArguments: {},
+            });
+
+            messagesToSave.push({
+                role: "tool",
+                content: toolResult,
+                toolCallId: "forced_search_activities",
+            });
+
+            const activities = parseActivitiesFromToolResult(toolResult);
+            if (activities.length > 0) {
+                const responseText = formatCatalogReply(activities, preferredReplyLanguage);
+                messagesToSave.push({
+                    role: "assistant",
+                    content: responseText,
+                });
+                await saveMessages(args.tenantId, args.waUserId, messagesToSave);
+                return {
+                    text: responseText,
+                    handled: true,
+                };
+            }
+        }
 
         // Tool-call loop
         let iterations = 0;
