@@ -40,6 +40,15 @@ export const toolDefinitions: OpenAI.ChatCompletionTool[] = [
                         type: "string",
                         description: "Date in YYYY-MM-DD format.",
                     },
+                    participants: {
+                        type: "integer",
+                        description: "Number of participants for exact pricing.",
+                        minimum: 1,
+                    },
+                    currency: {
+                        type: "string",
+                        description: "Currency code (e.g. EUR, USD).",
+                    },
                 },
                 required: ["activityId", "date"],
             },
@@ -142,7 +151,12 @@ export async function executeTool(args: ToolExecutorArgs): Promise<string> {
             case "check_availability":
                 result = await executeCheckAvailability(
                     args.tenantId,
-                    args.toolArguments as { activityId: string; date: string }
+                    args.toolArguments as {
+                        activityId: string;
+                        date: string;
+                        participants?: number;
+                        currency?: string;
+                    }
                 );
                 break;
 
@@ -199,12 +213,19 @@ async function executeSearchActivities(tenantId: string): Promise<string> {
 
 async function executeCheckAvailability(
     tenantId: string,
-    params: { activityId: string; date: string }
+    params: { activityId: string; date: string; participants?: number; currency?: string }
 ): Promise<string> {
+    const participants = Number.isInteger(params.participants) && (params.participants as number) > 0
+        ? (params.participants as number)
+        : null;
+
     const result = await checkAvailabilityForTenant({
         tenantId,
         activityId: params.activityId,
         date: params.date,
+        currency: typeof params.currency === "string" && params.currency.trim().length > 0
+            ? params.currency.trim().toUpperCase()
+            : undefined,
     });
 
     if (!Array.isArray(result) || result.length === 0) {
@@ -218,17 +239,49 @@ async function executeCheckAvailability(
             : {};
 
         let minPrice: number | null = null;
+        let minPriceCurrency: string | null = null;
+        let selectedPriceAmount: number | null = null;
+        let selectedPriceCurrency: string | null = null;
         const pricesByRate = Array.isArray(rec.pricesByRate) ? rec.pricesByRate : [];
+        const defaultRateId = toNumber(rec.defaultRateId);
         for (const priceGroup of pricesByRate) {
             if (!isRecord(priceGroup)) continue;
+            const rateId = toNumber(priceGroup.activityRateId);
             const perCategory = Array.isArray(priceGroup.pricePerCategoryUnit) ? priceGroup.pricePerCategoryUnit : [];
             for (const item of perCategory) {
                 if (!isRecord(item) || !isRecord(item.amount)) continue;
                 const amount = toNumber(item.amount.amount);
+                const currency = typeof item.amount.currency === "string" ? item.amount.currency : null;
                 if (amount === null) continue;
                 if (minPrice === null || amount < minPrice) {
                     minPrice = amount;
+                    minPriceCurrency = currency;
                 }
+
+                if (participants !== null) {
+                    const minPax = toNumber(item.minParticipantsRequired);
+                    const maxPax = toNumber(item.maxParticipantsRequired);
+                    const matchesParticipants =
+                        minPax !== null &&
+                        maxPax !== null &&
+                        participants >= minPax &&
+                        participants <= maxPax;
+
+                    if (matchesParticipants) {
+                        const isPreferredRate = defaultRateId !== null && rateId !== null && defaultRateId === rateId;
+                        if (selectedPriceAmount === null || isPreferredRate) {
+                            selectedPriceAmount = amount;
+                            selectedPriceCurrency = currency;
+                            if (isPreferredRate) {
+                                // Stop searching once we found the participant-matching price for default rate.
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if (participants !== null && selectedPriceAmount !== null && selectedPriceCurrency !== null && defaultRateId !== null && rateId === defaultRateId) {
+                break;
             }
         }
 
@@ -238,13 +291,19 @@ async function executeCheckAvailability(
             availabilityCount: rec.availabilityCount,
             soldOut: rec.soldOut,
             rateTitle: firstRate.title,
-            minPriceAmount: minPrice,
+            participants,
+            selectedPriceAmount,
+            selectedPriceCurrency,
+            fromPriceAmount: minPrice,
+            fromPriceCurrency: minPriceCurrency,
         };
     });
 
     return JSON.stringify({
         activityId: params.activityId,
         date: params.date,
+        participants,
+        requestedCurrency: params.currency ?? null,
         availabilities: condensed,
         totalFound: result.length,
         returned: condensed.length,
