@@ -15,7 +15,7 @@ export const bokunAdapter: BookingProviderAdapter = {
   listServices: async (args: ProviderListServicesArgs) => {
     return bokunSearchActivitiesForTenant({
       tenantId: args.tenantId,
-      body: { page: 0, pageSize: 20 },
+      body: { page: 1, pageSize: 20 },
       lang: process.env.BOKUN_DEFAULT_LANG?.trim() ?? "EN",
       currency: process.env.BOKUN_DEFAULT_CURRENCY?.trim() ?? "EUR",
     });

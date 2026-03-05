@@ -22,6 +22,33 @@ export type RunLLMAgentResult = {
 
 const MAX_TOOL_ITERATIONS = 3;
 
+function normalizeIntentText(value: string): string {
+    return value
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+}
+
+function shouldForceCatalogSearch(userMessage: string): boolean {
+    const text = normalizeIntentText(userMessage);
+    const catalogPatterns = [
+        "lista de atividades",
+        "lista de passeios",
+        "quais atividades",
+        "quais passeios",
+        "que atividades",
+        "que passeios",
+        "me de a lista",
+        "mostrar atividades",
+        "mostrar passeios",
+        "what activities",
+        "what tours",
+        "list activities",
+        "list tours",
+    ];
+    return catalogPatterns.some((pattern) => text.includes(pattern));
+}
+
 function buildLanguageLockInstruction(language: "pt" | "en" | "es" | null): string | null {
     if (!language) return null;
 
@@ -115,6 +142,55 @@ export async function runLLMAgent(args: RunLLMAgentArgs): Promise<RunLLMAgentRes
         const messagesToSave: ChatMessage[] = [
             { role: "user", content: args.userMessage },
         ];
+
+        // Ensure catalog requests always execute search_activities at least once.
+        if (shouldForceCatalogSearch(args.userMessage)) {
+            const forcedToolCallId = `forced_search_activities_${Date.now()}`;
+            const forcedToolName = "search_activities";
+            const toolResult = await executeTool({
+                tenantId: args.tenantId,
+                waUserId: args.waUserId,
+                channel: args.channel ?? "wa",
+                toolName: forcedToolName,
+                toolArguments: {},
+            });
+
+            messages.push({
+                role: "assistant",
+                content: "",
+                tool_calls: [{
+                    id: forcedToolCallId,
+                    type: "function",
+                    function: {
+                        name: forcedToolName,
+                        arguments: "{}",
+                    },
+                }],
+            });
+            messages.push({
+                role: "tool",
+                content: toolResult,
+                tool_call_id: forcedToolCallId,
+            });
+
+            messagesToSave.push({
+                role: "assistant",
+                content: "",
+                toolCalls: JSON.stringify([{
+                    id: forcedToolCallId,
+                    type: "function",
+                    function: {
+                        name: forcedToolName,
+                        arguments: "{}",
+                    },
+                }]),
+            });
+            messagesToSave.push({
+                role: "tool",
+                content: toolResult,
+                toolCallId: forcedToolCallId,
+            });
+        }
 
         // Tool-call loop
         let iterations = 0;
