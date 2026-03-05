@@ -1,9 +1,13 @@
 import {
   ArrowRight,
   Bot,
+  CalendarCheck2,
   Check,
   MessageCircleMore,
+  Shield,
   Sparkles,
+  Workflow,
+  Zap,
 } from "lucide-react";
 
 const integrationChips = [
@@ -21,7 +25,85 @@ const integrationChips = [
   "n8n",
 ];
 
+const featureCards = [
+  {
+    icon: MessageCircleMore,
+    title: "Atendimento mais rápido no WhatsApp e Telegram",
+    description:
+      "Respostas automáticas para dúvidas frequentes e conversas organizadas para não perder oportunidades de reserva.",
+    category: "Mensageria",
+  },
+  {
+    icon: CalendarCheck2,
+    title: "Fluxo de reservas orientado ao Bokun",
+    description:
+      "Conecte sua operação e leve o cliente da conversa ao agendamento com menos fricção e menos retrabalho manual.",
+    category: "Booking",
+  },
+  {
+    icon: Bot,
+    title: "Automação com IA para operação real",
+    description:
+      "A IA cobre tarefas repetitivas e seu time atua nos casos estratégicos, com controle do processo ponta a ponta.",
+    category: "IA aplicada",
+  },
+  {
+    icon: Workflow,
+    title: "Setup simples e rápido",
+    description:
+      "Onboarding desenhado para quem já usa Bokun: conectar, ativar canais e começar a operar em minutos.",
+    category: "Onboarding",
+  },
+  {
+    icon: Zap,
+    title: "Disponibilidade 24/7",
+    description:
+      "Seu atendimento continua ativo fora do horário comercial, inclusive fins de semana e feriados.",
+    category: "Always on",
+  },
+  {
+    icon: Shield,
+    title: "Controle e previsibilidade",
+    description:
+      "Fluxos claros, regras de operação e suporte para escalar atendimento sem perder qualidade.",
+    category: "Operação",
+  },
+];
+
+const faqItems = [
+  {
+    q: "O que é o Bokun Bot?",
+    a: "É um assistente de atendimento e agendamentos para estabelecimentos que usam Bokun. Ele ajuda a automatizar conversas no WhatsApp e Telegram com foco em operação de reservas.",
+  },
+  {
+    q: "Preciso de conhecimento técnico para configurar?",
+    a: "Não. O setup foi pensado para operação de negócio. Em geral, você conecta os canais, valida os fluxos e já começa a operar.",
+  },
+  {
+    q: "O Bokun Bot funciona 24/7?",
+    a: "Sim. A automação fica ativa continuamente para reduzir filas, responder mais rápido e evitar perda de demanda.",
+  },
+  {
+    q: "Posso usar com WhatsApp e Telegram ao mesmo tempo?",
+    a: "Sim. Você pode ativar um ou ambos os canais conforme sua estratégia de atendimento.",
+  },
+  {
+    q: "Como funciona o teste grátis?",
+    a: "Você testa por 7 dias, sem cartão de crédito, com acesso ao fluxo principal para validar aderência na prática.",
+  },
+  {
+    q: "Posso cancelar quando quiser?",
+    a: "Sim. Sem fidelidade obrigatória: você pode ajustar ou cancelar conforme o momento da sua operação.",
+  },
+  {
+    q: "Quais são os custos além da assinatura?",
+    a: "Além do plano do Bokun Bot, podem existir custos de provedores externos usados na sua stack (por exemplo, APIs e canais de mensageria), conforme consumo.",
+  },
+];
+
 export default function LandingPage() {
+  const currentYear = new Date().getFullYear();
+
   return (
     <div className="min-h-screen bg-warm-bg text-text-primary">
       <header className="sticky top-0 z-50 border-b border-border-subtle/80 bg-warm-bg/90 backdrop-blur-sm">
@@ -32,10 +114,13 @@ export default function LandingPage() {
 
           <nav className="hidden items-center gap-8 text-sm text-text-secondary md:flex">
             <a href="#features" className="transition-colors hover:text-text-primary">
-              Features
+              Recursos
             </a>
             <a href="#pricing" className="transition-colors hover:text-text-primary">
-              Pricing
+              Planos
+            </a>
+            <a href="#faq" className="transition-colors hover:text-text-primary">
+              FAQ
             </a>
           </nav>
 
@@ -52,7 +137,7 @@ export default function LandingPage() {
               rel="noopener noreferrer"
               className="rounded-full bg-lime-accent px-4 py-2 text-sm font-semibold text-slate-900 transition-transform hover:-translate-y-0.5"
             >
-              Testar grátis
+              Teste grátis
             </a>
           </div>
         </div>
@@ -102,16 +187,16 @@ export default function LandingPage() {
 
             <div className="pointer-events-none">
               <div className="absolute left-[10%] top-28 hidden rounded-full border border-border-subtle bg-surface px-4 py-2 text-xs font-medium text-text-secondary lg:block">
-                Tony · Google Meets
+                Atendimento contínuo
               </div>
               <div className="absolute right-[10%] top-28 hidden rounded-full border border-border-subtle bg-surface px-4 py-2 text-xs font-medium text-text-secondary lg:block">
-                Pepper · Estratégia
+                Integração Bokun-first
               </div>
               <div className="absolute left-[12%] top-[62%] hidden rounded-full border border-border-subtle bg-surface px-4 py-2 text-xs font-medium text-text-secondary lg:block">
-                Friday · Research
+                Fluxos orientados a reservas
               </div>
               <div className="absolute right-[14%] top-[56%] hidden rounded-full border border-border-subtle bg-surface px-4 py-2 text-xs font-medium text-text-secondary lg:block">
-                Wanda · Creator
+                Setup em minutos
               </div>
             </div>
           </div>
@@ -135,82 +220,38 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="features" className="py-10">
+        <section id="features" className="py-14">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-            <div className="mb-8 text-center">
+            <div className="mb-10 text-center">
               <span className="inline-flex rounded-full border border-border-subtle bg-surface px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-text-secondary">
-                Latest technologies
+                Recursos essenciais
               </span>
               <h2 className="font-display mx-auto mt-4 max-w-3xl text-4xl leading-tight text-slate-900 sm:text-5xl">
-                Tecnologia de orquestração para quem não tem tempo a perder.
+                Tudo o que você precisa para escalar atendimento e reservas no Bokun.
               </h2>
+              <p className="mx-auto mt-4 max-w-3xl text-base leading-relaxed text-text-secondary">
+                Estrutura pensada para operações que já usam Bokun e querem ganhar escala com simplicidade operacional.
+              </p>
             </div>
 
-            <div className="space-y-4">
-              <article className="glass-card grid gap-6 rounded-3xl p-6 md:grid-cols-2 md:items-center">
-                <div>
-                  <h3 className="font-display text-3xl text-slate-900">Dashboard Operacional</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-text-secondary">
-                    Visualize o progresso em tempo real. Cards avançam sozinhos conforme os agentes executam tarefas.
-                  </p>
-                  <a
-                    href="/auth"
-                    className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#082d33] px-4 py-2 text-sm font-semibold text-white"
-                  >
-                    Explorar fluxo
-                    <ArrowRight className="h-4 w-4" />
-                  </a>
-                </div>
-
-                <div className="rounded-2xl border border-border-subtle bg-surface p-4">
-                  <div className="mb-3 flex items-center justify-between text-xs text-text-secondary">
-                    <span>Kanban autônomo</span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[#dff58c] px-2 py-0.5 text-slate-800">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Live
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 text-[10px]">
-                    <div className="space-y-2 rounded-lg bg-[#f8f8f5] p-2">
-                      <p className="font-semibold text-text-secondary">Inbox</p>
-                      <div className="h-2 rounded bg-accent-cream" />
-                      <div className="h-2 rounded bg-accent-cream" />
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {featureCards.map((feature) => {
+                const Icon = feature.icon;
+                return (
+                  <article key={feature.title} className="glass-card rounded-3xl p-6">
+                    <div className="mb-4 flex items-center gap-3">
+                      <div className="inline-flex rounded-lg bg-lime-accent/60 p-2">
+                        <Icon className="h-4 w-4 text-slate-800" />
+                      </div>
+                      <span className="rounded-full border border-border-subtle bg-white px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
+                        {feature.category}
+                      </span>
                     </div>
-                    <div className="space-y-2 rounded-lg bg-[#f8f8f5] p-2">
-                      <p className="font-semibold text-text-secondary">Em processo</p>
-                      <div className="h-2 rounded bg-accent-cream" />
-                      <div className="h-2 rounded bg-accent-cream" />
-                    </div>
-                    <div className="space-y-2 rounded-lg bg-[#f8f8f5] p-2">
-                      <p className="font-semibold text-text-secondary">Done</p>
-                      <div className="h-2 rounded bg-[#dff58c]" />
-                      <div className="h-2 rounded bg-[#dff58c]" />
-                    </div>
-                  </div>
-                </div>
-              </article>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <article className="glass-card rounded-3xl p-6">
-                  <div className="mb-4 inline-flex rounded-lg bg-lime-accent/60 p-2">
-                    <MessageCircleMore className="h-4 w-4 text-slate-800" />
-                  </div>
-                  <h3 className="font-display text-2xl text-slate-900">Comando via Telegram</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-text-secondary">
-                    Não abre o dashboard. Mencione uma mensagem para o Jarvis e ele orquestra o time enquanto você toma
-                    café.
-                  </p>
-                </article>
-
-                <article className="glass-card rounded-3xl p-6">
-                  <div className="mb-4 inline-flex rounded-lg bg-lime-accent/60 p-2">
-                    <Bot className="h-4 w-4 text-slate-800" />
-                  </div>
-                  <h3 className="font-display text-2xl text-slate-900">O Feito Maestro</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-text-secondary">
-                    O Jarvis não apenas conversa, ele delega. Ele entende sua demanda e aciona especialistas certos.
-                  </p>
-                </article>
-              </div>
+                    <h3 className="font-display text-2xl leading-tight text-slate-900">{feature.title}</h3>
+                    <p className="mt-3 text-sm leading-relaxed text-text-secondary">{feature.description}</p>
+                  </article>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -222,7 +263,8 @@ export default function LandingPage() {
             </span>
             <h2 className="font-display mt-5 text-4xl sm:text-5xl">Não substitua. Integre.</h2>
             <p className="mx-auto mt-4 max-w-3xl text-sm leading-relaxed text-white/75 sm:text-base">
-              Conecte o Bokun Bot ao seu stack atual e mantenha seus agentes operando onde seu time já trabalha.
+              Conecte o Bokun Bot ao seu stack atual e mantenha sua operação fluindo nos canais em que seu time já
+              trabalha.
             </p>
 
             <div className="mx-auto mt-8 grid max-w-4xl grid-cols-2 gap-3 rounded-2xl border border-white/15 bg-white/5 p-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -238,100 +280,116 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="py-20">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center">
-            <p className="mx-auto max-w-4xl font-display text-4xl leading-tight text-slate-900 sm:text-5xl">
-              “Com o Bokun Bot não gerenciamos mais tickets, gerenciamos resultados.”
-            </p>
-            <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] text-text-secondary">Luiz Fernando Brazão · CEO da IA Operators</p>
+        <section id="pricing" className="py-20">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <div className="glass-card rounded-3xl p-8 sm:p-10">
+              <div className="text-center">
+                <h2 className="font-display text-5xl text-slate-900">Planos</h2>
+                <p className="mx-auto mt-3 max-w-2xl text-sm text-text-secondary">
+                  Comece com flexibilidade no mensal ou maximize eficiência no anual com 2 meses grátis.
+                </p>
+              </div>
 
-            <div className="mt-10 grid gap-3 sm:grid-cols-3">
-              <div className="glass-card rounded-xl p-6">
-                <p className="font-display text-4xl text-slate-900">2026</p>
-                <p className="mt-1 text-xs uppercase tracking-wide text-text-secondary">Bokun Bot lançado</p>
-              </div>
-              <div className="glass-card rounded-xl p-6">
-                <p className="font-display text-4xl text-slate-900">50K+</p>
-                <p className="mt-1 text-xs uppercase tracking-wide text-text-secondary">Tarefas executadas</p>
-              </div>
-              <div className="glass-card rounded-xl p-6">
-                <p className="font-display text-4xl text-slate-900">1K+</p>
-                <p className="mt-1 text-xs uppercase tracking-wide text-text-secondary">Operações ativas</p>
+              <div className="mt-8 grid gap-4 md:grid-cols-2">
+                <article className="rounded-2xl border border-border-subtle bg-surface p-6">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="text-3xl font-semibold text-slate-900">Mensal</h3>
+                    <span className="rounded-full bg-accent-cream px-2 py-0.5 text-[10px] font-semibold uppercase text-text-secondary">
+                      Flexível
+                    </span>
+                  </div>
+                  <p className="mb-5 text-sm text-text-secondary">Para operações que querem começar rápido.</p>
+                  <ul className="space-y-2 text-sm text-text-secondary">
+                    <li className="flex items-center gap-2">
+                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                      Mensagens e fluxos automáticos
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                      Integração Bokun + canais de chat
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                      Suporte por email
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                      7 dias de teste grátis
+                    </li>
+                  </ul>
+                  <p className="font-display mt-7 text-5xl text-slate-900">€29</p>
+                  <p className="mt-1 text-xs text-text-secondary">por mês</p>
+                  <a
+                    href="/api/create-checkout-session?plan=monthly"
+                    className="mt-4 inline-flex w-full justify-center rounded-full bg-black px-4 py-2.5 text-sm font-semibold text-white"
+                  >
+                    Iniciar teste grátis
+                  </a>
+                  <p className="mt-2 text-center text-xs text-text-secondary">Sem cartão de crédito</p>
+                </article>
+
+                <article className="rounded-2xl border border-black bg-black p-6 text-white shadow-xl">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="text-3xl font-semibold">Anual</h3>
+                    <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-semibold uppercase">
+                      2 meses grátis
+                    </span>
+                  </div>
+                  <p className="mb-5 text-sm text-white/70">Para quem quer reduzir custo total e escalar com previsibilidade.</p>
+                  <ul className="space-y-2 text-sm text-white/80">
+                    <li className="flex items-center gap-2">
+                      <Check className="h-3.5 w-3.5 text-cyan-300" />
+                      Tudo do plano mensal
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="h-3.5 w-3.5 text-cyan-300" />
+                      Melhor custo-benefício anual
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="h-3.5 w-3.5 text-cyan-300" />
+                      Prioridade de suporte
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="h-3.5 w-3.5 text-cyan-300" />
+                      7 dias de teste grátis
+                    </li>
+                  </ul>
+                  <p className="font-display mt-7 text-5xl">€290</p>
+                  <p className="mt-1 text-xs text-white/70">cobrança anual</p>
+                  <a
+                    href="/api/create-checkout-session?plan=annual"
+                    className="mt-4 inline-flex w-full justify-center rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-black"
+                  >
+                    Iniciar teste grátis
+                  </a>
+                  <p className="mt-2 text-center text-xs text-white/70">Sem cartão de crédito</p>
+                </article>
               </div>
             </div>
           </div>
         </section>
 
-        <section id="pricing" className="pb-20">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-            <div className="glass-card rounded-3xl p-8 sm:p-10">
-              <div className="text-center">
-                <h2 className="font-display text-5xl text-slate-900">Pricing Plans</h2>
-                <p className="mx-auto mt-3 max-w-2xl text-sm text-text-secondary">
-                  Mensal para flexibilidade. Anual com 2 meses grátis para reduzir custo total.
-                </p>
-                <div className="mx-auto mt-5 inline-flex rounded-full bg-accent-cream p-1 text-xs">
-                  <span className="rounded-full bg-white px-3 py-1 font-semibold">Anual</span>
-                  <span className="px-3 py-1 text-text-secondary">Mensal</span>
-                </div>
-              </div>
+        <section id="faq" className="pb-20">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <h2 className="font-display text-5xl text-slate-900">Perguntas Frequentes</h2>
+              <p className="mx-auto mt-3 max-w-2xl text-sm text-text-secondary">
+                Respostas diretas para as dúvidas mais comuns antes de iniciar sua operação.
+              </p>
+            </div>
 
-              <div className="mt-8 grid gap-4 lg:grid-cols-3">
-                <article className="rounded-2xl border border-border-subtle bg-surface p-6">
-                  <div className="mb-3 flex items-center justify-between">
-                    <h3 className="text-3xl font-semibold text-slate-900">Starter</h3>
-                    <span className="rounded-full bg-lime-accent/60 px-2 py-0.5 text-[10px] font-semibold uppercase">Free</span>
-                  </div>
-                  <p className="mb-5 text-sm text-text-secondary">Para validar o fluxo com seu time.</p>
-                  <ul className="space-y-2 text-sm text-text-secondary">
-                    <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-600" />1 operação</li>
-                    <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-600" />WhatsApp ou Telegram</li>
-                    <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-600" />Suporte por email</li>
-                  </ul>
-                  <p className="font-display mt-7 text-5xl text-slate-900">Free</p>
-                  <a href="https://apps.bokun.io" target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex w-full justify-center rounded-full bg-black px-4 py-2.5 text-sm font-semibold text-white">
-                    Montar meu Squad
-                  </a>
-                </article>
-
-                <article className="rounded-2xl border border-black bg-black p-6 text-white shadow-xl">
-                  <div className="mb-3 flex items-center justify-between">
-                    <h3 className="text-3xl font-semibold">Pro</h3>
-                    <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-semibold uppercase">Melhor escolha</span>
-                  </div>
-                  <p className="mb-5 text-sm text-white/70">Para equipes com maior volume.</p>
-                  <ul className="space-y-2 text-sm text-white/80">
-                    <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-cyan-300" />Até 3 operações</li>
-                    <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-cyan-300" />WhatsApp e Telegram</li>
-                    <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-cyan-300" />Dashboard operacional</li>
-                    <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-cyan-300" />Assistente de execução</li>
-                  </ul>
-                  <p className="font-display mt-7 text-5xl">€29</p>
-                  <p className="mt-1 text-xs text-white/70">por mês</p>
-                  <a href="/api/create-checkout-session?plan=monthly" className="mt-4 inline-flex w-full justify-center rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-black">
-                    Ativar plano Pro
-                  </a>
-                </article>
-
-                <article className="rounded-2xl border border-border-subtle bg-surface p-6">
-                  <div className="mb-3 flex items-center justify-between">
-                    <h3 className="text-3xl font-semibold text-slate-900">Business</h3>
-                    <span className="rounded-full bg-[#dbe4ff] px-2 py-0.5 text-[10px] font-semibold uppercase text-blue-800">Escala de time</span>
-                  </div>
-                  <p className="mb-5 text-sm text-text-secondary">Para operações com múltiplos canais.</p>
-                  <ul className="space-y-2 text-sm text-text-secondary">
-                    <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-600" />Operações ilimitadas</li>
-                    <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-600" />Playbooks avançados</li>
-                    <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-600" />Integrações API-first</li>
-                    <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-600" />Suporte prioritário</li>
-                  </ul>
-                  <p className="font-display mt-7 text-5xl text-slate-900">€290</p>
-                  <p className="mt-1 text-xs text-text-secondary">cobrança anual · 2 meses grátis</p>
-                  <a href="/api/create-checkout-session?plan=annual" className="mt-4 inline-flex w-full justify-center rounded-full bg-black px-4 py-2.5 text-sm font-semibold text-white">
-                    Ativar plano Business
-                  </a>
-                </article>
-              </div>
+            <div className="mt-10 space-y-3">
+              {faqItems.map((item) => (
+                <details key={item.q} className="glass-card rounded-2xl p-5 group">
+                  <summary className="cursor-pointer list-none text-left font-semibold text-slate-900">
+                    <span className="inline-flex items-center gap-3">
+                      <span className="h-2 w-2 rounded-full bg-lime-500" />
+                      {item.q}
+                    </span>
+                  </summary>
+                  <p className="mt-3 pl-5 text-sm leading-relaxed text-text-secondary">{item.a}</p>
+                </details>
+              ))}
             </div>
           </div>
         </section>
@@ -340,7 +398,7 @@ export default function LandingPage() {
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col items-start justify-between gap-6 rounded-3xl bg-lime-accent px-7 py-10 sm:flex-row sm:items-center sm:px-10">
               <h3 className="font-display max-w-xl text-4xl leading-tight text-slate-900 sm:text-5xl">
-                Descubra o poder da automação operacional.
+                Pronto para automatizar seu atendimento com Bokun?
               </h3>
               <a
                 href="https://apps.bokun.io"
@@ -348,7 +406,7 @@ export default function LandingPage() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-xl bg-[#082d33] px-5 py-3 text-sm font-semibold text-white"
               >
-                Montar meu Squad
+                Testar grátis por 7 dias
                 <ArrowRight className="h-4 w-4" />
               </a>
             </div>
@@ -358,41 +416,59 @@ export default function LandingPage() {
 
       <footer className="border-t border-border-subtle bg-[#f6f2eb] py-14">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-10 md:grid-cols-4">
+          <div className="grid gap-10 md:grid-cols-3">
             <div>
               <p className="font-display text-3xl text-slate-900">Bokun Bot</p>
               <p className="mt-3 text-sm leading-relaxed text-text-secondary">
-                Orquestração de reservas e atendimento para estabelecimentos que usam Bokun em produção.
+                Automatizamos atendimento e agendamentos para quem já opera com Bokun.
               </p>
             </div>
+
             <div>
-              <h4 className="mb-3 text-sm font-semibold text-slate-900">Solution</h4>
+              <h4 className="mb-3 text-sm font-semibold text-slate-900">Produto</h4>
               <ul className="space-y-2 text-sm text-text-secondary">
-                <li>Operação IA</li>
-                <li>Automações</li>
-                <li>Segurança</li>
+                <li>
+                  <a href="#features" className="hover:text-text-primary">
+                    Recursos
+                  </a>
+                </li>
+                <li>
+                  <a href="#pricing" className="hover:text-text-primary">
+                    Planos
+                  </a>
+                </li>
+                <li>
+                  <a href="#faq" className="hover:text-text-primary">
+                    FAQ
+                  </a>
+                </li>
               </ul>
             </div>
+
             <div>
-              <h4 className="mb-3 text-sm font-semibold text-slate-900">Customers</h4>
+              <h4 className="mb-3 text-sm font-semibold text-slate-900">Suporte</h4>
               <ul className="space-y-2 text-sm text-text-secondary">
-                <li>Operadores turísticos</li>
-                <li>Times de suporte</li>
-                <li>PMEs em escala</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="mb-3 text-sm font-semibold text-slate-900">Resources</h4>
-              <ul className="space-y-2 text-sm text-text-secondary">
-                <li>Pricing</li>
-                <li>Documentação</li>
-                <li>Status</li>
+                <li>
+                  <a href="mailto:info@iaoperators.com" className="hover:text-text-primary">
+                    info@iaoperators.com
+                  </a>
+                </li>
+                <li>
+                  <a href="/terms" className="hover:text-text-primary">
+                    Termos e Condições
+                  </a>
+                </li>
+                <li>
+                  <a href="/privacy" className="hover:text-text-primary">
+                    Política de Privacidade
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
 
           <div className="mt-12 border-t border-border-subtle pt-5 text-center text-xs text-text-secondary">
-            © 2026 Bokun Bot. Todos os direitos reservados.
+            © {currentYear} Bokun Bot. Todos os direitos reservados. Criado por IA Operators.
           </div>
         </div>
       </footer>
