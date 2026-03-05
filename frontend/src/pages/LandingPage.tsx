@@ -10,19 +10,21 @@ import {
   Zap,
 } from "lucide-react";
 
+const BRAND_LOGO_SRC = "/chatplug-newlogo.svg";
+
 const integrationChips = [
-  "WhatsApp",
-  "Telegram",
-  "Bokun",
-  "Stripe",
-  "Google Calendar",
-  "Notion",
-  "Gmail",
-  "Slack",
-  "API-first",
-  "Webhooks",
-  "CRM",
-  "n8n",
+  { name: "WhatsApp", logo: "https://cdn.simpleicons.org/whatsapp/25D366" },
+  { name: "Telegram", logo: "https://cdn.simpleicons.org/telegram/229ED9" },
+  { name: "Bokun", logo: "https://apps.bokun.io/favicon.ico" },
+  { name: "Stripe", logo: "https://cdn.simpleicons.org/stripe/635BFF" },
+  { name: "Google Calendar", logo: "https://cdn.simpleicons.org/googlecalendar/4285F4" },
+  { name: "Notion", logo: "https://cdn.simpleicons.org/notion/111111" },
+  { name: "Gmail", logo: "https://cdn.simpleicons.org/gmail/EA4335" },
+  { name: "Slack", logo: "https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/slack.svg" },
+  { name: "Postman", logo: "https://cdn.simpleicons.org/postman/FF6C37" },
+  { name: "Zapier", logo: "https://cdn.simpleicons.org/zapier/FF4A00" },
+  { name: "HubSpot", logo: "https://cdn.simpleicons.org/hubspot/FF7A59" },
+  { name: "n8n", logo: "https://cdn.simpleicons.org/n8n/EA4B71" },
 ];
 
 const featureCards = [
@@ -108,8 +110,8 @@ export default function LandingPage() {
     <div className="min-h-screen bg-warm-bg text-text-primary">
       <header className="sticky top-0 z-50 border-b border-border-subtle/80 bg-warm-bg/90 backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <a href="#hero" className="font-display text-2xl font-semibold tracking-tight">
-            Bokun Bot
+          <a href="#hero" aria-label="ChatPlug" className="inline-flex items-center">
+            <img src={BRAND_LOGO_SRC} alt="ChatPlug" className="h-9 w-auto object-contain" />
           </a>
 
           <nav className="hidden items-center gap-8 text-sm text-text-secondary md:flex">
@@ -126,15 +128,13 @@ export default function LandingPage() {
 
           <div className="flex items-center gap-2">
             <a
-              href="/auth"
+              href="/auth?mode=signin"
               className="rounded-full px-3 py-2 text-sm font-medium text-text-secondary transition-colors hover:text-text-primary"
             >
               Login
             </a>
             <a
-              href="https://apps.bokun.io"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/auth?mode=signup"
               className="rounded-full bg-lime-accent px-4 py-2 text-sm font-semibold text-slate-900 transition-transform hover:-translate-y-0.5"
             >
               Teste grátis
@@ -167,36 +167,41 @@ export default function LandingPage() {
 
             <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <a
-                href="https://apps.bokun.io"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/auth?mode=signup"
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#082d33] px-7 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#0c3f46]"
               >
                 Testar grátis por 7 dias
                 <ArrowRight className="h-4 w-4" />
               </a>
-              <a
-                href="#integracao"
-                className="inline-flex items-center justify-center rounded-xl border border-border-subtle bg-surface px-7 py-3 text-sm font-semibold text-text-primary transition-colors hover:bg-accent-cream"
-              >
-                Conectar Bokun ao WhatsApp ou Telegram
-              </a>
+
             </div>
 
             <p className="mt-4 text-center text-sm text-text-secondary">Sem cartão de crédito</p>
 
             <div className="pointer-events-none">
-              <div className="absolute left-[10%] top-28 hidden rounded-full border border-border-subtle bg-surface px-4 py-2 text-xs font-medium text-text-secondary lg:block">
-                Atendimento contínuo
+              <div className="chat-float absolute left-[10%] top-28 hidden rounded-2xl border border-border-subtle bg-surface px-4 py-2 text-xs font-medium leading-tight text-text-secondary shadow-sm lg:block">
+                Quero agendar para 2 pessoas
+                <br />
+                amanhã às 10h.
+                <span className="absolute -bottom-1 left-6 h-2.5 w-2.5 rotate-45 border-b border-r border-border-subtle bg-surface" />
               </div>
-              <div className="absolute right-[10%] top-28 hidden rounded-full border border-border-subtle bg-surface px-4 py-2 text-xs font-medium text-text-secondary lg:block">
-                Integração Bokun-first
+              <div className="chat-float chat-float-delay-1 absolute right-[10%] top-28 hidden rounded-2xl border border-border-subtle bg-surface px-4 py-2 text-xs font-medium leading-tight text-text-secondary shadow-sm lg:block">
+                Preciso cancelar minha
+                <br />
+                reserva de hoje.
+                <span className="absolute -bottom-1 right-6 h-2.5 w-2.5 rotate-45 border-b border-r border-border-subtle bg-surface" />
               </div>
-              <div className="absolute left-[12%] top-[62%] hidden rounded-full border border-border-subtle bg-surface px-4 py-2 text-xs font-medium text-text-secondary lg:block">
-                Fluxos orientados a reservas
+              <div className="chat-float chat-float-delay-2 absolute left-[12%] top-[82%] hidden rounded-2xl border border-border-subtle bg-surface px-4 py-2 text-xs font-medium leading-tight text-text-secondary shadow-sm lg:block">
+                Quais atividades vocês têm
+                <br />
+                disponíveis neste fim de semana?
+                <span className="absolute -bottom-1 left-6 h-2.5 w-2.5 rotate-45 border-b border-r border-border-subtle bg-surface" />
               </div>
-              <div className="absolute right-[14%] top-[56%] hidden rounded-full border border-border-subtle bg-surface px-4 py-2 text-xs font-medium text-text-secondary lg:block">
-                Setup em minutos
+              <div className="chat-float chat-float-delay-3 absolute right-[14%] top-[76%] hidden rounded-2xl border border-border-subtle bg-surface px-4 py-2 text-xs font-medium leading-tight text-text-secondary shadow-sm lg:block">
+                Dá para remarcar meu passeio
+                <br />
+                para sexta no período da tarde?
+                <span className="absolute -bottom-1 right-6 h-2.5 w-2.5 rotate-45 border-b border-r border-border-subtle bg-surface" />
               </div>
             </div>
           </div>
@@ -259,21 +264,41 @@ export default function LandingPage() {
         <section id="integracao" className="mt-14 bg-[#052a2e] py-20 text-white">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 text-center">
             <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#d8ef92]">
-              Integrações
+              Sob medida
             </span>
-            <h2 className="font-display mt-5 text-4xl sm:text-5xl">Não substitua. Integre.</h2>
+            <h2 className="font-display mt-5 text-4xl sm:text-5xl">Integrações sob medida para sua stack.</h2>
             <p className="mx-auto mt-4 max-w-3xl text-sm leading-relaxed text-white/75 sm:text-base">
-              Conecte o Bokun Bot ao seu stack atual e mantenha sua operação fluindo nos canais em que seu time já
-              trabalha.
+              Conectamos o ChatPlug ao seu ecossistema real com arquitetura pronta para produção: canais, CRM,
+              automações, pagamentos e APIs. Se você tem um fluxo específico, a gente desenha com você.
             </p>
+
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <a
+                href="mailto:info@iaoperators.com?subject=Integra%C3%A7%C3%B5es%20sob%20medida%20-%20ChatPlug"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-lime-accent px-7 py-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-[#d8ef92]"
+              >
+                Falar com a gente
+                <ArrowRight className="h-4 w-4" />
+              </a>
+
+            </div>
 
             <div className="mx-auto mt-8 grid max-w-4xl grid-cols-2 gap-3 rounded-2xl border border-white/15 bg-white/5 p-4 sm:grid-cols-3 lg:grid-cols-4">
               {integrationChips.map((chip) => (
                 <div
-                  key={chip}
-                  className="rounded-lg border border-white/15 bg-white px-3 py-2 text-sm font-semibold text-slate-800"
+                  key={chip.name}
+                  className="rounded-lg border border-white/15 bg-white px-3 py-3"
                 >
-                  {chip}
+                  <div className="flex items-center justify-center gap-2">
+                    <img
+                      src={chip.logo}
+                      alt={chip.name}
+                      title={chip.name}
+                      className="h-5 w-5 object-contain"
+                      loading="lazy"
+                    />
+                    <span className="text-sm font-semibold text-slate-800">{chip.name}</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -320,7 +345,7 @@ export default function LandingPage() {
                   <p className="font-display mt-7 text-5xl text-slate-900">€29</p>
                   <p className="mt-1 text-xs text-text-secondary">por mês</p>
                   <a
-                    href="/api/create-checkout-session?plan=monthly"
+                    href="/auth?mode=signup&plan=monthly"
                     className="mt-4 inline-flex w-full justify-center rounded-full bg-black px-4 py-2.5 text-sm font-semibold text-white"
                   >
                     Iniciar teste grátis
@@ -357,7 +382,7 @@ export default function LandingPage() {
                   <p className="font-display mt-7 text-5xl">€290</p>
                   <p className="mt-1 text-xs text-white/70">cobrança anual</p>
                   <a
-                    href="/api/create-checkout-session?plan=annual"
+                    href="/auth?mode=signup&plan=annual"
                     className="mt-4 inline-flex w-full justify-center rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-black"
                   >
                     Iniciar teste grátis
@@ -401,9 +426,7 @@ export default function LandingPage() {
                 Pronto para automatizar seu atendimento com Bokun?
               </h3>
               <a
-                href="https://apps.bokun.io"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/auth?mode=signup"
                 className="inline-flex items-center gap-2 rounded-xl bg-[#082d33] px-5 py-3 text-sm font-semibold text-white"
               >
                 Testar grátis por 7 dias
@@ -418,7 +441,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-10 md:grid-cols-3">
             <div>
-              <p className="font-display text-3xl text-slate-900">Bokun Bot</p>
+              <img src={BRAND_LOGO_SRC} alt="ChatPlug" className="h-10 w-auto object-contain" />
               <p className="mt-3 text-sm leading-relaxed text-text-secondary">
                 Automatizamos atendimento e agendamentos para quem já opera com Bokun.
               </p>
@@ -468,7 +491,7 @@ export default function LandingPage() {
           </div>
 
           <div className="mt-12 border-t border-border-subtle pt-5 text-center text-xs text-text-secondary">
-            © {currentYear} Bokun Bot. Todos os direitos reservados. Criado por IA Operators.
+            © {currentYear} ChatPlug. Todos os direitos reservados. Criado por IA Operators.
           </div>
         </div>
       </footer>

@@ -1,21 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useConvexAuth } from "convex/react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Mail, Lock, User, ArrowLeft } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Mail, Lock, User } from "lucide-react";
+const BRAND_LOGO_SRC = "/chatplug-newlogo.svg";
 
 function friendlyAuthError(raw: string, isSignUp: boolean): string {
   const lower = raw.toLowerCase();
@@ -48,26 +38,100 @@ function friendlyAuthError(raw: string, isSignUp: boolean): string {
   if (lower.includes("network") || lower.includes("fetch")) {
     return "Erro de conexão. Verifique sua internet e tente novamente.";
   }
-  if (
-    lower.includes("localstorage") ||
-    lower.includes("sessionstorage") ||
-    lower.includes("quotaexceeded")
-  ) {
-    return "O navegador bloqueou o armazenamento da sessão. Desative bloqueadores/privacidade para este site e tente novamente.";
-  }
 
   return isSignUp
     ? "Erro ao criar conta. Tente novamente."
     : "Erro ao fazer login. Tente novamente.";
 }
 
-const Auth = () => {
+const GoogleIcon = ({ className }: { className?: string }) => (
+  <svg
+    viewBox="0 0 24 24"
+    className={className}
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path
+      fill="#EA4335"
+      d="M12 10.2v3.9h5.4c-.2 1.2-1.4 3.6-5.4 3.6-3.3 0-6-2.7-6-6s2.7-6 6-6c1.9 0 3.2.8 3.9 1.5l2.7-2.6C16.9 3 14.6 2 12 2 6.5 2 2 6.5 2 12s4.5 10 10 10c5.8 0 9.6-4.1 9.6-9.8 0-.7-.1-1.2-.2-1.8H12z"
+    />
+    <path
+      fill="#34A853"
+      d="M2 12c0 1.6.4 3.1 1.2 4.4l3.4-2.6c-.2-.5-.4-1.1-.4-1.8s.1-1.2.4-1.8L3.2 7.6A9.9 9.9 0 0 0 2 12z"
+    />
+    <path
+      fill="#4A90E2"
+      d="M12 22c2.7 0 5-0.9 6.7-2.4l-3.2-2.6c-.9.6-2.1 1-3.5 1-2.6 0-4.8-1.8-5.6-4.1l-3.5 2.7C4.6 19.8 8 22 12 22z"
+    />
+    <path
+      fill="#FBBC05"
+      d="M6.4 13.9A6 6 0 0 1 6 12c0-.7.1-1.3.4-1.9L3 7.4A10 10 0 0 0 2 12c0 1.6.4 3.1 1.1 4.4l3.3-2.5z"
+    />
+  </svg>
+);
+
+function Field({
+  label,
+  type = "text",
+  value,
+  onChange,
+  placeholder,
+  required = false,
+  icon,
+  disabled,
+  autoComplete,
+}: {
+  label: string;
+  type?: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  required?: boolean;
+  icon?: "mail" | "lock" | "user";
+  disabled?: boolean;
+  autoComplete?: string;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-sm font-semibold text-slate-900">{label}</label>
+      <div className="relative">
+        {icon && (
+          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#617977]">
+            {icon === "mail" && <Mail size={15} />}
+            {icon === "lock" && <Lock size={15} />}
+            {icon === "user" && <User size={15} />}
+          </span>
+        )}
+        <input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          required={required}
+          autoComplete={autoComplete}
+          disabled={disabled}
+          className="h-12 w-full rounded-xl border border-[#d9d4c9] bg-[#f7f4f0] pl-11 pr-3 text-base text-[#062427] placeholder:text-[#708885] outline-none transition focus:border-[#9db8a8]"
+        />
+      </div>
+    </div>
+  );
+}
+
+export default function Auth() {
   const { signIn } = useAuthActions();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
   const { hasTenant, isLoading: tenantLoading } = useTenant();
 
-  const [isSignUp, setIsSignUp] = useState(false);
+  const modeFromUrl = searchParams.get("mode");
+  const initialIsSignUp = useMemo(
+    () => modeFromUrl === "signup" || modeFromUrl === "signUp",
+    [modeFromUrl],
+  );
+
+  const [isSignUp, setIsSignUp] = useState(initialIsSignUp);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -78,21 +142,23 @@ const Auth = () => {
   const [awaitingSession, setAwaitingSession] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const formRef = useRef<HTMLFormElement | null>(null);
   const isBusy = loading || oauthLoading || awaitingSession;
 
   useEffect(() => {
-    if (!awaitingSession) return;
-    if (authLoading) return;
-    if (!isAuthenticated) return;
-    if (tenantLoading) return;
+    setIsSignUp(initialIsSignUp);
+    setError(null);
+  }, [initialIsSignUp]);
 
+  useEffect(() => {
+    if (!awaitingSession) return;
+    if (authLoading || tenantLoading) return;
+    if (!isAuthenticated) return;
     navigate(hasTenant ? "/reservas" : "/onboarding", { replace: true });
   }, [
     awaitingSession,
     authLoading,
-    isAuthenticated,
     tenantLoading,
+    isAuthenticated,
     hasTenant,
     navigate,
   ]);
@@ -150,9 +216,7 @@ const Auth = () => {
 
     try {
       const result = await signIn("google");
-      if (result.signingIn) {
-        setAwaitingSession(true);
-      }
+      if (result.signingIn) setAwaitingSession(true);
     } catch (err) {
       setAwaitingSession(false);
       const raw = err instanceof Error ? err.message : String(err);
@@ -162,212 +226,207 @@ const Auth = () => {
     }
   };
 
+  const switchMode = (nextIsSignUp: boolean) => {
+    setIsSignUp(nextIsSignUp);
+    setSearchParams(nextIsSignUp ? { mode: "signup" } : { mode: "signin" });
+    setError(null);
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Bokun WhatsApp Bot
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Painel de gestão para operadores
-          </p>
-        </div>
+    <div className="min-h-screen bg-[#f7f4f0] overflow-y-auto relative isolate">
+      <div
+        className="pointer-events-none absolute inset-0 -z-10 opacity-55"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, rgba(6,36,39,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(6,36,39,0.08) 1px, transparent 1px)",
+          backgroundSize: "46px 46px",
+        }}
+      />
 
-        <Card className="shadow-lg border-0">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">
-              {isSignUp ? "Crie sua conta" : "Bem-vindo de volta"}
-            </CardTitle>
-            <CardDescription>
-              {isSignUp
-                ? "Cadastre-se para gerenciar seu bot WhatsApp"
-                : "Faça login no seu painel"}
-            </CardDescription>
-          </CardHeader>
+      <button
+        type="button"
+        onClick={() => navigate("/")}
+        className="absolute left-2 top-4 inline-flex items-center gap-2 border-0 bg-transparent p-0 text-xs font-medium text-[#062427] shadow-none outline-none hover:opacity-75 md:left-4 md:top-6"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Voltar para a landing
+      </button>
 
-          <CardContent className="space-y-6">
-            <Button
+      <div className="min-h-screen flex items-start justify-center px-4 py-8 md:py-12">
+        <div className="w-full max-w-[500px]">
+          <div className="text-center mb-5">
+            <div className="inline-flex items-center gap-2 px-0 py-0">
+              <img src={BRAND_LOGO_SRC} alt="ChatPlug" className="h-10 w-auto object-contain" />
+            </div>
+          </div>
+
+          <form
+            onSubmit={handleEmailAuth}
+            className="rounded-3xl border border-[#d9d4c9] bg-white/85 shadow-[0_18px_36px_rgba(6,36,39,0.10)] backdrop-blur-sm px-5 py-6 md:px-6 md:py-7 space-y-4"
+          >
+            <header className="text-center space-y-1.5">
+              <h1 className="font-display text-5xl leading-none font-semibold tracking-tight text-[#062427] mt-3">
+                {isSignUp ? "Comece Grátis" : "Welcome Back"}
+              </h1>
+              <p className="text-xs text-[#4f6462]">
+                {isSignUp
+                  ? "Crie sua conta e inicie o teste grátis de 7 dias"
+                  : "Log in to your dashboard"}
+              </p>
+            </header>
+
+            <button
+              type="button"
               onClick={handleGoogleAuth}
-              variant="outline"
-              className="w-full h-12 text-base font-medium"
               disabled={isBusy || authLoading}
+              className="w-full rounded-xl border border-[#d9d4c9] bg-[#f7f4f0] py-2.5 text-sm font-semibold text-[#062427] flex items-center justify-center gap-2.5 hover:bg-[#efeae1] transition-all disabled:opacity-60"
             >
-              <svg
-                className="h-5 w-5 mr-3"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  fill="#4285F4"
-                  d="M23.49 12.27c0-.79-.07-1.54-.2-2.27H12v4.51h6.44a5.5 5.5 0 0 1-2.39 3.61v3h3.86c2.26-2.08 3.58-5.15 3.58-8.85z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.46 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.28v3.09A11.99 11.99 0 0 0 12 24z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.27 14.29A7.2 7.2 0 0 1 4.9 12c0-.79.14-1.56.37-2.29V6.62H1.28A11.99 11.99 0 0 0 0 12c0 1.93.46 3.76 1.28 5.38l3.99-3.09z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 4.75c1.76 0 3.35.61 4.6 1.8l3.45-3.45C17.95 1.09 15.24 0 12 0A11.99 11.99 0 0 0 1.28 6.62l3.99 3.09C6.22 6.86 8.87 4.75 12 4.75z"
-                />
-              </svg>
+              <GoogleIcon className="h-5 w-5" />
               {oauthLoading
                 ? "Conectando com Google..."
                 : authLoading
                   ? "Carregando sessão..."
-                  : "Continuar com Google"}
-            </Button>
+                  : "Continue with Google"}
+            </button>
 
-            <div className="relative">
-              <Separator />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="bg-card px-4 text-sm text-muted-foreground">
-                  ou
-                </span>
-              </div>
+            <div className="flex items-center gap-4">
+              <div className="h-px flex-1 bg-[#d9d4c9]" />
+              <span className="text-xs text-[#657a78]">or</span>
+              <div className="h-px flex-1 bg-[#d9d4c9]" />
             </div>
 
-            <form ref={formRef} onSubmit={handleEmailAuth} className="space-y-4">
-              {isSignUp && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">Nome</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="firstName"
-                        type="text"
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        className="pl-10 h-12"
-                        placeholder="Seu nome"
-                        autoComplete="given-name"
-                        required
-                        disabled={isBusy || authLoading}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Sobrenome</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="lastName"
-                        type="text"
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        className="pl-10 h-12"
-                        placeholder="Seu sobrenome"
-                        autoComplete="family-name"
-                        required
-                        disabled={isBusy || authLoading}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="email">E-mail</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 h-12"
-                    placeholder="Digite seu e-mail"
-                    autoComplete={isSignUp ? "username" : "email"}
-                    required
-                    disabled={isBusy || authLoading}
-                  />
-                </div>
+            {isSignUp && (
+              <div className="grid grid-cols-2 gap-2.5">
+                <Field
+                  label="Nome"
+                  value={firstName}
+                  onChange={setFirstName}
+                  placeholder="Seu nome"
+                  required
+                  icon="user"
+                  disabled={isBusy || authLoading}
+                  autoComplete="given-name"
+                />
+                <Field
+                  label="Sobrenome"
+                  value={lastName}
+                  onChange={setLastName}
+                  placeholder="Seu sobrenome"
+                  required
+                  icon="user"
+                  disabled={isBusy || authLoading}
+                  autoComplete="family-name"
+                />
               </div>
+            )}
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 h-12"
-                    placeholder="Digite sua senha"
-                    autoComplete={isSignUp ? "new-password" : "current-password"}
-                    required
-                    minLength={8}
-                    disabled={isBusy || authLoading}
-                  />
-                </div>
-              </div>
+            <Field
+              label="Email"
+              type="email"
+              value={email}
+              onChange={setEmail}
+              placeholder="Enter your email"
+              required
+              icon="mail"
+              disabled={isBusy || authLoading}
+              autoComplete={isSignUp ? "username" : "email"}
+            />
 
-              {isSignUp && (
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="pl-10 h-12"
-                      placeholder="Confirme sua senha"
-                      autoComplete="new-password"
-                      required
-                      minLength={8}
-                      disabled={isBusy || authLoading}
-                    />
-                  </div>
-                </div>
-              )}
+            <Field
+              label="Password"
+              type="password"
+              value={password}
+              onChange={setPassword}
+              placeholder="Enter your password"
+              required
+              icon="lock"
+              disabled={isBusy || authLoading}
+              autoComplete={isSignUp ? "new-password" : "current-password"}
+            />
 
-              <Button
-                type="submit"
-                className="w-full h-12 text-base font-medium"
+            {isSignUp && (
+              <Field
+                label="Confirm Password"
+                type="password"
+                value={confirmPassword}
+                onChange={setConfirmPassword}
+                placeholder="Confirm your password"
+                required
+                icon="lock"
                 disabled={isBusy || authLoading}
-              >
-                {awaitingSession
-                  ? "Validando sessão..."
-                  : loading
-                  ? "Aguarde..."
+                autoComplete="new-password"
+              />
+            )}
+
+            {!isSignUp && (
+              <div className="text-right">
+                <button
+                  type="button"
+                  className="text-xs font-semibold text-[#062427] underline decoration-[#d4ff3f] underline-offset-2 hover:opacity-80"
+                  onClick={() =>
+                    window.alert(
+                      "Fluxo de recuperação de senha ainda não implementado. Posso criar no próximo passo.",
+                    )
+                  }
+                >
+                  Forgot Password?
+                </button>
+              </div>
+            )}
+
+            {error && (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isBusy || authLoading}
+              className="w-full rounded-xl py-3 text-sm font-semibold text-[#f7f4f0] bg-[#062427] hover:brightness-110 transition-all disabled:opacity-60"
+            >
+              {awaitingSession
+                ? "Validando sessão..."
+                : loading
+                  ? isSignUp
+                    ? "Criando conta..."
+                    : "Entrando..."
                   : isSignUp
-                    ? "Criar conta"
-                    : "Entrar"}
-              </Button>
+                    ? "Start Free Trial"
+                    : "Sign In"}
+            </button>
 
-              {error && (
-                <p className="text-sm text-destructive text-center">{error}</p>
+            <div className="text-center text-sm">
+              {isSignUp ? (
+                <button
+                  type="button"
+                  onClick={() => switchMode(false)}
+                  className="text-sm font-semibold text-[#062427] underline decoration-[#d4ff3f] underline-offset-2 hover:opacity-80"
+                  disabled={isBusy || authLoading}
+                >
+                  Already have an account? Sign in
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => switchMode(true)}
+                  className="text-sm font-semibold text-[#062427] underline decoration-[#d4ff3f] underline-offset-2 hover:opacity-80"
+                  disabled={isBusy || authLoading}
+                >
+                  Don't have an account? Start the free trial
+                </button>
               )}
-            </form>
-
-            <div className="text-center">
-              <button
-                onClick={() => {
-                  setIsSignUp(!isSignUp);
-                  setError(null);
-                }}
-                className="text-sm text-primary hover:text-primary/80 font-medium"
-                disabled={isBusy || authLoading}
-              >
-                {isSignUp
-                  ? "Já tem uma conta? Entre"
-                  : "Não tem uma conta? Cadastre-se"}
-              </button>
             </div>
-          </CardContent>
-        </Card>
+
+            {isSignUp && (
+              <p className="text-center text-[11px] text-[#627775]">
+                Senha com pelo menos 8 caracteres. Ao criar sua conta, você concorda com os Termos e Política de
+                Privacidade.
+              </p>
+            )}
+          </form>
+        </div>
       </div>
     </div>
   );
-};
-
-export default Auth;
+}
