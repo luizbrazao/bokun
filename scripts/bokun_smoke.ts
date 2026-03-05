@@ -1,6 +1,6 @@
 // scripts/bokun_smoke.ts
 import "dotenv/config";
-import { BokunClient } from "../src/bokun/bokunClient";
+import { BokunClient } from "../src/bokun/bokunClient.ts";
 
 async function main() {
     const baseUrl = process.env.BOKUN_BASE_URL!;
