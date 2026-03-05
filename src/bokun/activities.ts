@@ -45,7 +45,7 @@ export function buildSearchActivitiesRequest(args: SearchActivitiesArgs): BokunR
     baseUrl: args.baseUrl,
     path: `/activity.json/search${suffix}`,
     headers: args.headers,
-    body: args.body ?? { page: 0, pageSize: 20 },
+    body: args.body ?? { page: 1, pageSize: 20 },
   };
 }
 

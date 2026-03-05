@@ -180,7 +180,7 @@ async function main(): Promise<void> {
   console.log("\nTeste 1: search_activities");
   const searchResult = await bokunSearchActivitiesForTenant({
     tenantId,
-    body: { page: 0, pageSize: 10 },
+    body: { page: 1, pageSize: 10 },
     lang: process.env.BOKUN_DEFAULT_LANG?.trim() ?? "EN",
     currency: process.env.BOKUN_DEFAULT_CURRENCY?.trim() ?? "EUR",
   });

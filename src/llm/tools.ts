@@ -126,6 +126,24 @@ function extractActivities(raw: unknown): JsonRecord[] {
     return [];
 }
 
+function toActivitySummary(activity: JsonRecord): {
+    id: unknown;
+    title: unknown;
+    description?: string;
+    durationText: unknown;
+} {
+    return {
+        id: activity.id ?? activity.activityId,
+        title: activity.title ?? activity.name ?? activity.activityName,
+        description: typeof activity.excerpt === "string"
+            ? activity.excerpt.slice(0, 200)
+            : typeof activity.description === "string"
+              ? activity.description.slice(0, 200)
+              : undefined,
+        durationText: activity.durationText,
+    };
+}
+
 export async function executeTool(args: ToolExecutorArgs): Promise<string> {
     rootLogger.info({ handler: "llm_tools", tenantId: args.tenantId, waUserId: args.waUserId, toolName: args.toolName }, "llm_tool_executing");
     try {
@@ -180,16 +198,7 @@ async function executeSearchActivities(tenantId: string): Promise<string> {
         return JSON.stringify({ message: "No activities found for this vendor." });
     }
 
-    const summary = activities.map((activity) => ({
-        id: activity.id ?? activity.activityId,
-        title: activity.title ?? activity.name ?? activity.activityName,
-        description: typeof activity.excerpt === "string"
-            ? activity.excerpt.slice(0, 200)
-            : typeof activity.description === "string"
-              ? activity.description.slice(0, 200)
-            : undefined,
-        durationText: activity.durationText,
-    }));
+    const summary = activities.map(toActivitySummary);
 
     return JSON.stringify({ activities: summary });
 }

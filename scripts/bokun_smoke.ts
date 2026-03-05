@@ -15,7 +15,7 @@ async function main() {
 
     const body = {
         // corpo mínimo só pra bater no endpoint (pode variar conforme sua conta/dados)
-        page: 0,
+        page: 1,
         pageSize: 1,
     };
 
