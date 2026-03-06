@@ -11,6 +11,7 @@
 import type * as adminBootstrap from "../adminBootstrap.js";
 import type * as auditLog from "../auditLog.js";
 import type * as auth from "../auth.js";
+import type * as authMaintenance from "../authMaintenance.js";
 import type * as bokunInstallations from "../bokunInstallations.js";
 import type * as bookingDrafts from "../bookingDrafts.js";
 import type * as bookings from "../bookings.js";
@@ -45,6 +46,7 @@ declare const fullApi: ApiFromModules<{
   adminBootstrap: typeof adminBootstrap;
   auditLog: typeof auditLog;
   auth: typeof auth;
+  authMaintenance: typeof authMaintenance;
   bokunInstallations: typeof bokunInstallations;
   bookingDrafts: typeof bookingDrafts;
   bookings: typeof bookings;
