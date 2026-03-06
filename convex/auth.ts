@@ -17,15 +17,23 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   ],
   callbacks: {
     async redirect({ redirectTo }) {
-      // SITE_URL = frontend URL (e.g. https://myapp.vercel.app ou http://localhost:5173).
-      // É diferente de CONVEX_SITE_URL (URL do backend Convex).
-      const siteUrl = (process.env.SITE_URL ?? process.env.CONVEX_SITE_URL ?? "").replace(/\/$/, "");
-      if (!redirectTo || redirectTo === "") return siteUrl;
+      // SITE_URL deve ser a URL do FRONTEND (ex: http://localhost:5173 ou https://myapp.vercel.app).
+      // É diferente de CONVEX_SITE_URL, que é a URL do backend Convex.
+      // Configure: npx convex env set SITE_URL http://localhost:5173
+      const siteUrl = process.env.SITE_URL?.replace(/\/$/, "");
+      if (!siteUrl) {
+        throw new Error(
+          "Variável SITE_URL não configurada no Convex. " +
+          "Execute: npx convex env set SITE_URL <URL_DO_FRONTEND> " +
+          "(ex: http://localhost:5173 em desenvolvimento)"
+        );
+      }
+      if (!redirectTo) return siteUrl;
       if (redirectTo.startsWith("/") || redirectTo.startsWith("?")) {
         return `${siteUrl}${redirectTo}`;
       }
       if (redirectTo.startsWith(siteUrl)) return redirectTo;
-      throw new Error(`redirectTo inválido: "${redirectTo}". Configure a variável SITE_URL com a URL do frontend.`);
+      throw new Error(`redirectTo inválido: "${redirectTo}". SITE_URL configurado: ${siteUrl}`);
     },
     async createOrUpdateUser(ctx, args) {
       const { emailVerified, phoneVerified, ...rawProfile } = args.profile;
