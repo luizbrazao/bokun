@@ -16,6 +16,7 @@
         "diagnose:llm": "node --experimental-strip-types scripts/diagnoseLLMConnectivity.ts",
         "diagnose:tenants": "node --experimental-strip-types scripts/listTenantsForService.ts",
         "eval:agent": "node --experimental-strip-types scripts/evalAgentReliability.ts",
+        "eval:agent:e2e": "node --experimental-strip-types scripts/evalAgentE2E.ts",
         "test": "vitest run",
         "test:watch": "vitest"
     },
