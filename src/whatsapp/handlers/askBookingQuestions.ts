@@ -1,10 +1,13 @@
 import type { Id } from "../../../convex/_generated/dataModel.ts";
+import type { SupportedLanguage } from "../../i18n.ts";
+import { byLanguage } from "../../i18n.ts";
 
 export type AskBookingQuestionsArgs = {
     tenantId: Id<"tenants">;
     waUserId: string;
     bookingDraftId: Id<"booking_drafts">;
     bookingQuestions?: string; // JSON-stringified BookingQuestion[]
+    language?: SupportedLanguage;
 };
 
 export type AskBookingQuestionsResult = {
@@ -55,7 +58,7 @@ export async function askBookingQuestions(
 
     // Present first question
     const firstQuestion = questions[0];
-    const questionText = formatQuestion(firstQuestion, 1, questions.length);
+    const questionText = formatQuestion(firstQuestion, 1, questions.length, args.language);
 
     return {
         handled: true,
@@ -63,18 +66,35 @@ export async function askBookingQuestions(
     };
 }
 
-function formatQuestion(question: BookingQuestion, index: number, total: number): string {
-    let text = `📋 Pergunta ${index}/${total}\n\n${question.question}`;
+function formatQuestion(
+    question: BookingQuestion,
+    index: number,
+    total: number,
+    language?: SupportedLanguage
+): string {
+    let text = `${byLanguage(language, {
+        pt: "📋 Pergunta",
+        en: "📋 Question",
+        es: "📋 Pregunta",
+    })} ${index}/${total}\n\n${question.question}`;
 
     if (question.type === "SELECT" && question.options && question.options.length > 0) {
-        text += "\n\nOpções:";
+        text += byLanguage(language, {
+            pt: "\n\nOpções:",
+            en: "\n\nOptions:",
+            es: "\n\nOpciones:",
+        });
         question.options.forEach((option, i) => {
             text += `\n${i + 1}. ${option}`;
         });
     }
 
     if (!question.required) {
-        text += "\n\n(Opcional - envie 'pular' para avançar)";
+        text += byLanguage(language, {
+            pt: "\n\n(Opcional - envie 'pular' para avançar)",
+            en: "\n\n(Optional - send 'skip' to continue)",
+            es: "\n\n(Opcional - envía 'saltar' para continuar)",
+        });
     }
 
     return text;

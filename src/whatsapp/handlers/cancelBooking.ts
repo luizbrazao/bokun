@@ -1,11 +1,14 @@
 import { getConvexClient } from "../../convex/client.ts";
 import { bokunCancelBookingForTenant } from "../../bokun/gateway.ts";
 import rootLogger from "../../lib/logger.ts";
+import type { SupportedLanguage } from "../../i18n.ts";
+import { byLanguage } from "../../i18n.ts";
 
 export type HandleCancelBookingArgs = {
   tenantId: string;
   waUserId: string;
   text: string;
+  language?: SupportedLanguage;
 };
 
 export type HandleCancelBookingResult = {
@@ -21,9 +24,7 @@ type ConfirmedBookingDraft = {
   status: string;
 } | null;
 
-const CANCEL_KEYWORDS = ["cancelar", "cancelar reserva", "cancel", "cancel booking"];
-const CONFIRM_CANCEL_KEYWORDS = ["sim", "s", "yes", "y"];
-const DENY_CANCEL_KEYWORDS = ["nao", "não", "n", "no"];
+const CANCEL_KEYWORDS = ["cancelar", "cancelar reserva", "cancel", "cancel booking", "anular reserva"];
 
 export function isCancelIntent(text: string): boolean {
   const normalized = text.trim().toLowerCase();
@@ -46,7 +47,11 @@ export async function handleCancelBooking(
 
   if (!draft || draft.status !== "confirmed" || !draft.bokunConfirmationCode) {
     return {
-      text: "Não encontrei uma reserva confirmada para cancelar.",
+      text: byLanguage(args.language, {
+        pt: "Não encontrei uma reserva confirmada para cancelar.",
+        en: "I couldn't find a confirmed booking to cancel.",
+        es: "No encontré una reserva confirmada para cancelar.",
+      }),
       handled: true,
     };
   }
@@ -76,7 +81,11 @@ export async function handleCancelBooking(
     }
 
     return {
-      text: `Reserva ${draft.bokunConfirmationCode} cancelada com sucesso.`,
+      text: byLanguage(args.language, {
+        pt: `Reserva ${draft.bokunConfirmationCode} cancelada com sucesso.`,
+        en: `Booking ${draft.bokunConfirmationCode} cancelled successfully.`,
+        es: `Reserva ${draft.bokunConfirmationCode} cancelada con éxito.`,
+      }),
       handled: true,
     };
   } catch (error) {
@@ -91,7 +100,11 @@ export async function handleCancelBooking(
       } as any);
     } catch { /* audit log failure must not mask original error */ }
     return {
-      text: "Não foi possível cancelar a reserva na Bokun. Tente novamente ou entre em contato com o suporte.",
+      text: byLanguage(args.language, {
+        pt: "Não foi possível cancelar a reserva na Bokun. Tente novamente ou entre em contato com o suporte.",
+        en: "Could not cancel the booking in Bokun. Please try again or contact support.",
+        es: "No fue posible cancelar la reserva en Bokun. Inténtalo de nuevo o contacta con soporte.",
+      }),
       handled: true,
     };
   }

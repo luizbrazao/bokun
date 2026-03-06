@@ -4,44 +4,49 @@ import { useConvexAuth } from "convex/react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Mail, Lock, User, ArrowLeft } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
+import { useI18n } from "@/i18n";
 
 const BRAND_LOGO_SRC = "/chatplug-newlogo.svg";
 
-function friendlyAuthError(raw: string, isSignUp: boolean): string {
+function friendlyAuthError(
+  raw: string,
+  isSignUp: boolean,
+  t: (key: string) => string,
+): string {
   const lower = raw.toLowerCase();
 
   if (lower.includes("invalidsecret") || lower.includes("invalid secret")) {
-    return "Senha incorreta. Verifique e tente novamente.";
+    return t("auth.errorWrongPassword");
   }
   if (
     lower.includes("invalidaccountid") ||
     lower.includes("could not find account") ||
     lower.includes("invalid credentials")
   ) {
-    return "E-mail não encontrado. Verifique ou crie uma conta.";
+    return t("auth.errorEmailNotFound");
   }
   if (
     lower.includes("account already exists") ||
     lower.includes("accountalreadyexists")
   ) {
-    return "Este e-mail já está cadastrado. Faça login.";
+    return t("auth.errorEmailExists");
   }
   if (lower.includes("invalid email") || lower.includes("invalidemail")) {
-    return "E-mail inválido. Verifique o formato.";
+    return t("auth.errorInvalidEmail");
   }
   if (lower.includes("too many requests") || lower.includes("rate limit")) {
-    return "Muitas tentativas. Aguarde alguns minutos e tente novamente.";
+    return t("auth.errorRateLimit");
   }
   if (lower.includes("cannot read properties of null")) {
-    return "Erro interno de autenticação. Tente novamente ou use outro e-mail.";
+    return t("auth.errorInternal");
   }
   if (lower.includes("network") || lower.includes("fetch")) {
-    return "Erro de conexão. Verifique sua internet e tente novamente.";
+    return t("auth.errorNetwork");
   }
 
   return isSignUp
-    ? "Erro ao criar conta. Tente novamente."
-    : "Erro ao fazer login. Tente novamente.";
+    ? t("auth.errorSignup")
+    : t("auth.errorSignin");
 }
 
 const GoogleIcon = ({ className }: { className?: string }) => (
@@ -118,6 +123,7 @@ function Field({
 }
 
 export default function Auth() {
+  const { t } = useI18n();
   const { signIn } = useAuthActions();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -169,7 +175,7 @@ export default function Auth() {
       if (!isAuthenticated) {
         setAwaitingSession(false);
         setError(
-          "Sessão criada, mas ainda não confirmada no Convex. Aguarde alguns segundos e tente novamente.",
+          t("auth.errorSessionPending"),
         );
       }
     }, 12000);
@@ -183,7 +189,7 @@ export default function Auth() {
 
     try {
       if (isSignUp && password !== confirmPassword) {
-        setError("As senhas não coincidem.");
+        setError(t("auth.errorPasswordMismatch"));
         return;
       }
 
@@ -196,14 +202,14 @@ export default function Auth() {
       });
 
       if (!result.signingIn) {
-        setError("Não foi possível concluir o login agora. Tente novamente.");
+        setError(t("auth.errorLoginNow"));
         return;
       }
       setAwaitingSession(true);
     } catch (err) {
       setAwaitingSession(false);
       const raw = err instanceof Error ? err.message : String(err);
-      setError(friendlyAuthError(raw, isSignUp));
+      setError(friendlyAuthError(raw, isSignUp, t));
     } finally {
       setLoading(false);
     }
@@ -220,7 +226,7 @@ export default function Auth() {
     } catch (err) {
       setAwaitingSession(false);
       const raw = err instanceof Error ? err.message : String(err);
-      setError(friendlyAuthError(raw, false));
+      setError(friendlyAuthError(raw, false, t));
     } finally {
       setOauthLoading(false);
     }
@@ -249,7 +255,7 @@ export default function Auth() {
         className="absolute left-2 top-4 inline-flex items-center gap-2 border-0 bg-transparent p-0 text-xs font-medium text-[#062427] shadow-none outline-none hover:opacity-75 md:left-4 md:top-6"
       >
         <ArrowLeft className="h-4 w-4" />
-        Voltar para a landing
+        {t("common.backToHome")}
       </button>
 
       <div className="min-h-screen flex items-start justify-center px-4 py-8 md:py-12">
@@ -266,12 +272,12 @@ export default function Auth() {
           >
             <header className="text-center space-y-1.5">
               <h1 className="font-display text-5xl leading-none font-semibold tracking-tight text-[#062427] mt-3">
-                {isSignUp ? "Comece Grátis" : "Welcome Back"}
+                {isSignUp ? t("auth.startFree") : t("auth.welcomeBack")}
               </h1>
               <p className="text-xs text-[#4f6462]">
                 {isSignUp
-                  ? "Crie sua conta e inicie o teste grátis de 7 dias"
-                  : "Log in to your dashboard"}
+                  ? t("auth.subtitleSignup")
+                  : t("auth.subtitleSignin")}
               </p>
             </header>
 
@@ -283,35 +289,35 @@ export default function Auth() {
             >
               <GoogleIcon className="h-5 w-5" />
               {oauthLoading
-                ? "Conectando com Google..."
+                ? t("auth.connectingGoogle")
                 : authLoading
-                  ? "Carregando sessão..."
-                  : "Continue with Google"}
+                  ? t("auth.loadingSession")
+                  : t("auth.continueWithGoogle")}
             </button>
 
             <div className="flex items-center gap-4">
               <div className="h-px flex-1 bg-[#d9d4c9]" />
-              <span className="text-xs text-[#657a78]">or</span>
+              <span className="text-xs text-[#657a78]">{t("auth.or")}</span>
               <div className="h-px flex-1 bg-[#d9d4c9]" />
             </div>
 
             {isSignUp && (
               <div className="grid grid-cols-2 gap-2.5">
                 <Field
-                  label="Nome"
+                  label={t("auth.firstName")}
                   value={firstName}
                   onChange={setFirstName}
-                  placeholder="Seu nome"
+                  placeholder={t("auth.placeholderFirstName")}
                   required
                   icon="user"
                   disabled={isBusy || authLoading}
                   autoComplete="given-name"
                 />
                 <Field
-                  label="Sobrenome"
+                  label={t("auth.lastName")}
                   value={lastName}
                   onChange={setLastName}
-                  placeholder="Seu sobrenome"
+                  placeholder={t("auth.placeholderLastName")}
                   required
                   icon="user"
                   disabled={isBusy || authLoading}
@@ -321,11 +327,11 @@ export default function Auth() {
             )}
 
             <Field
-              label="Email"
+              label={t("auth.email")}
               type="email"
               value={email}
               onChange={setEmail}
-              placeholder="Enter your email"
+              placeholder={t("auth.placeholderEmail")}
               required
               icon="mail"
               disabled={isBusy || authLoading}
@@ -333,11 +339,11 @@ export default function Auth() {
             />
 
             <Field
-              label="Password"
+              label={t("auth.password")}
               type="password"
               value={password}
               onChange={setPassword}
-              placeholder="Enter your password"
+              placeholder={t("auth.placeholderPassword")}
               required
               icon="lock"
               disabled={isBusy || authLoading}
@@ -346,11 +352,11 @@ export default function Auth() {
 
             {isSignUp && (
               <Field
-                label="Confirm Password"
+                label={t("auth.confirmPassword")}
                 type="password"
                 value={confirmPassword}
                 onChange={setConfirmPassword}
-                placeholder="Confirm your password"
+                placeholder={t("auth.placeholderConfirmPassword")}
                 required
                 icon="lock"
                 disabled={isBusy || authLoading}
@@ -365,11 +371,11 @@ export default function Auth() {
                   className="text-xs font-semibold text-[#062427] underline decoration-[#d4ff3f] underline-offset-2 hover:opacity-80"
                   onClick={() =>
                     window.alert(
-                      "Fluxo de recuperação de senha ainda não implementado. Posso criar no próximo passo.",
+                      t("auth.resetNotImplemented"),
                     )
                   }
                 >
-                  Forgot Password?
+                  {t("auth.forgotPassword")}
                 </button>
               </div>
             )}
@@ -386,14 +392,14 @@ export default function Auth() {
               className="w-full rounded-xl py-3 text-sm font-semibold text-[#f7f4f0] bg-[#062427] hover:brightness-110 transition-all disabled:opacity-60"
             >
               {awaitingSession
-                ? "Validando sessão..."
+                ? t("auth.validatingSession")
                 : loading
                   ? isSignUp
-                    ? "Criando conta..."
-                    : "Entrando..."
+                    ? t("auth.creatingAccount")
+                    : t("auth.loggingIn")
                   : isSignUp
-                    ? "Start Free Trial"
-                    : "Sign In"}
+                    ? t("auth.startFreeTrial")
+                    : t("auth.signin")}
             </button>
 
             <div className="text-center text-sm">
@@ -404,7 +410,7 @@ export default function Auth() {
                   className="text-sm font-semibold text-[#062427] underline decoration-[#d4ff3f] underline-offset-2 hover:opacity-80"
                   disabled={isBusy || authLoading}
                 >
-                  Already have an account? Sign in
+                  {t("auth.alreadyHaveAccountSignin")}
                 </button>
               ) : (
                 <button
@@ -413,15 +419,14 @@ export default function Auth() {
                   className="text-sm font-semibold text-[#062427] underline decoration-[#d4ff3f] underline-offset-2 hover:opacity-80"
                   disabled={isBusy || authLoading}
                 >
-                  Don't have an account? Start the free trial
+                  {t("auth.noAccountStartTrial")}
                 </button>
               )}
             </div>
 
             {isSignUp && (
               <p className="text-center text-[11px] text-[#627775]">
-                Senha com pelo menos 8 caracteres. Ao criar sua conta, você concorda com os Termos e Política de
-                Privacidade.
+                {t("auth.passwordPolicy")}
               </p>
             )}
           </form>

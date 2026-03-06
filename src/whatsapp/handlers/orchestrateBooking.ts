@@ -7,11 +7,13 @@ import { handleAfterSelectPickup } from "./afterSelectPickup.ts";
 import { handleAfterSelectTime } from "./afterSelectTime.ts";
 import { isCancelIntent, handleCancelBooking } from "./cancelBooking.ts";
 import { isEditIntent, handleEditBooking } from "./editBooking.ts";
+import type { SupportedLanguage } from "../../i18n.ts";
 
 export type OrchestrateBookingArgs = {
   tenantId: string;
   waUserId: string;
   text: string;
+  language?: SupportedLanguage;
 };
 
 export type OrchestrateBookingResult = {
@@ -129,6 +131,7 @@ export async function orchestrateBooking(args: OrchestrateBookingArgs): Promise<
         waUserId: args.waUserId,
         activityId,
         date: requestedDate,
+        language: args.language,
       });
 
       return {
@@ -148,6 +151,7 @@ export async function orchestrateBooking(args: OrchestrateBookingArgs): Promise<
       tenantId: args.tenantId,
       waUserId: args.waUserId,
       text: args.text,
+      language: args.language,
     });
 
     return {
@@ -161,6 +165,7 @@ export async function orchestrateBooking(args: OrchestrateBookingArgs): Promise<
       tenantId: args.tenantId,
       waUserId: args.waUserId,
       text: args.text,
+      language: args.language,
     });
 
     return {
@@ -174,6 +179,7 @@ export async function orchestrateBooking(args: OrchestrateBookingArgs): Promise<
       tenantId: args.tenantId,
       waUserId: args.waUserId,
       text: args.text,
+      language: args.language,
     });
 
     return {
@@ -189,6 +195,7 @@ export async function orchestrateBooking(args: OrchestrateBookingArgs): Promise<
       waUserId: args.waUserId,
       bookingDraftId: draft._id,
       bookingQuestions: draft.bookingQuestions,
+      language: args.language,
     });
 
     // If no questions, orchestrator will re-run with nextStep: confirm
@@ -240,6 +247,7 @@ export async function orchestrateBooking(args: OrchestrateBookingArgs): Promise<
       text: args.text,
       bookingQuestions: draft.bookingQuestions,
       bookingAnswers: draft.bookingAnswers,
+      language: args.language,
     });
 
     return {
@@ -253,6 +261,7 @@ export async function orchestrateBooking(args: OrchestrateBookingArgs): Promise<
       tenantId: args.tenantId,
       waUserId: args.waUserId,
       text: args.text,
+      language: args.language,
     });
 
     return {

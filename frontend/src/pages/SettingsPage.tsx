@@ -25,6 +25,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Copy, RefreshCw, UserMinus, Pencil, Save } from "lucide-react";
+import { useI18n } from "@/i18n";
 
 function formatDate(ts: number) {
   return new Date(ts).toLocaleDateString("pt-BR", {
@@ -1076,21 +1077,22 @@ function AssinaturaTab({ tenantId }: { tenantId: string }) {
 
 const SettingsPage = () => {
   const { tenantId } = useTenant();
+  const { t } = useI18n();
   const [tab, setTab] = useState("whatsapp");
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Configurações</h1>
+      <h1 className="text-2xl font-bold">{t("settings.title")}</h1>
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
-          <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
-          <TabsTrigger value="telegram">Telegram</TabsTrigger>
-          <TabsTrigger value="bokun">Bokun</TabsTrigger>
-          <TabsTrigger value="ia">IA</TabsTrigger>
-          <TabsTrigger value="equipe">Equipe</TabsTrigger>
-          <TabsTrigger value="perfil">Perfil</TabsTrigger>
-          <TabsTrigger value="assinatura">Assinatura</TabsTrigger>
+          <TabsTrigger value="whatsapp">{t("settings.tabs.whatsapp")}</TabsTrigger>
+          <TabsTrigger value="telegram">{t("settings.tabs.telegram")}</TabsTrigger>
+          <TabsTrigger value="bokun">{t("settings.tabs.bokun")}</TabsTrigger>
+          <TabsTrigger value="ia">{t("settings.tabs.ia")}</TabsTrigger>
+          <TabsTrigger value="equipe">{t("settings.tabs.team")}</TabsTrigger>
+          <TabsTrigger value="perfil">{t("settings.tabs.profile")}</TabsTrigger>
+          <TabsTrigger value="assinatura">{t("settings.tabs.subscription")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="whatsapp">

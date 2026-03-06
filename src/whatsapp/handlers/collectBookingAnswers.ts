@@ -1,5 +1,7 @@
 import { getConvexClient } from "../../convex/client.ts";
 import type { Id } from "../../../convex/_generated/dataModel.ts";
+import type { SupportedLanguage } from "../../i18n.ts";
+import { byLanguage } from "../../i18n.ts";
 
 export type CollectBookingAnswersArgs = {
     tenantId: Id<"tenants">;
@@ -8,6 +10,7 @@ export type CollectBookingAnswersArgs = {
     text: string;
     bookingQuestions?: string; // JSON-stringified BookingQuestion[]
     bookingAnswers?: string;   // JSON-stringified { [questionId]: answer }
+    language?: SupportedLanguage;
 };
 
 export type CollectBookingAnswersResult = {
@@ -33,7 +36,11 @@ export async function collectBookingAnswers(
     if (!args.bookingQuestions || args.bookingQuestions.trim().length === 0) {
         return {
             handled: true,
-            text: "Nenhuma pergunta configurada. Avançando para confirmação.",
+            text: byLanguage(args.language, {
+                pt: "Nenhuma pergunta configurada. Avançando para confirmação.",
+                en: "No questions configured. Moving to confirmation.",
+                es: "No hay preguntas configuradas. Avanzando a la confirmación.",
+            }),
         };
     }
 
@@ -43,14 +50,22 @@ export async function collectBookingAnswers(
     } catch {
         return {
             handled: true,
-            text: "Erro ao processar perguntas. Avançando para confirmação.",
+            text: byLanguage(args.language, {
+                pt: "Erro ao processar perguntas. Avançando para confirmação.",
+                en: "Error processing questions. Moving to confirmation.",
+                es: "Error al procesar preguntas. Avanzando a la confirmación.",
+            }),
         };
     }
 
     if (!Array.isArray(questions) || questions.length === 0) {
         return {
             handled: true,
-            text: "Nenhuma pergunta configurada. Avançando para confirmação.",
+            text: byLanguage(args.language, {
+                pt: "Nenhuma pergunta configurada. Avançando para confirmação.",
+                en: "No questions configured. Moving to confirmation.",
+                es: "No hay preguntas configuradas. Avanzando a la confirmación.",
+            }),
         };
     }
 
@@ -76,7 +91,11 @@ export async function collectBookingAnswers(
 
         return {
             handled: true,
-            text: "✅ Perguntas respondidas! Vamos confirmar sua reserva.",
+            text: byLanguage(args.language, {
+                pt: "✅ Perguntas respondidas! Vamos confirmar sua reserva.",
+                en: "✅ Questions answered! Let's confirm your booking.",
+                es: "✅ ¡Preguntas respondidas! Vamos a confirmar tu reserva.",
+            }),
         };
     }
 
@@ -84,7 +103,7 @@ export async function collectBookingAnswers(
     const userInput = args.text.trim();
 
     // Check for skip
-    if (!currentQuestion.required && /^(pular|skip|próxima|next)$/i.test(userInput)) {
+    if (!currentQuestion.required && /^(pular|skip|próxima|proxima|next|saltar)$/i.test(userInput)) {
         answers[String(currentQuestion.id)] = "";
 
         // Check if more questions remain
@@ -102,7 +121,11 @@ export async function collectBookingAnswers(
 
             return {
                 handled: true,
-                text: "✅ Perguntas respondidas! Vamos confirmar sua reserva.",
+                text: byLanguage(args.language, {
+                    pt: "✅ Perguntas respondidas! Vamos confirmar sua reserva.",
+                    en: "✅ Questions answered! Let's confirm your booking.",
+                    es: "✅ ¡Preguntas respondidas! Vamos a confirmar tu reserva.",
+                }),
             };
         }
 
@@ -110,16 +133,16 @@ export async function collectBookingAnswers(
         const nextQuestion = questions[nextUnansweredIndex];
         return {
             handled: true,
-            text: formatQuestion(nextQuestion, nextUnansweredIndex + 1, questions.length),
+            text: formatQuestion(nextQuestion, nextUnansweredIndex + 1, questions.length, args.language),
         };
     }
 
     // Validate answer
-    const validation = validateAnswer(userInput, currentQuestion);
+    const validation = validateAnswer(userInput, currentQuestion, args.language);
     if (!validation.valid) {
         return {
             handled: true,
-            text: `❌ ${validation.error}\n\n${formatQuestion(currentQuestion, unansweredIndex + 1, questions.length)}`,
+            text: `❌ ${validation.error}\n\n${formatQuestion(currentQuestion, unansweredIndex + 1, questions.length, args.language)}`,
         };
     }
 
@@ -141,7 +164,11 @@ export async function collectBookingAnswers(
 
         return {
             handled: true,
-            text: "✅ Perguntas respondidas! Vamos confirmar sua reserva.",
+            text: byLanguage(args.language, {
+                pt: "✅ Perguntas respondidas! Vamos confirmar sua reserva.",
+                en: "✅ Questions answered! Let's confirm your booking.",
+                es: "✅ ¡Preguntas respondidas! Vamos a confirmar tu reserva.",
+            }),
         };
     }
 
@@ -149,17 +176,25 @@ export async function collectBookingAnswers(
     const nextQuestion = questions[nextUnansweredIndex];
     return {
         handled: true,
-        text: formatQuestion(nextQuestion, nextUnansweredIndex + 1, questions.length),
+        text: formatQuestion(nextQuestion, nextUnansweredIndex + 1, questions.length, args.language),
     };
 }
 
 function validateAnswer(
     input: string,
-    question: BookingQuestion
+    question: BookingQuestion,
+    language?: SupportedLanguage
 ): { valid: boolean; value?: string; error?: string } {
     if (input.length === 0) {
         if (question.required) {
-            return { valid: false, error: "Esta pergunta é obrigatória." };
+            return {
+                valid: false,
+                error: byLanguage(language, {
+                    pt: "Esta pergunta é obrigatória.",
+                    en: "This question is required.",
+                    es: "Esta pregunta es obligatoria.",
+                }),
+            };
         }
         return { valid: true, value: "" };
     }
@@ -168,7 +203,14 @@ function validateAnswer(
         case "NUMBER":
             const num = Number(input);
             if (isNaN(num) || !isFinite(num)) {
-                return { valid: false, error: "Por favor, envie um número válido." };
+                return {
+                    valid: false,
+                    error: byLanguage(language, {
+                        pt: "Por favor, envie um número válido.",
+                        en: "Please send a valid number.",
+                        es: "Por favor, envía un número válido.",
+                    }),
+                };
             }
             return { valid: true, value: String(num) };
 
@@ -180,7 +222,17 @@ function validateAnswer(
             if (/^(não|nao|no|n|false|0)$/.test(normalized)) {
                 return { valid: true, value: "false" };
             }
-            return { valid: false, error: "Por favor, responda com 'sim' ou 'não'." };
+            if (/^(sí|si)$/.test(normalized)) {
+                return { valid: true, value: "true" };
+            }
+            return {
+                valid: false,
+                error: byLanguage(language, {
+                    pt: "Por favor, responda com 'sim' ou 'não'.",
+                    en: "Please answer with 'yes' or 'no'.",
+                    es: "Por favor, responde con 'sí' o 'no'.",
+                }),
+            };
 
         case "SELECT":
             if (!question.options || question.options.length === 0) {
@@ -206,7 +258,11 @@ function validateAnswer(
 
             return {
                 valid: false,
-                error: `Por favor, escolha uma das opções (1-${question.options.length}).`,
+                error: byLanguage(language, {
+                    pt: `Por favor, escolha uma das opções (1-${question.options.length}).`,
+                    en: `Please choose one of the options (1-${question.options.length}).`,
+                    es: `Por favor, elige una de las opciones (1-${question.options.length}).`,
+                }),
             };
 
         case "DATE":
@@ -214,7 +270,11 @@ function validateAnswer(
             if (!/^\d{4}-\d{2}-\d{2}$/.test(input) && !/^\d{2}\/\d{2}\/\d{4}$/.test(input)) {
                 return {
                     valid: false,
-                    error: "Por favor, envie uma data válida (DD/MM/AAAA ou AAAA-MM-DD).",
+                    error: byLanguage(language, {
+                        pt: "Por favor, envie uma data válida (DD/MM/AAAA ou AAAA-MM-DD).",
+                        en: "Please send a valid date (DD/MM/YYYY or YYYY-MM-DD).",
+                        es: "Por favor, envía una fecha válida (DD/MM/AAAA o AAAA-MM-DD).",
+                    }),
                 };
             }
             return { valid: true, value: input };
@@ -225,18 +285,35 @@ function validateAnswer(
     }
 }
 
-function formatQuestion(question: BookingQuestion, index: number, total: number): string {
-    let text = `📋 Pergunta ${index}/${total}\n\n${question.question}`;
+function formatQuestion(
+    question: BookingQuestion,
+    index: number,
+    total: number,
+    language?: SupportedLanguage
+): string {
+    let text = `${byLanguage(language, {
+        pt: "📋 Pergunta",
+        en: "📋 Question",
+        es: "📋 Pregunta",
+    })} ${index}/${total}\n\n${question.question}`;
 
     if (question.type === "SELECT" && question.options && question.options.length > 0) {
-        text += "\n\nOpções:";
+        text += byLanguage(language, {
+            pt: "\n\nOpções:",
+            en: "\n\nOptions:",
+            es: "\n\nOpciones:",
+        });
         question.options.forEach((option, i) => {
             text += `\n${i + 1}. ${option}`;
         });
     }
 
     if (!question.required) {
-        text += "\n\n(Opcional - envie 'pular' para avançar)";
+        text += byLanguage(language, {
+            pt: "\n\n(Opcional - envie 'pular' para avançar)",
+            en: "\n\n(Optional - send 'skip' to continue)",
+            es: "\n\n(Opcional - envía 'saltar' para continuar)",
+        });
     }
 
     return text;

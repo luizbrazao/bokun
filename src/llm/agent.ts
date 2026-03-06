@@ -7,12 +7,15 @@ import { rootLogger } from "../lib/logger.ts";
 import { classifyLLMError } from "./errorClassifier.ts";
 import { detectReplyLanguageFromUserMessage } from "./language.ts";
 import type OpenAI from "openai";
+import type { SupportedLanguage } from "../i18n.ts";
+import { byLanguage, normalizeLanguage } from "../i18n.ts";
 
 export type RunLLMAgentArgs = {
     tenantId: string;
     waUserId: string;
     userMessage: string;
     channel?: "wa" | "tg";
+    language?: SupportedLanguage;
 };
 
 export type RunLLMAgentResult = {
@@ -92,8 +95,13 @@ export async function runLLMAgent(args: RunLLMAgentArgs): Promise<RunLLMAgentRes
     try {
         const config = await resolveOpenAIConfig(args.tenantId);
         if (!config) {
+            const lang = normalizeLanguage(args.language);
             return {
-                text: "O assistente de IA não está configurado. Peça ao administrador para adicionar a chave OpenAI nas configurações.",
+                text: byLanguage(lang, {
+                    pt: "O assistente de IA não está configurado. Peça ao administrador para adicionar a chave OpenAI nas configurações.",
+                    en: "The AI assistant is not configured. Ask an administrator to add the OpenAI key in settings.",
+                    es: "El asistente de IA no está configurado. Pide a un administrador que agregue la clave de OpenAI en configuración.",
+                }),
                 handled: true,
             };
         }
@@ -108,7 +116,7 @@ export async function runLLMAgent(args: RunLLMAgentArgs): Promise<RunLLMAgentRes
             "tenants:getTenantByIdForService" as any,
             { tenantId: args.tenantId, serviceToken } as any
         )) as { language?: string; timezone?: string } | null;
-        const tenantLanguage = tenantRecord?.language ?? "pt";
+        const tenantLanguage = normalizeLanguage(tenantRecord?.language ?? args.language ?? "pt");
         const userLanguageHint = detectReplyLanguageFromUserMessage(args.userMessage);
         const languageLockInstruction = buildLanguageLockInstruction(userLanguageHint);
 
@@ -301,7 +309,11 @@ export async function runLLMAgent(args: RunLLMAgentArgs): Promise<RunLLMAgentRes
         await saveMessages(args.tenantId, args.waUserId, messagesToSave);
 
         return {
-            text: fallbackText || "Desculpe, não consegui processar sua mensagem. Tente novamente.",
+            text: fallbackText || byLanguage(tenantLanguage, {
+                pt: "Desculpe, não consegui processar sua mensagem. Tente novamente.",
+                en: "Sorry, I couldn't process your message. Please try again.",
+                es: "Lo siento, no pude procesar tu mensaje. Inténtalo de nuevo.",
+            }),
             handled: true,
         };
     } catch (error) {
@@ -322,14 +334,24 @@ export async function runLLMAgent(args: RunLLMAgentArgs): Promise<RunLLMAgentRes
 
         // Graceful degradation: return a generic message instead of crashing
         if (classified.category === "auth" || classified.category === "config") {
+            const lang = normalizeLanguage(args.language);
             return {
-                text: "O assistente de IA está temporariamente indisponível por configuração. Peça ao administrador para revisar a integração OpenAI.",
+                text: byLanguage(lang, {
+                    pt: "O assistente de IA está temporariamente indisponível por configuração. Peça ao administrador para revisar a integração OpenAI.",
+                    en: "The AI assistant is temporarily unavailable due to configuration. Ask an administrator to review the OpenAI integration.",
+                    es: "El asistente de IA está temporalmente no disponible por configuración. Pide a un administrador revisar la integración de OpenAI.",
+                }),
                 handled: true,
             };
         }
 
+        const lang = normalizeLanguage(args.language);
         return {
-            text: "Desculpe, estou com dificuldades técnicas no momento. Tente novamente em alguns minutos.",
+            text: byLanguage(lang, {
+                pt: "Desculpe, estou com dificuldades técnicas no momento. Tente novamente em alguns minutos.",
+                en: "Sorry, I'm having technical difficulties right now. Please try again in a few minutes.",
+                es: "Lo siento, tengo dificultades técnicas en este momento. Inténtalo de nuevo en unos minutos.",
+            }),
             handled: true,
         };
     }

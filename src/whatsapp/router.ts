@@ -11,6 +11,7 @@ import {
   handleHandoffUserMessage,
 } from "./handlers/handoff.ts";
 import { getConvexServiceToken } from "../convex/client.ts";
+import { byLanguage, normalizeLanguage } from "../i18n.ts";
 
 export type RouteWhatsAppMessageArgs = OrchestrateBookingArgs & {
   channel?: "wa" | "tg";
@@ -60,11 +61,16 @@ export async function routeWhatsAppMessage(
   const tenant = await convex.query(
     "tenants:getTenantByIdForService" as any,
     { tenantId: args.tenantId, serviceToken } as any
-  ) as { status: string; stripeStatus?: string; stripeCurrentPeriodEnd?: number } | null;
+  ) as { status: string; stripeStatus?: string; stripeCurrentPeriodEnd?: number; language?: string } | null;
+  const language = normalizeLanguage(tenant?.language);
   if (tenant?.status === "disabled") {
     return {
       handled: true,
-      text: "O bot está temporariamente desativado. Por favor, contacte o operador para mais informações.",
+      text: byLanguage(language, {
+        pt: "O bot está temporariamente desativado. Por favor, contacte o operador para mais informações.",
+        en: "The bot is temporarily disabled. Please contact an operator for more information.",
+        es: "El bot está temporalmente desactivado. Por favor, contacta con un operador para más información.",
+      }),
     };
   }
 
@@ -77,7 +83,11 @@ export async function routeWhatsAppMessage(
     if (gated) {
       return {
         handled: true,
-        text: "O serviço de reservas está temporariamente indisponível. Por favor, acesse as configurações em /configuracoes → Assinatura para reativar a sua subscrição.",
+        text: byLanguage(language, {
+          pt: "O serviço de reservas está temporariamente indisponível. Por favor, acesse as configurações em /configuracoes → Assinatura para reativar a sua subscrição.",
+          en: "The booking service is temporarily unavailable. Please go to /configuracoes → Subscription to reactivate your plan.",
+          es: "El servicio de reservas está temporalmente no disponible. Ve a /configuracoes → Suscripción para reactivar tu plan.",
+        }),
       };
     }
   }
@@ -95,6 +105,7 @@ export async function routeWhatsAppMessage(
       waUserId: args.waUserId,
       text: args.text,
       channel,
+      language,
     });
   }
 
@@ -105,11 +116,12 @@ export async function routeWhatsAppMessage(
       waUserId: args.waUserId,
       text: args.text,
       channel,
+      language,
     });
   }
 
   // 1. Try deterministic booking state machine first
-  const bookingResult = await orchestrateBooking(args);
+  const bookingResult = await orchestrateBooking({ ...args, language });
   if (bookingResult.handled) {
     return bookingResult;
   }
@@ -119,5 +131,6 @@ export async function routeWhatsAppMessage(
     tenantId: args.tenantId,
     waUserId: args.waUserId,
     userMessage: args.text,
+    language,
   });
 }

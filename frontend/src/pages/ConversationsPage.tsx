@@ -22,23 +22,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Search } from "lucide-react";
+import { formatTimeAgo, useI18n } from "@/i18n";
 
 const PAGE_SIZE = 50;
-
-function timeAgo(ts: number): string {
-  const diff = Date.now() - ts;
-  const min = Math.floor(diff / 60000);
-  if (min < 1) return "agora";
-  if (min < 60) return `há ${min} min`;
-  const hours = Math.floor(min / 60);
-  if (hours < 24) return `há ${hours}h`;
-  const days = Math.floor(hours / 24);
-  return `há ${days}d`;
-}
 
 const ConversationsPage = () => {
   const { tenantId } = useTenant();
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -49,13 +40,10 @@ const ConversationsPage = () => {
     tenantId ? { tenantId } : "skip",
   );
 
-  // DASH-03: filter by waUserId (customer phone), then by date range, then paginate
   const filtered = conversations?.filter((c) => {
-    // 1. Filter by waUserId (text search — satisfies DASH-03 text search requirement)
     if (search && !c.waUserId.toLowerCase().includes(search.toLowerCase())) {
       return false;
     }
-    // 2. Filter by date range
     if (dateFrom && c.updatedAt < new Date(dateFrom).getTime()) {
       return false;
     }
@@ -78,18 +66,18 @@ const ConversationsPage = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Conversas</h1>
+      <h1 className="text-2xl font-bold">{t("conversations.title")}</h1>
 
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <CardTitle className="text-lg">Conversas WhatsApp</CardTitle>
+            <CardTitle className="text-lg">{t("conversations.whatsAppTitle")}</CardTitle>
           </div>
           <div className="flex flex-wrap gap-3 items-end mt-2">
             <div className="relative flex-1 min-w-[200px] max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por número do cliente..."
+                placeholder={t("conversations.searchPlaceholder")}
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -100,7 +88,7 @@ const ConversationsPage = () => {
             </div>
             <div className="flex items-end gap-2">
               <div className="flex flex-col gap-1">
-                <Label className="text-xs text-muted-foreground">De:</Label>
+                <Label className="text-xs text-muted-foreground">{t("conversations.from")}</Label>
                 <Input
                   type="date"
                   value={dateFrom}
@@ -112,7 +100,7 @@ const ConversationsPage = () => {
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <Label className="text-xs text-muted-foreground">Até:</Label>
+                <Label className="text-xs text-muted-foreground">{t("conversations.to")}</Label>
                 <Input
                   type="date"
                   value={dateTo}
@@ -130,7 +118,7 @@ const ConversationsPage = () => {
                   onClick={clearDates}
                   className="h-9"
                 >
-                  Limpar
+                  {t("conversations.clear")}
                 </Button>
               )}
             </div>
@@ -145,17 +133,17 @@ const ConversationsPage = () => {
             </div>
           ) : paginated && paginated.length === 0 ? (
             <p className="text-muted-foreground text-center py-8">
-              Nenhuma conversa encontrada.
+              {t("conversations.none")}
             </p>
           ) : (
             <>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>Última mensagem</TableHead>
-                    <TableHead>Última atividade</TableHead>
-                    <TableHead>Atualizado</TableHead>
+                    <TableHead>{t("conversations.client")}</TableHead>
+                    <TableHead>{t("conversations.lastMessage")}</TableHead>
+                    <TableHead>{t("conversations.lastActivity")}</TableHead>
+                    <TableHead>{t("conversations.updated")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -173,7 +161,7 @@ const ConversationsPage = () => {
                       <TableCell className="max-w-[250px]">
                         {c.lastMessage ? (
                           <span className="text-xs text-muted-foreground truncate block">
-                            {c.lastMessage.role === "user" ? "Cliente: " : "Bot: "}
+                            {c.lastMessage.role === "user" ? t("conversations.customerPrefix") : t("conversations.botPrefix")}
                             {c.lastMessage.content}
                           </span>
                         ) : (
@@ -184,18 +172,21 @@ const ConversationsPage = () => {
                         {c.lastActivityId ?? "-"}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
-                        {timeAgo(c.updatedAt)}
+                        {formatTimeAgo(t, c.updatedAt)}
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
 
-              {/* Pagination controls — shown only when more than PAGE_SIZE items */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between mt-4">
                   <span className="text-sm text-muted-foreground">
-                    Página {page + 1} de {totalPages} ({filtered?.length} conversas)
+                    {t("conversations.pageInfo", {
+                      page: page + 1,
+                      total: totalPages,
+                      count: filtered?.length ?? 0,
+                    })}
                   </span>
                   <div className="flex gap-2">
                     <Button
@@ -204,7 +195,7 @@ const ConversationsPage = () => {
                       disabled={page === 0}
                       onClick={() => setPage((p) => p - 1)}
                     >
-                      Anterior
+                      {t("common.previous")}
                     </Button>
                     <Button
                       variant="outline"
@@ -212,7 +203,7 @@ const ConversationsPage = () => {
                       disabled={page >= totalPages - 1}
                       onClick={() => setPage((p) => p + 1)}
                     >
-                      Próxima
+                      {t("common.next")}
                     </Button>
                   </div>
                 </div>

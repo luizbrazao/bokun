@@ -2,11 +2,14 @@
 import { handleListPickupPlaces } from "./listPickupPlaces.ts";
 import { handleSelectTime } from "./selectTime.ts";
 import { getConvexClient } from "../../convex/client.ts";
+import type { SupportedLanguage } from "../../i18n.ts";
+import { byLanguage } from "../../i18n.ts";
 
 export type HandleAfterSelectTimeArgs = {
   tenantId: string;
   waUserId: string;
   text: string;
+  language?: SupportedLanguage;
 };
 
 export type HandleAfterSelectTimeResult = {
@@ -24,6 +27,7 @@ export async function handleAfterSelectTime(
     tenantId: args.tenantId,
     waUserId: args.waUserId,
     text: args.text,
+    language: args.language,
   });
 
   if (!selected.ok) {
@@ -36,6 +40,7 @@ export async function handleAfterSelectTime(
     const pickup = await handleListPickupPlaces({
       tenantId: args.tenantId,
       waUserId: args.waUserId,
+      language: args.language,
     });
 
     return {
@@ -68,7 +73,11 @@ export async function handleAfterSelectTime(
     }
 
     return {
-      text: [selected.text, "Quantas pessoas vão participar? (ex: 2)"].join("\n\n"),
+      text: [selected.text, byLanguage(args.language, {
+        pt: "Quantas pessoas vão participar? (ex: 2)",
+        en: "How many participants will join? (e.g., 2)",
+        es: "¿Cuántas personas van a participar? (ej.: 2)",
+      })].join("\n\n"),
     };
   }
 

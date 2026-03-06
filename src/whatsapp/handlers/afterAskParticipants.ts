@@ -1,11 +1,14 @@
 import { getConvexClient } from "../../convex/client.ts";
 import { bokunGetActivityQuestionsForTenant } from "../../bokun/gateway.ts";
 import { rootLogger } from "../../lib/logger.ts";
+import type { SupportedLanguage } from "../../i18n.ts";
+import { byLanguage } from "../../i18n.ts";
 
 export type HandleAfterAskParticipantsArgs = {
   tenantId: string;
   waUserId: string;
   text: string;
+  language?: SupportedLanguage;
 };
 
 export type HandleAfterAskParticipantsResult = {
@@ -37,7 +40,11 @@ export async function handleAfterAskParticipants(
   const participants = parseParticipants(String(args.text ?? "").trim());
   if (participants === null) {
     return {
-      text: "Digite um número de participantes (ex: 2).",
+      text: byLanguage(args.language, {
+        pt: "Digite um número de participantes (ex: 2).",
+        en: "Enter the number of participants (e.g., 2).",
+        es: "Escribe el número de participantes (ej.: 2).",
+      }),
     };
   }
 
@@ -52,7 +59,11 @@ export async function handleAfterAskParticipants(
 
   if (!draft?._id) {
     return {
-      text: "Não encontrei uma reserva em andamento. Me diga atividade e data para continuar.",
+      text: byLanguage(args.language, {
+        pt: "Não encontrei uma reserva em andamento. Me diga atividade e data para continuar.",
+        en: "I couldn't find an ongoing booking. Tell me the activity and date to continue.",
+        es: "No encontré una reserva en curso. Dime la actividad y la fecha para continuar.",
+      }),
     };
   }
 
@@ -103,6 +114,10 @@ export async function handleAfterAskParticipants(
 
   // No questions or fetch failed — go straight to confirm
   return {
-    text: "Perfeito. Confirma a reserva? (sim/não)",
+    text: byLanguage(args.language, {
+      pt: "Perfeito. Confirma a reserva? (sim/não)",
+      en: "Perfect. Do you confirm the booking? (yes/no)",
+      es: "Perfecto. ¿Confirmas la reserva? (sí/no)",
+    }),
   };
 }

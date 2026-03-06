@@ -15,8 +15,10 @@ import {
 } from "@/components/ui/card";
 import { KeyRound, LogOut, Building2, PlusCircle } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
+import { useI18n } from "@/i18n";
 
 const Onboarding = () => {
+  const { t } = useI18n();
   const { hasTenant, isLoading: isTenantLoading } = useTenant();
   const { isAuthenticated, isLoading: isAuthLoading } = useConvexAuth();
   const navigate = useNavigate();
@@ -41,7 +43,7 @@ const Onboarding = () => {
     e.preventDefault();
     setError(null);
     if (!isSessionReady) {
-      setError("Sessão ainda sincronizando. Aguarde alguns segundos e tente novamente.");
+      setError(t("onboarding.errorSyncing"));
       return;
     }
     setLoading(true);
@@ -52,11 +54,11 @@ const Onboarding = () => {
     } catch (err) {
       const raw = err instanceof Error ? err.message : String(err);
       if (raw.includes("inválido") || raw.includes("invalid")) {
-        setError("Código de convite inválido. Verifique e tente novamente.");
+        setError(t("onboarding.errorInviteInvalid"));
       } else if (raw.includes("já está vinculado")) {
-        setError("Você já está vinculado a uma empresa.");
+        setError(t("onboarding.errorAlreadyLinked"));
       } else {
-        setError("Erro ao vincular empresa. Tente novamente.");
+        setError(t("onboarding.errorJoin"));
       }
       setLoading(false);
     }
@@ -66,7 +68,7 @@ const Onboarding = () => {
     e.preventDefault();
     setError(null);
     if (!isSessionReady) {
-      setError("Sessão ainda sincronizando. Aguarde alguns segundos e tente novamente.");
+      setError(t("onboarding.errorSyncing"));
       return;
     }
     setLoading(true);
@@ -76,7 +78,7 @@ const Onboarding = () => {
       // Redirecionamento será tratado pelo useEffect
     } catch (err) {
       const raw = err instanceof Error ? err.message : String(err);
-      setError(raw.includes("vinculado") ? "Você já está vinculado a uma empresa." : "Erro ao criar empresa. Tente novamente.");
+      setError(raw.includes("vinculado") ? t("onboarding.errorAlreadyLinked") : t("onboarding.errorCreate"));
       setLoading(false);
     }
   };
@@ -105,14 +107,14 @@ const Onboarding = () => {
         <Card className="shadow-lg border-0">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">
-              {mode === "select" && "Bem-vindo"}
-              {mode === "create" && "Criar nova empresa"}
-              {mode === "join" && "Vincular empresa"}
+              {mode === "select" && t("onboarding.welcome")}
+              {mode === "create" && t("onboarding.createCompany")}
+              {mode === "join" && t("onboarding.joinCompany")}
             </CardTitle>
             <CardDescription>
-              {mode === "select" && "Configure sua conta para começar a gerenciar seu bot WhatsApp"}
-              {mode === "create" && "Comece definindo o nome da sua organização"}
-              {mode === "join" && "Digite o código de convite recebido no Bokun marketplace"}
+              {mode === "select" && t("onboarding.subtitleWelcome")}
+              {mode === "create" && t("onboarding.subtitleCreate")}
+              {mode === "join" && t("onboarding.subtitleJoin")}
             </CardDescription>
           </CardHeader>
 
@@ -127,8 +129,8 @@ const Onboarding = () => {
                 >
                   <PlusCircle className="h-6 w-6 text-primary group-hover:scale-110 transition-transform" />
                   <div className="flex flex-col">
-                    <span className="font-semibold text-base">Nova empresa</span>
-                    <span className="text-xs text-muted-foreground font-normal">Eu sou um novo vendor</span>
+                    <span className="font-semibold text-base">{t("onboarding.newCompany")}</span>
+                    <span className="text-xs text-muted-foreground font-normal">{t("onboarding.iAmNewVendor")}</span>
                   </div>
                 </Button>
 
@@ -140,8 +142,8 @@ const Onboarding = () => {
                 >
                   <KeyRound className="h-6 w-6 text-primary group-hover:scale-110 transition-transform" />
                   <div className="flex flex-col">
-                    <span className="font-semibold text-base">Já tenho um código</span>
-                    <span className="text-xs text-muted-foreground font-normal">Vincular a uma empresa existente</span>
+                    <span className="font-semibold text-base">{t("onboarding.haveCode")}</span>
+                    <span className="text-xs text-muted-foreground font-normal">{t("onboarding.joinExisting")}</span>
                   </div>
                 </Button>
               </div>
@@ -150,7 +152,7 @@ const Onboarding = () => {
             {mode === "create" && (
               <form onSubmit={handleCreate} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="tenantName">Nome da Empresa</Label>
+                  <Label htmlFor="tenantName">{t("onboarding.companyName")}</Label>
                   <div className="relative">
                     <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -159,7 +161,7 @@ const Onboarding = () => {
                       value={tenantName}
                       onChange={(e) => setTenantName(e.target.value)}
                       className="pl-10 h-12"
-                      placeholder="Ex: Minha Agência de Turismo"
+                      placeholder={t("onboarding.companyNamePlaceholder")}
                       required
                       disabled={loading || !isSessionReady}
                     />
@@ -168,10 +170,10 @@ const Onboarding = () => {
 
                 <div className="flex gap-3">
                   <Button variant="ghost" onClick={() => setMode("select")} disabled={loading} className="px-6 h-12">
-                    Voltar
+                    {t("onboarding.back")}
                   </Button>
                   <Button type="submit" className="flex-1 h-12" disabled={loading || !isSessionReady}>
-                    {loading ? "Criando..." : "Criar Empresa"}
+                    {loading ? t("onboarding.creating") : t("onboarding.createCompanyAction")}
                   </Button>
                 </div>
               </form>
@@ -180,7 +182,7 @@ const Onboarding = () => {
             {mode === "join" && (
               <form onSubmit={handleJoin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="inviteCode">Código de convite</Label>
+                  <Label htmlFor="inviteCode">{t("onboarding.inviteCode")}</Label>
                   <div className="relative">
                     <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -201,14 +203,14 @@ const Onboarding = () => {
 
                 <div className="flex gap-3">
                   <Button variant="ghost" onClick={() => setMode("select")} disabled={loading} className="px-6 h-12">
-                    Voltar
+                    {t("onboarding.back")}
                   </Button>
                   <Button
                     type="submit"
                     className="flex-1 h-12"
                     disabled={loading || inviteCode.length < 4 || !isSessionReady}
                   >
-                    {loading ? "Vinculando..." : "Vincular Empresa"}
+                    {loading ? t("onboarding.joining") : t("onboarding.joinCompanyAction")}
                   </Button>
                 </div>
               </form>
@@ -216,7 +218,7 @@ const Onboarding = () => {
 
             {!isSessionReady && (
               <p className="text-sm text-muted-foreground text-center">
-                Sincronizando sessão segura...
+                {t("onboarding.syncingSession")}
               </p>
             )}
 
@@ -232,7 +234,7 @@ const Onboarding = () => {
                 onClick={() => signOut()}
               >
                 <LogOut className="h-4 w-4 mr-2" />
-                Sair da conta
+                {t("onboarding.signOutAccount")}
               </Button>
             </div>
           </CardContent>

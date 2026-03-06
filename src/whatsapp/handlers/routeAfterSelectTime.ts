@@ -1,8 +1,11 @@
 import { getConvexClient } from "../../convex/client.ts";
+import type { SupportedLanguage } from "../../i18n.ts";
+import { byLanguage } from "../../i18n.ts";
 
 export type HandleRouteAfterSelectTimeArgs = {
   tenantId: string;
   waUserId: string;
+  language?: SupportedLanguage;
 };
 
 export type HandleRouteAfterSelectTimeResult = {
@@ -49,19 +52,31 @@ export async function handleRouteAfterSelectTime(
   if (!hasBookingDraftForPickup(draft)) {
     return {
       next: "skip_pickup",
-      text: "Preciso primeiro de atividade, data e horário.",
+      text: byLanguage(args.language, {
+        pt: "Preciso primeiro de atividade, data e horário.",
+        en: "I first need activity, date, and time.",
+        es: "Primero necesito actividad, fecha y horario.",
+      }),
     };
   }
 
   if (draft?.selectedPickupSelectionType === "UNAVAILABLE") {
     return {
       next: "skip_pickup",
-      text: "Perfeito. Não há pickup para essa atividade. Continuando…",
+      text: byLanguage(args.language, {
+        pt: "Perfeito. Não há pickup para essa atividade. Continuando…",
+        en: "Perfect. There is no pickup for this activity. Continuing…",
+        es: "Perfecto. No hay pickup para esta actividad. Continuando…",
+      }),
     };
   }
 
   return {
     next: "check_pickup",
-    text: "Beleza. Agora vou verificar se há pickup para essa atividade.",
+    text: byLanguage(args.language, {
+      pt: "Beleza. Agora vou verificar se há pickup para essa atividade.",
+      en: "Great. Now I'll check whether pickup is available for this activity.",
+      es: "Perfecto. Ahora voy a verificar si hay pickup para esta actividad.",
+    }),
   };
 }

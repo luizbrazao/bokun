@@ -1,9 +1,12 @@
 import { getConvexClient } from "../../convex/client.ts";
+import type { SupportedLanguage } from "../../i18n.ts";
+import { byLanguage } from "../../i18n.ts";
 
 export type HandleSelectPickupPlaceArgs = {
   tenantId: string;
   waUserId: string;
   text: string;
+  language?: SupportedLanguage;
 };
 
 export type HandleSelectPickupPlaceResult = {
@@ -70,7 +73,11 @@ export async function handleSelectPickupPlace(
   if (selectedIndex === null || selectedIndex < 1 || selectedIndex > 8) {
     return {
       ok: false,
-      text: "Responda com um número de 1 a 8.",
+      text: byLanguage(args.language, {
+        pt: "Responda com um número de 1 a 8.",
+        en: "Reply with a number from 1 to 8.",
+        es: "Responde con un número del 1 al 8.",
+      }),
     };
   }
 
@@ -86,7 +93,11 @@ export async function handleSelectPickupPlace(
   if (!conversation?.lastPickupOptionMap) {
     return {
       ok: false,
-      text: "Não encontrei uma lista recente de pickup. Vamos listar os locais novamente?",
+      text: byLanguage(args.language, {
+        pt: "Não encontrei uma lista recente de pickup. Vamos listar os locais novamente?",
+        en: "I couldn't find a recent pickup list. Shall we list pickup places again?",
+        es: "No encontré una lista reciente de pickup. ¿Volvemos a listar los puntos de pickup?",
+      }),
       selectedIndex,
     };
   }
@@ -106,7 +117,11 @@ export async function handleSelectPickupPlace(
 
     return {
       ok: false,
-      text: "Essa lista de pickup expirou. Vamos listar os locais novamente?",
+      text: byLanguage(args.language, {
+        pt: "Essa lista de pickup expirou. Vamos listar os locais novamente?",
+        en: "This pickup list has expired. Shall we list pickup places again?",
+        es: "Esta lista de pickup caducó. ¿Volvemos a listar los puntos de pickup?",
+      }),
       selectedIndex,
     };
   }
@@ -115,7 +130,11 @@ export async function handleSelectPickupPlace(
   if (!resolved.found) {
     return {
       ok: false,
-      text: "Não reconheci essa opção. Escolha um número das opções enviadas.",
+      text: byLanguage(args.language, {
+        pt: "Não reconheci essa opção. Escolha um número das opções enviadas.",
+        en: "I didn't recognize that option. Choose a number from the sent options.",
+        es: "No reconocí esa opción. Elige un número de las opciones enviadas.",
+      }),
       selectedIndex,
     };
   }
@@ -123,7 +142,11 @@ export async function handleSelectPickupPlace(
   if (resolved.pickupPlaceId === undefined) {
     return {
       ok: false,
-      text: "Esse local não está selecionável. Vamos listar novamente?",
+      text: byLanguage(args.language, {
+        pt: "Esse local não está selecionável. Vamos listar novamente?",
+        en: "That pickup location is no longer selectable. Shall we list again?",
+        es: "Ese punto de pickup ya no se puede seleccionar. ¿Volvemos a listar?",
+      }),
       selectedIndex,
     };
   }
@@ -147,7 +170,11 @@ export async function handleSelectPickupPlace(
 
   return {
     ok: true,
-    text: `Perfeito. Vou usar o pickup ${selectedIndex}. Continuando…`,
+    text: byLanguage(args.language, {
+      pt: `Perfeito. Vou usar o pickup ${selectedIndex}. Continuando…`,
+      en: `Perfect. I'll use pickup ${selectedIndex}. Continuing…`,
+      es: `Perfecto. Usaré el pickup ${selectedIndex}. Continuando…`,
+    }),
     pickupPlaceId: resolved.pickupPlaceId,
     selectedIndex,
   };

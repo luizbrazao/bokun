@@ -1,10 +1,13 @@
 import { getConvexClient } from "../../convex/client.ts";
 import rootLogger from "../../lib/logger.ts";
+import type { SupportedLanguage } from "../../i18n.ts";
+import { byLanguage } from "../../i18n.ts";
 
 export type HandleAfterConfirmArgs = {
   tenantId: string;
   waUserId: string;
   text: string;
+  language?: SupportedLanguage;
 };
 
 export type HandleAfterConfirmResult = {
@@ -42,7 +45,7 @@ export function parseConfirmationIntent(text: string): "confirm" | "cancel" | "i
     return "invalid";
   }
 
-  if (["sim", "s", "yes", "y"].includes(normalized)) {
+  if (["sim", "s", "yes", "y", "si", "sí"].includes(normalized)) {
     return "confirm";
   }
 
@@ -53,18 +56,36 @@ export function parseConfirmationIntent(text: string): "confirm" | "cancel" | "i
   return "invalid";
 }
 
-function buildConfirmedText(result: CreateBookingFromDraftResult): string {
+function buildConfirmedText(result: CreateBookingFromDraftResult, language?: SupportedLanguage): string {
+  const codeLabel = byLanguage(language, {
+    pt: "Código",
+    en: "Code",
+    es: "Código",
+  });
+  const linkLabel = byLanguage(language, {
+    pt: "Link",
+    en: "Link",
+    es: "Enlace",
+  });
   const parts = [
     result?.bokunBookingId ? `Booking ID: ${result.bokunBookingId}` : undefined,
-    result?.bokunConfirmationCode ? `Código: ${result.bokunConfirmationCode}` : undefined,
-    result?.bokunBookingUrl ? `Link: ${result.bokunBookingUrl}` : undefined,
+    result?.bokunConfirmationCode ? `${codeLabel}: ${result.bokunConfirmationCode}` : undefined,
+    result?.bokunBookingUrl ? `${linkLabel}: ${result.bokunBookingUrl}` : undefined,
   ].filter((part): part is string => part !== undefined);
 
   if (parts.length === 0) {
-    return "Perfeito. Reserva confirmada e enviada para a Bokun.";
+    return byLanguage(language, {
+      pt: "Perfeito. Reserva confirmada e enviada para a Bokun.",
+      en: "Perfect. Booking confirmed and sent to Bokun.",
+      es: "Perfecto. Reserva confirmada y enviada a Bokun.",
+    });
   }
 
-  return `Perfeito. Reserva confirmada e enviada para a Bokun. ${parts.join(" | ")}`;
+  return byLanguage(language, {
+    pt: `Perfeito. Reserva confirmada e enviada para a Bokun. ${parts.join(" | ")}`,
+    en: `Perfect. Booking confirmed and sent to Bokun. ${parts.join(" | ")}`,
+    es: `Perfecto. Reserva confirmada y enviada a Bokun. ${parts.join(" | ")}`,
+  });
 }
 
 export async function handleAfterConfirmWithDeps(
@@ -74,7 +95,11 @@ export async function handleAfterConfirmWithDeps(
   const intent = parseConfirmationIntent(String(args.text ?? ""));
   if (intent === "invalid") {
     return {
-      text: "Responda com sim ou não.",
+      text: byLanguage(args.language, {
+        pt: "Responda com sim ou não.",
+        en: "Please reply with yes or no.",
+        es: "Responde con sí o no.",
+      }),
     };
   }
 
@@ -85,7 +110,11 @@ export async function handleAfterConfirmWithDeps(
 
   if (!draft?._id) {
     return {
-      text: "Não encontrei uma reserva em andamento. Me diga atividade e data para continuar.",
+      text: byLanguage(args.language, {
+        pt: "Não encontrei uma reserva em andamento. Me diga atividade e data para continuar.",
+        en: "I couldn't find an ongoing booking. Tell me the activity and date to continue.",
+        es: "No encontré una reserva en curso. Dime la actividad y la fecha para continuar.",
+      }),
     };
   }
 
@@ -103,7 +132,11 @@ export async function handleAfterConfirmWithDeps(
       rootLogger.warn({ tenantId: args.tenantId, handler: "afterConfirm" }, "audit_log_write_failed");
     }
     return {
-      text: "Ok, cancelei. Me diga atividade e data para recomeçar.",
+      text: byLanguage(args.language, {
+        pt: "Ok, cancelei. Me diga atividade e data para recomeçar.",
+        en: "Okay, cancelled. Tell me the activity and date to start again.",
+        es: "Listo, cancelado. Dime la actividad y la fecha para empezar de nuevo.",
+      }),
     };
   }
 
@@ -125,11 +158,15 @@ export async function handleAfterConfirmWithDeps(
       rootLogger.warn({ tenantId: args.tenantId, handler: "afterConfirm" }, "audit_log_write_failed");
     }
     return {
-      text: buildConfirmedText(booking),
+      text: buildConfirmedText(booking, args.language),
     };
   } catch {
     return {
-      text: "Reserva confirmada internamente, mas falhou ao criar booking na Bokun. Tente novamente em instantes.",
+      text: byLanguage(args.language, {
+        pt: "Reserva confirmada internamente, mas falhou ao criar booking na Bokun. Tente novamente em instantes.",
+        en: "Booking confirmed internally, but creating it in Bokun failed. Please try again shortly.",
+        es: "La reserva se confirmó internamente, pero falló al crearla en Bokun. Inténtalo de nuevo en breve.",
+      }),
     };
   }
 }

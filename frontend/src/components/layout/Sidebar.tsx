@@ -5,15 +5,7 @@ import { api } from "@convex/api";
 import { LayoutDashboard, BookOpen, MessageSquare, Headset, Settings, LogOut, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-const navItems = [
-  { to: "/overview", label: "Visão Geral", icon: LayoutDashboard },
-  { to: "/reservas", label: "Reservas", icon: BookOpen },
-  { to: "/conversas", label: "Conversas", icon: MessageSquare },
-  { to: "/webhooks", label: "Webhooks", icon: AlertTriangle },
-  { to: "/atendimento", label: "Atendimento", icon: Headset, showBadge: true },
-  { to: "/configuracoes", label: "Configurações", icon: Settings },
-];
+import { type Locale, useI18n } from "@/i18n";
 
 interface SidebarProps {
   tenantName: string;
@@ -22,6 +14,16 @@ interface SidebarProps {
 
 export function Sidebar({ tenantName, tenantId }: SidebarProps) {
   const { signOut } = useAuthActions();
+  const { t, locale, setLocale } = useI18n();
+
+  const navItems = [
+    { to: "/overview", label: t("sidebar.overview"), icon: LayoutDashboard },
+    { to: "/reservas", label: t("sidebar.bookings"), icon: BookOpen },
+    { to: "/conversas", label: t("sidebar.conversations"), icon: MessageSquare },
+    { to: "/webhooks", label: t("sidebar.webhooks"), icon: AlertTriangle },
+    { to: "/atendimento", label: t("sidebar.support"), icon: Headset, showBadge: true },
+    { to: "/configuracoes", label: t("sidebar.settings"), icon: Settings },
+  ];
 
   const handoffCount = useQuery(
     api.dashboard.countActiveHandoffs,
@@ -32,7 +34,7 @@ export function Sidebar({ tenantName, tenantId }: SidebarProps) {
     <aside className="flex h-screen w-64 flex-col border-r bg-card">
       <div className="border-b p-4">
         <h2 className="text-lg font-semibold truncate">{tenantName}</h2>
-        <p className="text-xs text-muted-foreground">Bokun WhatsApp Bot</p>
+        <p className="text-xs text-muted-foreground">{t("sidebar.appName")}</p>
       </div>
 
       <nav className="flex-1 space-y-1 p-3">
@@ -61,13 +63,25 @@ export function Sidebar({ tenantName, tenantId }: SidebarProps) {
       </nav>
 
       <div className="border-t p-3">
+        <label className="mb-2 block text-xs text-muted-foreground">
+          {t("common.language")}
+        </label>
+        <select
+          value={locale}
+          onChange={(e) => setLocale(e.target.value as Locale)}
+          className="mb-3 h-8 w-full rounded-md border border-input bg-background px-2 text-xs"
+        >
+          <option value="pt">Português</option>
+          <option value="en">English</option>
+          <option value="es">Español</option>
+        </select>
         <Button
           variant="ghost"
           className="w-full justify-start gap-3 text-muted-foreground"
           onClick={() => signOut()}
         >
           <LogOut className="h-4 w-4" />
-          Sair
+          {t("common.signOut")}
         </Button>
       </div>
     </aside>

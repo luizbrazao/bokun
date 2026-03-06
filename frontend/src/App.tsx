@@ -14,15 +14,19 @@ import FailedWebhooksPage from "./pages/FailedWebhooksPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsOfUsePage from "./pages/TermsOfUsePage";
 import { useTenant } from "./hooks/useTenant";
+import { useI18n } from "./i18n";
 
-const Spinner = () => (
-  <div className="min-h-screen flex items-center justify-center text-slate-400 bg-slate-50">
-    <div className="flex flex-col items-center gap-2">
-      <div className="h-5 w-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      <p className="text-sm font-medium animate-pulse">Sincronizando...</p>
+const Spinner = () => {
+  const { t } = useI18n();
+  return (
+    <div className="min-h-screen flex items-center justify-center text-slate-400 bg-slate-50">
+      <div className="flex flex-col items-center gap-2">
+        <div className="h-5 w-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm font-medium animate-pulse">{t("common.loadingSync")}</p>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // Guard: exige autenticação, mostra spinner enquanto carrega
 function RequireAuth() {

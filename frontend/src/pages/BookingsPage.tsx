@@ -1,4 +1,3 @@
-// DASH-04: All required columns present — confirmation code (bokunConfirmationCode), status, customer phone (waUserId), activity date (date).
 import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@convex/api";
@@ -29,33 +28,23 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Search } from "lucide-react";
+import { formatDateTimeByLocale, formatTimeAgo, useI18n } from "@/i18n";
 
 type StatusFilter = "all" | "confirmed" | "draft" | "abandoned";
 
-function statusBadge(status: string) {
+function statusBadge(status: string, t: (key: string) => string) {
   switch (status) {
     case "confirmed":
-      return <Badge variant="success">Confirmada</Badge>;
+      return <Badge variant="success">{t("overview.statusConfirmed")}</Badge>;
     case "abandoned":
-      return <Badge variant="warning">Abandonada</Badge>;
+      return <Badge variant="warning">{t("overview.statusAbandoned")}</Badge>;
     default:
-      return <Badge variant="secondary">Rascunho</Badge>;
+      return <Badge variant="secondary">{t("overview.statusDraft")}</Badge>;
   }
 }
 
-function timeAgo(ts: number): string {
-  const diff = Date.now() - ts;
-  const min = Math.floor(diff / 60000);
-  if (min < 1) return "agora";
-  if (min < 60) return `há ${min} min`;
-  const hours = Math.floor(min / 60);
-  if (hours < 24) return `há ${hours}h`;
-  const days = Math.floor(hours / 24);
-  return `há ${days}d`;
-}
-
-function formatDateTime(ts: number) {
-  return new Date(ts).toLocaleDateString("pt-BR", {
+function formatDateTime(locale: "pt" | "en" | "es", ts: number) {
+  return formatDateTimeByLocale(locale, ts, {
     day: "2-digit",
     month: "2-digit",
     year: "2-digit",
@@ -64,14 +53,14 @@ function formatDateTime(ts: number) {
   });
 }
 
-function nextStepLabel(step?: string) {
+function nextStepLabel(step: string | undefined, t: (key: string) => string) {
   const labels: Record<string, string> = {
-    select_time: "Selecionar horário",
-    select_pickup: "Selecionar pickup",
-    ask_participants: "Informar participantes",
-    ask_booking_questions: "Perguntas pré-reserva",
-    collect_booking_answers: "Coletando respostas",
-    confirm: "Aguardando confirmação",
+    select_time: t("bookings.stepSelectTime"),
+    select_pickup: t("bookings.stepSelectPickup"),
+    ask_participants: t("bookings.stepAskParticipants"),
+    ask_booking_questions: t("bookings.stepAskBookingQuestions"),
+    collect_booking_answers: t("bookings.stepCollectBookingAnswers"),
+    confirm: t("bookings.stepConfirm"),
   };
   return step ? labels[step] ?? step : "-";
 }
@@ -89,6 +78,7 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
 
 const BookingsPage = () => {
   const { tenantId } = useTenant();
+  const { locale, t } = useI18n();
   const bookings = useQuery(
     api.dashboard.listBookingDrafts,
     tenantId ? { tenantId } : "skip",
@@ -113,16 +103,16 @@ const BookingsPage = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Reservas</h1>
+      <h1 className="text-2xl font-bold">{t("bookings.title")}</h1>
 
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <CardTitle className="text-lg">Reservas</CardTitle>
+            <CardTitle className="text-lg">{t("bookings.title")}</CardTitle>
             <div className="relative flex-1 max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar cliente ou código..."
+                placeholder={t("bookings.searchPlaceholder")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9 h-9"
@@ -136,11 +126,11 @@ const BookingsPage = () => {
           >
             <TabsList>
               <TabsTrigger value="all">
-                Todas{bookings ? ` (${bookings.length})` : ""}
+                {t("common.all")}{bookings ? ` (${bookings.length})` : ""}
               </TabsTrigger>
-              <TabsTrigger value="confirmed">Confirmadas</TabsTrigger>
-              <TabsTrigger value="draft">Pendentes</TabsTrigger>
-              <TabsTrigger value="abandoned">Abandonadas</TabsTrigger>
+              <TabsTrigger value="confirmed">{t("bookings.confirmed")}</TabsTrigger>
+              <TabsTrigger value="draft">{t("bookings.pending")}</TabsTrigger>
+              <TabsTrigger value="abandoned">{t("bookings.abandoned")}</TabsTrigger>
             </TabsList>
           </Tabs>
         </CardHeader>
@@ -153,19 +143,19 @@ const BookingsPage = () => {
             </div>
           ) : filtered && filtered.length === 0 ? (
             <p className="text-muted-foreground text-center py-8">
-              Nenhuma reserva encontrada.
+              {t("bookings.none")}
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Atividade</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Participantes</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Código</TableHead>
-                  <TableHead>Atualizado</TableHead>
+                  <TableHead>{t("bookings.client")}</TableHead>
+                  <TableHead>{t("bookings.activity")}</TableHead>
+                  <TableHead>{t("bookings.date")}</TableHead>
+                  <TableHead>{t("bookings.participants")}</TableHead>
+                  <TableHead>{t("bookings.status")}</TableHead>
+                  <TableHead>{t("bookings.code")}</TableHead>
+                  <TableHead>{t("bookings.updated")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -183,12 +173,12 @@ const BookingsPage = () => {
                     </TableCell>
                     <TableCell>{b.date}</TableCell>
                     <TableCell>{b.participants ?? "-"}</TableCell>
-                    <TableCell>{statusBadge(b.status)}</TableCell>
+                    <TableCell>{statusBadge(b.status, t)}</TableCell>
                     <TableCell className="font-mono text-xs">
                       {b.bokunConfirmationCode ?? "-"}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {timeAgo(b.updatedAt)}
+                      {formatTimeAgo(t, b.updatedAt)}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -198,37 +188,36 @@ const BookingsPage = () => {
         </CardContent>
       </Card>
 
-      {/* Booking Detail Dialog */}
       <Dialog
         open={selectedBooking !== null}
         onOpenChange={(open) => !open && setSelectedBooking(null)}
       >
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Detalhes da Reserva</DialogTitle>
+            <DialogTitle>{t("bookings.detailsTitle")}</DialogTitle>
             <DialogDescription>
               {selectedBooking?.bokunConfirmationCode
                 ? `Código: ${selectedBooking.bokunConfirmationCode}`
-                : "Reserva em andamento"}
+                : t("bookings.reservationInProgress")}
             </DialogDescription>
           </DialogHeader>
           {selectedBooking && (
             <div className="space-y-1">
-              <InfoRow label="Cliente" value={`...${selectedBooking.waUserId.slice(-8)}`} />
-              <InfoRow label="Atividade" value={selectedBooking.activityId} />
-              <InfoRow label="Data" value={selectedBooking.date} />
-              <InfoRow label="Participantes" value={selectedBooking.participants} />
-              <InfoRow label="Status" value={statusBadge(selectedBooking.status)} />
-              <InfoRow label="Etapa atual" value={nextStepLabel(selectedBooking.nextStep)} />
-              <InfoRow label="Código Bokun" value={selectedBooking.bokunConfirmationCode} />
-              <InfoRow label="Booking ID" value={selectedBooking.bokunBookingId} />
-              <InfoRow label="Pickup" value={selectedBooking.pickupPlaceId} />
+              <InfoRow label={t("bookings.client")} value={`...${selectedBooking.waUserId.slice(-8)}`} />
+              <InfoRow label={t("bookings.activity")} value={selectedBooking.activityId} />
+              <InfoRow label={t("bookings.date")} value={selectedBooking.date} />
+              <InfoRow label={t("bookings.participants")} value={selectedBooking.participants} />
+              <InfoRow label={t("bookings.status")} value={statusBadge(selectedBooking.status, t)} />
+              <InfoRow label={t("bookings.currentStep")} value={nextStepLabel(selectedBooking.nextStep, t)} />
+              <InfoRow label={t("bookings.bokunCode")} value={selectedBooking.bokunConfirmationCode} />
+              <InfoRow label={t("bookings.bookingId")} value={selectedBooking.bokunBookingId} />
+              <InfoRow label={t("bookings.pickup")} value={selectedBooking.pickupPlaceId} />
               <InfoRow
-                label="Confirmado em"
-                value={selectedBooking.confirmedAt ? formatDateTime(selectedBooking.confirmedAt) : null}
+                label={t("bookings.confirmedAt")}
+                value={selectedBooking.confirmedAt ? formatDateTime(locale, selectedBooking.confirmedAt) : null}
               />
-              <InfoRow label="Criado em" value={formatDateTime(selectedBooking.createdAt)} />
-              <InfoRow label="Atualizado em" value={formatDateTime(selectedBooking.updatedAt)} />
+              <InfoRow label={t("bookings.createdAt")} value={formatDateTime(locale, selectedBooking.createdAt)} />
+              <InfoRow label={t("bookings.updatedAt")} value={formatDateTime(locale, selectedBooking.updatedAt)} />
             </div>
           )}
         </DialogContent>

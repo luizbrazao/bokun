@@ -2,12 +2,15 @@ import { getConvexClient } from "../../convex/client.ts";
 import { getConvexServiceToken } from "../../convex/client.ts";
 import { sendTelegramMessage } from "../../telegram/botClient.ts";
 import { rootLogger } from "../../lib/logger.ts";
+import type { SupportedLanguage } from "../../i18n.ts";
+import { byLanguage } from "../../i18n.ts";
 
 export type HandleHandoffArgs = {
   tenantId: string;
   waUserId: string;
   text: string;
   channel: "wa" | "tg";
+  language?: SupportedLanguage;
 };
 
 export type HandleHandoffResult = {
@@ -65,7 +68,11 @@ export async function handleStartHandoff(
 
   if (!tgChannel?.operatorGroupChatId || !tgChannel.botToken) {
     return {
-      text: "Desculpe, o atendimento humano não está disponível no momento. Posso tentar ajudar de outra forma?",
+      text: byLanguage(args.language, {
+        pt: "Desculpe, o atendimento humano não está disponível no momento. Posso tentar ajudar de outra forma?",
+        en: "Sorry, human support is not available right now. I can try to help in another way.",
+        es: "Lo siento, la atención humana no está disponible en este momento. Puedo intentar ayudarte de otra forma.",
+      }),
       handled: true,
     };
   }
@@ -100,7 +107,11 @@ export async function handleStartHandoff(
   if (!sendResult.ok) {
     rootLogger.error({ handler: "handoff", tenantId: args.tenantId, waUserId: args.waUserId, err: sendResult.error }, "Failed to send to operator group");
     return {
-      text: "Desculpe, houve um erro ao transferir para o atendente. Tente novamente.",
+      text: byLanguage(args.language, {
+        pt: "Desculpe, houve um erro ao transferir para o atendente. Tente novamente.",
+        en: "Sorry, there was an error transferring you to an agent. Please try again.",
+        es: "Lo siento, hubo un error al transferirte a un agente. Inténtalo de nuevo.",
+      }),
       handled: true,
     };
   }
@@ -118,7 +129,11 @@ export async function handleStartHandoff(
   );
 
   return {
-    text: "Transferindo para um atendente. Aguarde, em breve alguém vai responder.",
+    text: byLanguage(args.language, {
+      pt: "Transferindo para um atendente. Aguarde, em breve alguém vai responder.",
+      en: "Transferring you to an agent. Please wait, someone will reply shortly.",
+      es: "Te estoy transfiriendo a un agente. Espera, alguien responderá en breve.",
+    }),
     handled: true,
   };
 }

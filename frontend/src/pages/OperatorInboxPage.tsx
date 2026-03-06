@@ -9,35 +9,25 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Send, X, Headset } from "lucide-react";
+import { formatDateByLocale, formatTimeAgo, formatTimeByLocale, useI18n } from "@/i18n";
 
-function timeAgo(ts: number): string {
-  const diff = Date.now() - ts;
-  const min = Math.floor(diff / 60000);
-  if (min < 1) return "agora";
-  if (min < 60) return `há ${min} min`;
-  const hours = Math.floor(min / 60);
-  if (hours < 24) return `há ${hours}h`;
-  const days = Math.floor(hours / 24);
-  return `há ${days}d`;
-}
-
-function formatTime(ts: number) {
-  return new Date(ts).toLocaleTimeString("pt-BR", {
+function formatTime(locale: "pt" | "en" | "es", ts: number) {
+  return formatTimeByLocale(locale, ts, {
     hour: "2-digit",
     minute: "2-digit",
   });
 }
 
-function formatDate(ts: number) {
-  return new Date(ts).toLocaleDateString("pt-BR", {
+function formatDate(locale: "pt" | "en" | "es", ts: number) {
+  return formatDateByLocale(locale, ts, {
     day: "2-digit",
     month: "2-digit",
     year: "2-digit",
   });
 }
 
-function channelLabel(ch: string) {
-  return ch === "tg" ? "Telegram" : "WhatsApp";
+function channelLabel(ch: string, t: (key: string) => string) {
+  return ch === "tg" ? t("operatorInbox.channelTelegram") : t("operatorInbox.channelWhatsApp");
 }
 
 /* ─── Conversation List (left panel) ─── */
@@ -46,10 +36,12 @@ function ConversationList({
   handoffs,
   selectedUserId,
   onSelect,
+  t,
 }: {
   handoffs: any[] | undefined;
   selectedUserId: string | null;
   onSelect: (waUserId: string) => void;
+  t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   if (handoffs === undefined) {
     return (
@@ -66,7 +58,7 @@ function ConversationList({
       <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-6">
         <Headset className="h-10 w-10 mb-3 opacity-50" />
         <p className="text-sm text-center">
-          Nenhum atendimento ativo no momento.
+          {t("operatorInbox.noneActive")}
         </p>
       </div>
     );
@@ -88,16 +80,16 @@ function ConversationList({
               ...{h.waUserId.slice(-8)}
             </span>
             <span className="text-[10px] text-muted-foreground">
-              {timeAgo(h.updatedAt)}
+              {formatTimeAgo(t, h.updatedAt)}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-              {channelLabel(h.handoffChannel)}
+              {channelLabel(h.handoffChannel, t)}
             </Badge>
             {h.lastMessage && (
               <span className="text-xs text-muted-foreground truncate flex-1">
-                {h.lastMessage.role === "user" ? "" : "Operador: "}
+                {h.lastMessage.role === "user" ? "" : t("operatorInbox.operatorPrefix")}
                 {h.lastMessage.content}
               </span>
             )}
@@ -114,10 +106,14 @@ function ChatPanel({
   tenantId,
   waUserId,
   onResolved,
+  locale,
+  t,
 }: {
   tenantId: string;
   waUserId: string;
   onResolved: () => void;
+  locale: "pt" | "en" | "es";
+  t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
@@ -149,7 +145,7 @@ function ChatPanel({
       });
       setMessage("");
     } catch (err) {
-      console.error("Erro ao enviar:", err);
+      console.error(t("operatorInbox.sendError"), err);
     } finally {
       setSending(false);
     }
@@ -165,7 +161,7 @@ function ChatPanel({
       });
       onResolved();
     } catch (err) {
-      console.error("Erro ao encerrar:", err);
+      console.error(t("operatorInbox.endError"), err);
     } finally {
       setResolving(false);
     }
@@ -195,7 +191,7 @@ function ChatPanel({
           className="text-destructive hover:text-destructive"
         >
           <X className="h-4 w-4 mr-1" />
-          {resolving ? "Encerrando..." : "Encerrar atendimento"}
+          {resolving ? t("operatorInbox.ending") : t("operatorInbox.endSession")}
         </Button>
       </div>
 
@@ -209,7 +205,7 @@ function ChatPanel({
           </div>
         ) : sortedMessages.length === 0 ? (
           <p className="text-muted-foreground text-center py-8 text-sm">
-            Nenhuma mensagem encontrada.
+            {t("operatorInbox.noneMessages")}
           </p>
         ) : (
           sortedMessages.map((msg) => {
@@ -239,7 +235,7 @@ function ChatPanel({
                         : "text-primary-foreground/70",
                     )}
                   >
-                    {formatDate(msg.createdAt)} {formatTime(msg.createdAt)}
+                    {formatDate(locale, msg.createdAt)} {formatTime(locale, msg.createdAt)}
                   </p>
                 </div>
               </div>
@@ -256,7 +252,7 @@ function ChatPanel({
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Digite sua mensagem..."
+            placeholder={t("operatorInbox.inputPlaceholder")}
             disabled={sending}
             className="flex-1"
           />
@@ -273,6 +269,7 @@ function ChatPanel({
 
 const OperatorInboxPage = () => {
   const { tenantId } = useTenant();
+  const { locale, t } = useI18n();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   const handoffs = useQuery(
@@ -298,9 +295,14 @@ const OperatorInboxPage = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-bold">Atendimento</h1>
+        <h1 className="text-2xl font-bold">{t("operatorInbox.title")}</h1>
         {handoffs && handoffs.length > 0 && (
-          <Badge variant="default">{handoffs.length} ativo{handoffs.length !== 1 ? "s" : ""}</Badge>
+          <Badge variant="default">
+            {t("operatorInbox.activeCount", {
+              count: handoffs.length,
+              suffix: handoffs.length !== 1 ? "s" : "",
+            })}
+          </Badge>
         )}
       </div>
 
@@ -309,13 +311,14 @@ const OperatorInboxPage = () => {
           {/* Left: conversation list */}
           <div className="w-80 border-r flex-shrink-0 flex flex-col">
             <CardHeader className="py-3 px-4 border-b">
-              <CardTitle className="text-sm">Conversas em atendimento</CardTitle>
+              <CardTitle className="text-sm">{t("operatorInbox.activeConversations")}</CardTitle>
             </CardHeader>
             <div className="flex-1 overflow-auto">
               <ConversationList
                 handoffs={handoffs}
                 selectedUserId={selectedUserId}
                 onSelect={setSelectedUserId}
+                t={t}
               />
             </div>
           </div>
@@ -327,6 +330,8 @@ const OperatorInboxPage = () => {
                 tenantId={tenantId}
                 waUserId={selectedUserId}
                 onResolved={handleResolved}
+                locale={locale}
+                t={t}
               />
             ) : (
               <div className="flex-1 flex items-center justify-center text-muted-foreground">
@@ -334,8 +339,8 @@ const OperatorInboxPage = () => {
                   <Headset className="h-12 w-12 mx-auto mb-3 opacity-30" />
                   <p className="text-sm">
                     {handoffs && handoffs.length > 0
-                      ? "Selecione uma conversa para atender"
-                      : "Aguardando atendimentos..."}
+                      ? t("operatorInbox.selectConversation")
+                      : t("operatorInbox.waitingSessions")}
                   </p>
                 </div>
               </div>

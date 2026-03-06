@@ -1,10 +1,13 @@
 import { getConvexClient } from "../../convex/client.ts";
 import { bokunCancelBookingForTenant } from "../../bokun/gateway.ts";
+import type { SupportedLanguage } from "../../i18n.ts";
+import { byLanguage } from "../../i18n.ts";
 
 export type HandleEditBookingArgs = {
   tenantId: string;
   waUserId: string;
   text: string;
+  language?: SupportedLanguage;
 };
 
 export type HandleEditBookingResult = {
@@ -35,6 +38,10 @@ const EDIT_KEYWORDS = [
   "edit",
   "edit booking",
   "reschedule",
+  "cambiar reserva",
+  "cambiar fecha",
+  "editar reserva",
+  "reprogramar",
 ];
 
 export function isEditIntent(text: string): boolean {
@@ -59,7 +66,11 @@ export async function handleEditBooking(
 
   if (!draft || draft.status !== "confirmed" || !draft.bokunConfirmationCode) {
     return {
-      text: "Não encontrei uma reserva confirmada para alterar. Se quiser fazer uma nova reserva, me diga qual atividade e data deseja.",
+      text: byLanguage(args.language, {
+        pt: "Não encontrei uma reserva confirmada para alterar. Se quiser fazer uma nova reserva, me diga qual atividade e data deseja.",
+        en: "I couldn't find a confirmed booking to edit. If you want a new booking, tell me which activity and date you want.",
+        es: "No encontré una reserva confirmada para modificar. Si quieres una nueva reserva, dime qué actividad y fecha deseas.",
+      }),
       handled: true,
     };
   }
@@ -92,12 +103,20 @@ export async function handleEditBooking(
     }
 
     return {
-      text: `Reserva ${confirmationCode} cancelada para remarcação. Para qual data deseja remarcar?`,
+      text: byLanguage(args.language, {
+        pt: `Reserva ${confirmationCode} cancelada para remarcação. Para qual data deseja remarcar?`,
+        en: `Booking ${confirmationCode} cancelled for rescheduling. Which date would you like?`,
+        es: `Reserva ${confirmationCode} cancelada para reprogramación. ¿Qué fecha deseas?`,
+      }),
       handled: true,
     };
   } catch (error) {
     return {
-      text: "Não foi possível cancelar a reserva atual na Bokun. Tente novamente ou entre em contato com o suporte.",
+      text: byLanguage(args.language, {
+        pt: "Não foi possível cancelar a reserva atual na Bokun. Tente novamente ou entre em contato com o suporte.",
+        en: "Could not cancel the current booking in Bokun. Please try again or contact support.",
+        es: "No fue posible cancelar la reserva actual en Bokun. Inténtalo de nuevo o contacta con soporte.",
+      }),
       handled: true,
     };
   }

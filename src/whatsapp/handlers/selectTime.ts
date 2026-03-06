@@ -1,10 +1,13 @@
 import { getConvexClient } from "../../convex/client.ts";
 import { handleRouteAfterSelectTime } from "./routeAfterSelectTime.ts";
+import type { SupportedLanguage } from "../../i18n.ts";
+import { byLanguage } from "../../i18n.ts";
 
 export type HandleSelectTimeArgs = {
   tenantId: string;
   waUserId: string;
   text: string;
+  language?: SupportedLanguage;
 };
 
 export type HandleSelectTimeResult = {
@@ -37,14 +40,22 @@ export async function handleSelectTime(args: HandleSelectTimeArgs): Promise<Hand
   if (selectedIndex === null) {
     return {
       ok: false,
-      text: "Responda com um número da lista.",
+      text: byLanguage(args.language, {
+        pt: "Responda com um número da lista.",
+        en: "Reply with a number from the list.",
+        es: "Responde con un número de la lista.",
+      }),
     };
   }
 
   if (selectedIndex < 1) {
     return {
       ok: false,
-      text: "Responda com um número da lista.",
+      text: byLanguage(args.language, {
+        pt: "Responda com um número da lista.",
+        en: "Reply with a number from the list.",
+        es: "Responde con un número de la lista.",
+      }),
     };
   }
 
@@ -60,7 +71,11 @@ export async function handleSelectTime(args: HandleSelectTimeArgs): Promise<Hand
   if (!bookingDraft?._id) {
     return {
       ok: false,
-      text: "Não encontrei uma lista recente de horários. Vamos listar os horários novamente?",
+      text: byLanguage(args.language, {
+        pt: "Não encontrei uma lista recente de horários. Vamos listar os horários novamente?",
+        en: "I couldn't find a recent time list. Shall we list the times again?",
+        es: "No encontré una lista reciente de horarios. ¿Volvemos a listar los horarios?",
+      }),
       selectedIndex,
     };
   }
@@ -88,7 +103,11 @@ export async function handleSelectTime(args: HandleSelectTimeArgs): Promise<Hand
   if (!selection.ok && selection.reason === "OPTION_MAP_EXPIRED") {
     return {
       ok: false,
-      text: "Essa lista de horários expirou. Vamos listar os horários novamente?",
+      text: byLanguage(args.language, {
+        pt: "Essa lista de horários expirou. Vamos listar os horários novamente?",
+        en: "This time list has expired. Shall we list the times again?",
+        es: "Esta lista de horarios caducó. ¿Volvemos a listar los horarios?",
+      }),
       selectedIndex,
     };
   }
@@ -96,7 +115,11 @@ export async function handleSelectTime(args: HandleSelectTimeArgs): Promise<Hand
   if (!selection.ok && selection.reason === "OPTION_NOT_FOUND") {
     return {
       ok: false,
-      text: "Não reconheci essa opção. Escolha um número das opções enviadas.",
+      text: byLanguage(args.language, {
+        pt: "Não reconheci essa opção. Escolha um número das opções enviadas.",
+        en: "I didn't recognize that option. Choose a number from the sent options.",
+        es: "No reconocí esa opción. Elige un número de las opciones enviadas.",
+      }),
       selectedIndex,
     };
   }
@@ -104,7 +127,11 @@ export async function handleSelectTime(args: HandleSelectTimeArgs): Promise<Hand
   if (!selection.ok && selection.reason === "OPTION_INVALID") {
     return {
       ok: false,
-      text: "Esse horário não está mais selecionável. Vamos listar novamente?",
+      text: byLanguage(args.language, {
+        pt: "Esse horário não está mais selecionável. Vamos listar novamente?",
+        en: "That time is no longer selectable. Shall we list again?",
+        es: "Ese horario ya no se puede seleccionar. ¿Volvemos a listar?",
+      }),
       selectedIndex,
     };
   }
@@ -112,7 +139,11 @@ export async function handleSelectTime(args: HandleSelectTimeArgs): Promise<Hand
   if (!selection.ok) {
     return {
       ok: false,
-      text: "Não encontrei uma lista recente de horários. Vamos listar os horários novamente?",
+      text: byLanguage(args.language, {
+        pt: "Não encontrei uma lista recente de horários. Vamos listar os horários novamente?",
+        en: "I couldn't find a recent time list. Shall we list the times again?",
+        es: "No encontré una lista reciente de horarios. ¿Volvemos a listar los horarios?",
+      }),
       selectedIndex,
     };
   }
@@ -123,21 +154,34 @@ export async function handleSelectTime(args: HandleSelectTimeArgs): Promise<Hand
   if (typeof selection.selectedPickupSelectionType === "string") {
     if (selection.selectedPickupSelectionType === "UNAVAILABLE") {
       next = "skip_pickup";
-      routeText = "Perfeito. Não há pickup para essa atividade. Continuando…";
+      routeText = byLanguage(args.language, {
+        pt: "Perfeito. Não há pickup para essa atividade. Continuando…",
+        en: "Perfect. There is no pickup for this activity. Continuing…",
+        es: "Perfecto. No hay pickup para esta actividad. Continuando…",
+      });
     } else {
       next = "check_pickup";
-      routeText = "Beleza. Agora vou verificar se há pickup para essa atividade.";
+      routeText = byLanguage(args.language, {
+        pt: "Beleza. Agora vou verificar se há pickup para essa atividade.",
+        en: "Great. Now I'll check whether pickup is available for this activity.",
+        es: "Perfecto. Ahora voy a verificar si hay pickup para esta actividad.",
+      });
     }
   } else {
     const route = await handleRouteAfterSelectTime({
       tenantId: args.tenantId,
       waUserId: args.waUserId,
+      language: args.language,
     });
     next = route.next;
     routeText = route.text;
   }
 
-  const confirmationText = `Perfeito. Horário selecionado para ${selection.selectedDateKey} (startTimeId: ${selection.selectedStartTimeId}).`;
+  const confirmationText = byLanguage(args.language, {
+    pt: `Perfeito. Horário selecionado para ${selection.selectedDateKey} (startTimeId: ${selection.selectedStartTimeId}).`,
+    en: `Perfect. Time selected for ${selection.selectedDateKey} (startTimeId: ${selection.selectedStartTimeId}).`,
+    es: `Perfecto. Horario seleccionado para ${selection.selectedDateKey} (startTimeId: ${selection.selectedStartTimeId}).`,
+  });
 
   return {
     ok: true,

@@ -11,6 +11,7 @@ import { getConvexClient, getConvexServiceToken } from "../../convex/client.ts";
 import { formatAvailabilityOptions } from "../formatAvailabilityOptions.ts";
 import rootLogger from "../../lib/logger.ts";
 import { captureError } from "../../lib/sentry.ts";
+import type { SupportedLanguage } from "../../i18n.ts";
 
 export type HandleListTimesArgs = {
   tenantId: string;
@@ -19,6 +20,7 @@ export type HandleListTimesArgs = {
   date: string;
   endDate?: string;
   currency?: string;
+  language?: SupportedLanguage;
 };
 
 type HandleListTimesResult = {
@@ -112,6 +114,7 @@ export async function handleListTimes(args: HandleListTimesArgs): Promise<Handle
   const formatted = formatAvailabilityOptions({
     activityTitle: extractActivityTitle(activityDetails),
     date: args.date,
+    language: args.language,
     options: generatedOptionMap.options.map((option) => ({
       label: option.display,
       startTimeId: option.startTimeId,
