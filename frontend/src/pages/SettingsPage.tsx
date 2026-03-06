@@ -57,6 +57,9 @@ function roleLabel(role: string) {
 
 /* ─── WhatsApp Tab ─── */
 
+const WHATSAPP_WEBHOOK_URL = "https://api.bokun.iaoperators.com/whatsapp/webhook";
+const WHATSAPP_VERIFY_TOKEN = "chatplug";
+
 function WhatsAppTab({ tenantId }: { tenantId: string }) {
   const channel = useQuery(
     api.dashboard.getWhatsAppChannel,
@@ -71,7 +74,6 @@ function WhatsAppTab({ tenantId }: { tenantId: string }) {
     phoneNumberId: "",
     wabaId: "",
     accessToken: "",
-    verifyToken: "",
   });
 
   const startEdit = () => {
@@ -79,14 +81,13 @@ function WhatsAppTab({ tenantId }: { tenantId: string }) {
       phoneNumberId: channel?.phoneNumberId ?? "",
       wabaId: channel?.wabaId ?? "",
       accessToken: "",
-      verifyToken: "",
     });
     setEditing(true);
     setSaved(false);
   };
 
   const handleSave = async () => {
-    if (!form.phoneNumberId.trim() || !form.wabaId.trim() || !form.accessToken.trim() || !form.verifyToken.trim()) return;
+    if (!form.phoneNumberId.trim() || !form.wabaId.trim() || !form.accessToken.trim()) return;
     setSaving(true);
     try {
       await upsert({
@@ -94,7 +95,7 @@ function WhatsAppTab({ tenantId }: { tenantId: string }) {
         phoneNumberId: form.phoneNumberId.trim(),
         wabaId: form.wabaId.trim(),
         accessToken: form.accessToken.trim(),
-        verifyToken: form.verifyToken.trim(),
+        verifyToken: WHATSAPP_VERIFY_TOKEN,
       });
       setEditing(false);
       setSaved(true);
@@ -138,6 +139,14 @@ function WhatsAppTab({ tenantId }: { tenantId: string }) {
             </p>
             <div className="space-y-3">
               <div>
+                <Label htmlFor="wa-webhook-url">Webhook URL (copiar na Meta)</Label>
+                <Input id="wa-webhook-url" value={WHATSAPP_WEBHOOK_URL} readOnly className="font-mono text-xs" />
+              </div>
+              <div>
+                <Label htmlFor="wa-verify-fixed">Verify Token (copiar na Meta)</Label>
+                <Input id="wa-verify-fixed" value={WHATSAPP_VERIFY_TOKEN} readOnly className="font-mono text-xs" />
+              </div>
+              <div>
                 <Label htmlFor="wa-phone">Phone Number ID</Label>
                 <Input id="wa-phone" value={form.phoneNumberId} onChange={(e) => setForm((f) => ({ ...f, phoneNumberId: e.target.value }))} placeholder="Ex: 123456789012345" />
               </div>
@@ -148,10 +157,6 @@ function WhatsAppTab({ tenantId }: { tenantId: string }) {
               <div>
                 <Label htmlFor="wa-token">Access Token</Label>
                 <Input id="wa-token" type="password" value={form.accessToken} onChange={(e) => setForm((f) => ({ ...f, accessToken: e.target.value }))} placeholder="Token permanente do Meta" />
-              </div>
-              <div>
-                <Label htmlFor="wa-verify">Verify Token</Label>
-                <Input id="wa-verify" value={form.verifyToken} onChange={(e) => setForm((f) => ({ ...f, verifyToken: e.target.value }))} placeholder="Token de verificação do webhook" />
               </div>
             </div>
             <div className="flex gap-2">
@@ -167,6 +172,8 @@ function WhatsAppTab({ tenantId }: { tenantId: string }) {
         ) : (
           <div>
             <InfoRow label="Status" value={channel.status === "active" ? <Badge variant="success">Ativo</Badge> : <Badge variant="warning">Desativado</Badge>} />
+            <InfoRow label="Webhook URL" value={<span className="font-mono text-xs">{WHATSAPP_WEBHOOK_URL}</span>} />
+            <InfoRow label="Verify Token" value={<span className="font-mono text-xs">{WHATSAPP_VERIFY_TOKEN}</span>} />
             <InfoRow label="Phone Number ID" value={<span className="font-mono text-xs">{channel.phoneNumberId}</span>} />
             <InfoRow label="WABA ID" value={<span className="font-mono text-xs">{channel.wabaId}</span>} />
             <InfoRow label="Configurado em" value={formatDate(channel.createdAt)} />
