@@ -1,7 +1,8 @@
 import { getConvexClient } from "../../convex/client.ts";
-import { bokunCancelBookingForTenant } from "../../bokun/gateway.ts";
+import { bokunCancelBookingForTenant, bokunGetBookingForTenant } from "../../bokun/gateway.ts";
 import type { SupportedLanguage } from "../../i18n.ts";
 import { byLanguage } from "../../i18n.ts";
+import { extractConfirmationCodeFromText } from "./cancelBooking.ts";
 
 export type HandleEditBookingArgs = {
   tenantId: string;
@@ -23,32 +24,31 @@ type ConfirmedBookingDraft = {
   status: string;
 } | null;
 
-const EDIT_KEYWORDS = [
-  "alterar",
-  "alterar reserva",
-  "mudar",
-  "mudar data",
-  "mudar reserva",
-  "editar",
-  "editar reserva",
-  "remarcar",
-  "trocar data",
-  "change",
-  "change booking",
-  "edit",
-  "edit booking",
-  "reschedule",
-  "cambiar reserva",
-  "cambiar fecha",
-  "editar reserva",
-  "reprogramar",
+const EDIT_PATTERNS: RegExp[] = [
+  /\balterar\b/u,
+  /\beditar\b/u,
+  /\bremarcar\b/u,
+  /\bremarcacao\b/u,
+  /\bremarcação\b/u,
+  /\bmudar\b/u,
+  /\btrocar data\b/u,
+  /\bchange\b/u,
+  /\bedit\b/u,
+  /\breschedule\b/u,
+  /\bmodify booking\b/u,
+  /\bcambiar\b/u,
+  /\breprogramar\b/u,
+  /\bmodificar reserva\b/u,
 ];
 
 export function isEditIntent(text: string): boolean {
-  const normalized = text.trim().toLowerCase();
-  return EDIT_KEYWORDS.some(
-    (kw) => normalized === kw || normalized.startsWith(`${kw} `)
-  );
+  const normalized = text
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  if (normalized.length === 0) return false;
+  return EDIT_PATTERNS.some((pattern) => pattern.test(normalized));
 }
 
 export async function handleEditBooking(
@@ -64,30 +64,75 @@ export async function handleEditBooking(
     } as any
   )) as ConfirmedBookingDraft;
 
-  if (!draft || draft.status !== "confirmed" || !draft.bokunConfirmationCode) {
+  const explicitConfirmationCode = extractConfirmationCodeFromText(args.text);
+  const confirmationCode =
+    explicitConfirmationCode ??
+    (draft?.status === "confirmed" ? draft.bokunConfirmationCode : undefined);
+
+  if (!confirmationCode) {
+    await convex.mutation(
+      "conversations:setPendingAction" as any,
+      {
+        tenantId: args.tenantId,
+        waUserId: args.waUserId,
+        pendingAction: "edit_code",
+      } as any
+    );
     return {
       text: byLanguage(args.language, {
-        pt: "Não encontrei uma reserva confirmada para alterar. Se quiser fazer uma nova reserva, me diga qual atividade e data deseja.",
-        en: "I couldn't find a confirmed booking to edit. If you want a new booking, tell me which activity and date you want.",
-        es: "No encontré una reserva confirmada para modificar. Si quieres una nueva reserva, dime qué actividad y fecha deseas.",
+        pt: "Para remarcar, me envie o código da reserva atual (confirmation code).",
+        en: "To reschedule, please send me the current booking confirmation code.",
+        es: "Para reprogramar, envíame el código de confirmación de la reserva actual.",
       }),
       handled: true,
     };
   }
 
-  const activityId = draft.activityId;
-  const confirmationCode = draft.bokunConfirmationCode;
+  const activityId = draft?.activityId;
 
   try {
+    try {
+      await bokunGetBookingForTenant({
+        tenantId: args.tenantId,
+        confirmationCode,
+      });
+    } catch {
+      await convex.mutation(
+        "conversations:setPendingAction" as any,
+        {
+          tenantId: args.tenantId,
+          waUserId: args.waUserId,
+          pendingAction: "edit_code",
+        } as any
+      );
+      return {
+        text: byLanguage(args.language, {
+          pt: `Não encontrei reserva com o código ${confirmationCode}. Confira e tente novamente.`,
+          en: `I couldn't find a booking with code ${confirmationCode}. Please check and try again.`,
+          es: `No encontré una reserva con el código ${confirmationCode}. Verifica y vuelve a intentarlo.`,
+        }),
+        handled: true,
+      };
+    }
+
     await bokunCancelBookingForTenant({
       tenantId: args.tenantId,
       confirmationCode,
       note: "Cancelado para remarcação pelo cliente via chat.",
     });
 
+    if (draft?._id && draft.bokunConfirmationCode === confirmationCode) {
+      await convex.mutation(
+        "bookingDrafts:abandonDraft" as any,
+        { bookingDraftId: draft._id } as any
+      );
+    }
     await convex.mutation(
-      "bookingDrafts:abandonDraft" as any,
-      { bookingDraftId: draft._id } as any
+      "conversations:clearPendingAction" as any,
+      {
+        tenantId: args.tenantId,
+        waUserId: args.waUserId,
+      } as any
     );
 
     // Preserve activityId so the booking flow can pick it up when user sends new date
@@ -102,11 +147,22 @@ export async function handleEditBooking(
       );
     }
 
+    if (activityId) {
+      return {
+        text: byLanguage(args.language, {
+          pt: `Reserva ${confirmationCode} cancelada para remarcação. Para qual data deseja remarcar?`,
+          en: `Booking ${confirmationCode} cancelled for rescheduling. Which date would you like?`,
+          es: `Reserva ${confirmationCode} cancelada para reprogramación. ¿Qué fecha deseas?`,
+        }),
+        handled: true,
+      };
+    }
+
     return {
       text: byLanguage(args.language, {
-        pt: `Reserva ${confirmationCode} cancelada para remarcação. Para qual data deseja remarcar?`,
-        en: `Booking ${confirmationCode} cancelled for rescheduling. Which date would you like?`,
-        es: `Reserva ${confirmationCode} cancelada para reprogramación. ¿Qué fecha deseas?`,
+        pt: `Reserva ${confirmationCode} cancelada para remarcação. Agora me diga a atividade e a nova data desejada.`,
+        en: `Booking ${confirmationCode} was cancelled for rescheduling. Now tell me the activity and the new date you want.`,
+        es: `La reserva ${confirmationCode} fue cancelada para reprogramación. Ahora dime la actividad y la nueva fecha deseada.`,
       }),
       handled: true,
     };

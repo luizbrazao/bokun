@@ -8,6 +8,7 @@ vi.mock("../../convex/client.ts", () => ({
 
 vi.mock("../../bokun/gateway.ts", () => ({
   bokunCancelBookingForTenant: vi.fn(),
+  bokunGetBookingForTenant: vi.fn(),
 }));
 
 // Mock the logger to silence output in tests
@@ -27,7 +28,7 @@ vi.mock("../../lib/logger.ts", () => ({
 }));
 
 import { getConvexClient } from "../../convex/client.ts";
-import { bokunCancelBookingForTenant } from "../../bokun/gateway.ts";
+import { bokunCancelBookingForTenant, bokunGetBookingForTenant } from "../../bokun/gateway.ts";
 
 describe("isCancelIntent", () => {
   it('returns true for "cancelar"', () => {
@@ -50,12 +51,22 @@ describe("isCancelIntent", () => {
     expect(isCancelIntent("cancelar agora por favor")).toBe(true);
   });
 
-  it('returns false for "quero cancelar" (keyword not at start)', () => {
-    expect(isCancelIntent("quero cancelar")).toBe(false);
+  it('returns true for "quero cancelar"', () => {
+    expect(isCancelIntent("quero cancelar")).toBe(true);
   });
 
   it('returns false for "booking" (no cancel keyword)', () => {
     expect(isCancelIntent("booking")).toBe(false);
+  });
+
+  it("returns true for english and spanish cancellation intents", () => {
+    expect(isCancelIntent("I need to cancel my booking")).toBe(true);
+    expect(isCancelIntent("Necesito cancelar mi reserva")).toBe(true);
+  });
+
+  it("returns false for negated cancellation intent", () => {
+    expect(isCancelIntent("não quero cancelar")).toBe(false);
+    expect(isCancelIntent("I do not want to cancel")).toBe(false);
   });
 });
 
@@ -67,7 +78,7 @@ describe("handleCancelBooking", () => {
     vi.clearAllMocks();
   });
 
-  it("returns 'Não encontrei' when no confirmed draft exists", async () => {
+  it("asks for confirmation code when no confirmed draft exists and no code in message", async () => {
     const mockConvex = {
       query: vi.fn().mockResolvedValue(null),
       mutation: vi.fn().mockResolvedValue(undefined),
@@ -81,7 +92,7 @@ describe("handleCancelBooking", () => {
     });
 
     expect(result.handled).toBe(true);
-    expect(result.text).toContain("Não encontrei");
+    expect(result.text).toContain("código");
   });
 
   it("cancels booking and returns success text containing confirmation code when draft is confirmed", async () => {
@@ -95,6 +106,9 @@ describe("handleCancelBooking", () => {
       mutation: vi.fn().mockResolvedValue(undefined),
     };
     (getConvexClient as ReturnType<typeof vi.fn>).mockReturnValue(mockConvex);
+    (bokunGetBookingForTenant as ReturnType<typeof vi.fn>).mockResolvedValue({
+      confirmationCode: "CONF-ABC123",
+    });
     (bokunCancelBookingForTenant as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
 
     const result = await handleCancelBooking({
@@ -110,6 +124,30 @@ describe("handleCancelBooking", () => {
     expect(result.text).toContain("CONF-ABC123");
   });
 
+  it("cancels booking by explicit confirmation code even without confirmed draft", async () => {
+    const mockConvex = {
+      query: vi.fn().mockResolvedValue(null),
+      mutation: vi.fn().mockResolvedValue(undefined),
+    };
+    (getConvexClient as ReturnType<typeof vi.fn>).mockReturnValue(mockConvex);
+    (bokunGetBookingForTenant as ReturnType<typeof vi.fn>).mockResolvedValue({
+      confirmationCode: "ABCD-1234",
+    });
+    (bokunCancelBookingForTenant as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+
+    const result = await handleCancelBooking({
+      tenantId: TENANT_ID,
+      waUserId: WA_USER_ID,
+      text: "quero cancelar ABCD-1234",
+    });
+
+    expect(bokunCancelBookingForTenant).toHaveBeenCalledWith(
+      expect.objectContaining({ confirmationCode: "ABCD-1234" })
+    );
+    expect(result.handled).toBe(true);
+    expect(result.text).toContain("ABCD-1234");
+  });
+
   it("returns graceful error text when Bokun cancel throws", async () => {
     const confirmedDraft = {
       _id: "draft-id-2",
@@ -121,6 +159,9 @@ describe("handleCancelBooking", () => {
       mutation: vi.fn().mockResolvedValue(undefined),
     };
     (getConvexClient as ReturnType<typeof vi.fn>).mockReturnValue(mockConvex);
+    (bokunGetBookingForTenant as ReturnType<typeof vi.fn>).mockResolvedValue({
+      confirmationCode: "CONF-ERR999",
+    });
     (bokunCancelBookingForTenant as ReturnType<typeof vi.fn>).mockRejectedValue(
       new Error("Bokun API error")
     );

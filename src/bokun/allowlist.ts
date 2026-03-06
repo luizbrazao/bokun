@@ -12,6 +12,11 @@ const BOKUN_ALLOWED_ENDPOINTS: AllowedEndpoint[] = [
   // Shopping cart
   { method: "POST", pathPattern: "/shopping-cart.json/session/{sessionId}/activity" },
   { method: "GET", pathPattern: "/shopping-cart.json/session/{sessionId}" },
+  // Booking questions
+  { method: "GET", pathPattern: "/question.json/shopping-cart/{sessionId}" },
+  { method: "POST", pathPattern: "/question.json/shopping-cart/{sessionId}" },
+  { method: "GET", pathPattern: "/question.json/booking/{bookingId}" },
+  { method: "GET", pathPattern: "/question.json/activity-booking/{activityBookingId}" },
   // Booking reserve & confirm
   { method: "POST", pathPattern: "/booking.json/guest/{sessionId}/reserve" },
   { method: "POST", pathPattern: "/booking.json/{confirmationCode}/confirm" },

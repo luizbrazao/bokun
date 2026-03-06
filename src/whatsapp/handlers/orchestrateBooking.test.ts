@@ -272,4 +272,50 @@ describe("orchestrateBooking — cancellation flow (TEST-02)", () => {
     expect(result.handled).toBe(true);
     expect(result.text).toContain("Não encontrei");
   });
+
+  it("routes directly to handleCancelBooking when conversation is pending cancel_code", async () => {
+    const conversation = { pendingAction: "cancel_code" };
+    const mockConvex = makeMockConvex(null, conversation);
+    (getConvexClient as ReturnType<typeof vi.fn>).mockReturnValue(mockConvex);
+    (isCancelIntent as ReturnType<typeof vi.fn>).mockReturnValue(false);
+    (handleCancelBooking as ReturnType<typeof vi.fn>).mockResolvedValue({
+      text: "Reserva CANCEL-123 cancelada com sucesso.",
+      handled: true,
+    });
+
+    const result = await orchestrateBooking({
+      tenantId: TENANT_ID,
+      waUserId: WA_USER_ID,
+      text: "CANCEL-123",
+    });
+
+    expect(handleCancelBooking).toHaveBeenCalledWith(
+      expect.objectContaining({ tenantId: TENANT_ID, waUserId: WA_USER_ID, text: "CANCEL-123" })
+    );
+    expect(result.handled).toBe(true);
+  });
+
+  it("routes directly to handleEditBooking when conversation is pending edit_code", async () => {
+    const { handleEditBooking } = await import("./editBooking.ts");
+    (handleEditBooking as ReturnType<typeof vi.fn>).mockResolvedValue({
+      text: "Reserva alterada.",
+      handled: true,
+    });
+
+    const conversation = { pendingAction: "edit_code" };
+    const mockConvex = makeMockConvex(null, conversation);
+    (getConvexClient as ReturnType<typeof vi.fn>).mockReturnValue(mockConvex);
+    (isCancelIntent as ReturnType<typeof vi.fn>).mockReturnValue(false);
+
+    const result = await orchestrateBooking({
+      tenantId: TENANT_ID,
+      waUserId: WA_USER_ID,
+      text: "EDIT-456",
+    });
+
+    expect(handleEditBooking).toHaveBeenCalledWith(
+      expect.objectContaining({ tenantId: TENANT_ID, waUserId: WA_USER_ID, text: "EDIT-456" })
+    );
+    expect(result.handled).toBe(true);
+  });
 });

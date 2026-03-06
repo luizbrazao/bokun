@@ -5,5 +5,9 @@ export {
   bokunGetActivityByIdForTenant,
   bokunGetAvailabilitiesForTenant,
   bokunGetPickupPlacesForTenant,
+  bokunGetShoppingCartQuestionsForTenant,
+  bokunSaveShoppingCartAnswersForTenant,
+  bokunGetBookingQuestionsForTenant,
+  bokunGetActivityBookingQuestionsForTenant,
 } from "./gateway.ts";
 export type { BokunContext } from "./context.ts";

@@ -5,6 +5,7 @@ import {
     listServicesForTenant,
 } from "../providers/service.ts";
 import { handleStartHandoff } from "../whatsapp/handlers/handoff.ts";
+import { handleCancelBooking } from "../whatsapp/handlers/cancelBooking.ts";
 import { rootLogger } from "../lib/logger.ts";
 
 // ── Tool definitions for OpenAI function calling ──
@@ -69,6 +70,28 @@ export const toolDefinitions: OpenAI.ChatCompletionTool[] = [
                     },
                 },
                 required: ["confirmationCode"],
+            },
+        },
+    },
+    {
+        type: "function",
+        function: {
+            name: "cancel_booking",
+            description:
+                "Cancel an existing booking. Use when the user explicitly asks to cancel a reservation. Prefer passing confirmationCode when available.",
+            parameters: {
+                type: "object",
+                properties: {
+                    confirmationCode: {
+                        type: "string",
+                        description: "Booking confirmation code to cancel.",
+                    },
+                    reason: {
+                        type: "string",
+                        description: "Optional cancellation reason/note.",
+                    },
+                },
+                required: [],
             },
         },
     },
@@ -164,6 +187,14 @@ export async function executeTool(args: ToolExecutorArgs): Promise<string> {
                 result = await executeCheckBookingDetails(
                     args.tenantId,
                     args.toolArguments as { confirmationCode: string }
+                );
+                break;
+
+            case "cancel_booking":
+                result = await executeCancelBooking(
+                    args.tenantId,
+                    args.waUserId,
+                    args.toolArguments as { confirmationCode?: string; reason?: string }
                 );
                 break;
 
@@ -324,6 +355,24 @@ async function executeCheckBookingDetails(
     }
 
     return JSON.stringify(result);
+}
+
+async function executeCancelBooking(
+    tenantId: string,
+    waUserId: string,
+    params: { confirmationCode?: string; reason?: string }
+): Promise<string> {
+    const inputText = [params.reason, params.confirmationCode].filter((part) => typeof part === "string" && part.trim().length > 0).join(" ");
+    const result = await handleCancelBooking({
+        tenantId,
+        waUserId,
+        text: inputText.length > 0 ? inputText : "cancelar",
+    });
+
+    return JSON.stringify({
+        handled: result.handled,
+        message: result.text,
+    });
 }
 
 async function executeEscalateToOperator(

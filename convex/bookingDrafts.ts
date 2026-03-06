@@ -223,6 +223,7 @@ export const upsertBookingDraftBase = mutation({
         lastPickupOptionMap: undefined,
         lastPickupOptionMapUpdatedAt: undefined,
         participants: undefined,
+        bokunSessionId: undefined,
         bokunBookingId: undefined,
         bokunConfirmationCode: undefined,
         bokunBookingUrl: undefined,
@@ -427,6 +428,7 @@ export const setSelectedTimeFromOption = mutation({
       selectedPickupSelectionType,
       pickupPlaceId: undefined,
       participants: undefined,
+      bokunSessionId: undefined,
       bokunBookingId: undefined,
       bokunConfirmationCode: undefined,
       bokunBookingUrl: undefined,
@@ -496,6 +498,31 @@ export const setParticipants = mutation({
       participants: args.participants,
       status: "draft",
       nextStep: "confirm",
+      updatedAt: Date.now(),
+    });
+
+    return draft._id;
+  },
+});
+
+export const setBokunSessionId = mutation({
+  args: {
+    bookingDraftId: v.id("booking_drafts"),
+    bokunSessionId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const draft = await ctx.db.get(args.bookingDraftId);
+    if (!draft) {
+      throw new Error("Booking draft not found.");
+    }
+
+    const sessionId = args.bokunSessionId.trim();
+    if (sessionId.length === 0) {
+      throw new Error("bokunSessionId must be a non-empty string.");
+    }
+
+    await ctx.db.patch(draft._id, {
+      bokunSessionId: sessionId,
       updatedAt: Date.now(),
     });
 
@@ -610,6 +637,7 @@ export const upsertBookingDraftSelectionTime = mutation({
         lastPickupOptionMapUpdatedAt: undefined,
         pickupPlaceId: undefined,
         participants: undefined,
+        bokunSessionId: undefined,
         bokunBookingId: undefined,
         bokunConfirmationCode: undefined,
         bokunBookingUrl: undefined,
@@ -630,6 +658,7 @@ export const upsertBookingDraftSelectionTime = mutation({
       startTimeId: args.startTimeId,
       selectedStartTimeId,
       selectedDateKey: args.date,
+      bokunSessionId: undefined,
       bokunBookingId: undefined,
       bokunConfirmationCode: undefined,
       bokunBookingUrl: undefined,

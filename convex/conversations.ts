@@ -310,3 +310,63 @@ export const clearConversationPickupOptionMap = mutation({
     return true;
   },
 });
+
+export const setPendingAction = mutation({
+  args: {
+    tenantId: v.id("tenants"),
+    waUserId: v.string(),
+    pendingAction: v.union(v.literal("cancel_code"), v.literal("edit_code")),
+  },
+  handler: async (ctx, args) => {
+    assertNonEmptyString(args.waUserId, "waUserId");
+    const now = Date.now();
+    const existing = await ctx.db
+      .query("conversations")
+      .withIndex("by_tenantId_waUserId", (q) =>
+        q.eq("tenantId", args.tenantId).eq("waUserId", args.waUserId)
+      )
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        pendingAction: args.pendingAction,
+        pendingActionUpdatedAt: now,
+        updatedAt: now,
+      });
+      return existing._id;
+    }
+
+    return ctx.db.insert("conversations", {
+      tenantId: args.tenantId,
+      waUserId: args.waUserId,
+      pendingAction: args.pendingAction,
+      pendingActionUpdatedAt: now,
+      createdAt: now,
+      updatedAt: now,
+    });
+  },
+});
+
+export const clearPendingAction = mutation({
+  args: {
+    tenantId: v.id("tenants"),
+    waUserId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("conversations")
+      .withIndex("by_tenantId_waUserId", (q) =>
+        q.eq("tenantId", args.tenantId).eq("waUserId", args.waUserId)
+      )
+      .first();
+
+    if (!existing) return false;
+
+    await ctx.db.patch(existing._id, {
+      pendingAction: undefined,
+      pendingActionUpdatedAt: undefined,
+      updatedAt: Date.now(),
+    });
+    return true;
+  },
+});

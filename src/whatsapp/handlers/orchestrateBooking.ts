@@ -38,6 +38,7 @@ type BookingDraftState = {
 
 type ConversationState = {
   lastActivityId?: string;
+  pendingAction?: "cancel_code" | "edit_code";
 } | null;
 
 function isValidYmdDate(ymd: string): boolean {
@@ -79,6 +80,26 @@ function parseDateFromText(text: string): string | null {
 }
 
 export async function orchestrateBooking(args: OrchestrateBookingArgs): Promise<OrchestrateBookingResult> {
+  const convex = getConvexClient();
+  const conversation = (await convex.query(
+    "conversations:getConversationByWaUserId" as any,
+    {
+      tenantId: args.tenantId,
+      waUserId: args.waUserId,
+    } as any
+  )) as ConversationState;
+
+  // If waiting for reservation code, prioritize that flow even if user sends only the code.
+  if (conversation?.pendingAction === "cancel_code") {
+    const cancelResult = await handleCancelBooking(args);
+    return { handled: cancelResult.handled, text: cancelResult.text };
+  }
+
+  if (conversation?.pendingAction === "edit_code") {
+    const editResult = await handleEditBooking(args);
+    return { handled: editResult.handled, text: editResult.text };
+  }
+
   // Check for cancel intent before anything else
   if (isCancelIntent(args.text)) {
     const cancelResult = await handleCancelBooking(args);
@@ -91,7 +112,6 @@ export async function orchestrateBooking(args: OrchestrateBookingArgs): Promise<
     return { handled: editResult.handled, text: editResult.text };
   }
 
-  const convex = getConvexClient();
   const draft = (await convex.query(
     "bookingDrafts:getBookingDraftByWaUserId" as any,
     {
@@ -108,14 +128,6 @@ export async function orchestrateBooking(args: OrchestrateBookingArgs): Promise<
         text: "",
       };
     }
-
-    const conversation = (await convex.query(
-      "conversations:getConversationByWaUserId" as any,
-      {
-        tenantId: args.tenantId,
-        waUserId: args.waUserId,
-      } as any
-    )) as ConversationState;
 
     const activityId = conversation?.lastActivityId;
     if (!activityId || activityId.trim().length === 0) {

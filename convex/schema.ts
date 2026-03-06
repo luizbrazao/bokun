@@ -82,6 +82,8 @@ export default defineSchema({
     handoffState: v.optional(v.union(v.literal("active"), v.literal("idle"))),
     handoffOperatorMessageId: v.optional(v.number()),
     handoffChannel: v.optional(v.string()),
+    pendingAction: v.optional(v.union(v.literal("cancel_code"), v.literal("edit_code"))),
+    pendingActionUpdatedAt: v.optional(v.number()),
     updatedAt: v.number(),
     createdAt: v.number(),
   })
@@ -137,6 +139,7 @@ export default defineSchema({
     participants: v.optional(v.number()),
     bookingQuestions: v.optional(v.string()), // JSON-stringified BookingQuestion[]
     bookingAnswers: v.optional(v.string()),   // JSON-stringified { [questionId]: answer }
+    bokunSessionId: v.optional(v.string()),
     bokunBookingId: v.optional(v.string()),
     bokunConfirmationCode: v.optional(v.string()),
     bokunBookingUrl: v.optional(v.string()),

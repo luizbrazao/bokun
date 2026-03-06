@@ -1,5 +1,8 @@
 import { getConvexClient } from "../../convex/client.ts";
-import { bokunGetActivityQuestionsForTenant } from "../../bokun/gateway.ts";
+import {
+  bokunAddActivityToCartForTenant,
+  bokunGetShoppingCartQuestionsForTenant,
+} from "../../bokun/gateway.ts";
 import { rootLogger } from "../../lib/logger.ts";
 import type { SupportedLanguage } from "../../i18n.ts";
 import { byLanguage } from "../../i18n.ts";
@@ -18,6 +21,10 @@ export type HandleAfterAskParticipantsResult = {
 type BookingDraftRef = {
   _id: string;
   activityId?: string;
+  selectedStartTimeId?: number;
+  selectedDateKey?: string;
+  selectedRateId?: number;
+  pickupPlaceId?: string | number;
 } | null;
 
 function parseParticipants(text: string): number | null {
@@ -76,12 +83,41 @@ export async function handleAfterAskParticipants(
     } as any
   );
 
-  // Fetch booking questions from Bokun
-  if (draft.activityId) {
+  // Fetch booking questions from Bokun in shopping-cart context.
+  if (draft.activityId && draft.selectedStartTimeId && draft.selectedDateKey) {
     try {
-      const questions = await bokunGetActivityQuestionsForTenant({
+      const sessionId = crypto.randomUUID();
+      await bokunAddActivityToCartForTenant({
         tenantId: args.tenantId,
-        activityId: draft.activityId,
+        sessionId,
+        body: {
+          activityId: Number(draft.activityId),
+          startTimeId: draft.selectedStartTimeId,
+          date: draft.selectedDateKey,
+          ...(typeof draft.selectedRateId === "number"
+            ? {
+                pricingCategoryBookings: [
+                  {
+                    pricingCategoryId: draft.selectedRateId,
+                    participants,
+                  },
+                ],
+              }
+            : {}),
+          ...(draft.pickupPlaceId !== undefined ? { pickupPlaceId: draft.pickupPlaceId } : {}),
+        },
+      });
+      await convex.mutation(
+        "bookingDrafts:setBokunSessionId" as any,
+        {
+          bookingDraftId: draft._id,
+          bokunSessionId: sessionId,
+        } as any
+      );
+
+      const questions = await bokunGetShoppingCartQuestionsForTenant({
+        tenantId: args.tenantId,
+        sessionId,
       });
 
       if (questions.length > 0) {

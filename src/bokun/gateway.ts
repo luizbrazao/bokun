@@ -10,7 +10,14 @@ import {
 } from "./booking.ts";
 import { getBokunContextOrThrow } from "./context.ts";
 import { getPickupPlaces } from "./pickupPlaces.ts";
-import { getActivityQuestions, type BookingQuestion } from "./questions.ts";
+import {
+  getActivityQuestions,
+  getShoppingCartQuestions,
+  getBookingQuestions,
+  getActivityBookingQuestions,
+  saveShoppingCartAnswers,
+  type BookingQuestion,
+} from "./questions.ts";
 
 export type { BookingQuestion };
 
@@ -180,5 +187,57 @@ export async function bokunGetActivityQuestionsForTenant(args: {
     baseUrl: context.baseUrl,
     headers: context.headers,
     activityId: args.activityId,
+  });
+}
+
+export async function bokunGetShoppingCartQuestionsForTenant(args: {
+  tenantId: string;
+  sessionId: string;
+}): Promise<BookingQuestion[]> {
+  const context = await getBokunContextOrThrow({ tenantId: args.tenantId });
+  return getShoppingCartQuestions({
+    baseUrl: context.baseUrl,
+    headers: context.headers,
+    sessionId: args.sessionId,
+  });
+}
+
+export async function bokunSaveShoppingCartAnswersForTenant(args: {
+  tenantId: string;
+  sessionId: string;
+  questions: BookingQuestion[];
+  answersByQuestionId: Record<string, string>;
+}): Promise<unknown> {
+  const context = await getBokunContextOrThrow({ tenantId: args.tenantId });
+  return saveShoppingCartAnswers({
+    baseUrl: context.baseUrl,
+    headers: context.headers,
+    sessionId: args.sessionId,
+    questions: args.questions,
+    answersByQuestionId: args.answersByQuestionId,
+  });
+}
+
+export async function bokunGetBookingQuestionsForTenant(args: {
+  tenantId: string;
+  bookingId: string | number;
+}): Promise<BookingQuestion[]> {
+  const context = await getBokunContextOrThrow({ tenantId: args.tenantId });
+  return getBookingQuestions({
+    baseUrl: context.baseUrl,
+    headers: context.headers,
+    bookingId: args.bookingId,
+  });
+}
+
+export async function bokunGetActivityBookingQuestionsForTenant(args: {
+  tenantId: string;
+  activityBookingId: string | number;
+}): Promise<BookingQuestion[]> {
+  const context = await getBokunContextOrThrow({ tenantId: args.tenantId });
+  return getActivityBookingQuestions({
+    baseUrl: context.baseUrl,
+    headers: context.headers,
+    activityBookingId: args.activityBookingId,
   });
 }
