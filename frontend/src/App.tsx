@@ -28,6 +28,15 @@ const Spinner = () => {
   );
 };
 
+function HomeRoute() {
+  const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
+  const { hasTenant, isLoading: tenantLoading } = useTenant();
+
+  if (authLoading || (isAuthenticated && tenantLoading)) return <Spinner />;
+  if (!isAuthenticated) return <LandingPage />;
+  return <Navigate to={hasTenant ? "/overview" : "/onboarding"} replace />;
+}
+
 // Guard: exige autenticação, mostra spinner enquanto carrega
 function RequireAuth() {
   const { isAuthenticated, isLoading } = useConvexAuth();
@@ -65,7 +74,7 @@ function App() {
   return (
     <Routes>
       {/* Rotas públicas */}
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={<HomeRoute />} />
       <Route path="/auth" element={<AuthRoute />} />
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
       <Route path="/terms" element={<TermsOfUsePage />} />
