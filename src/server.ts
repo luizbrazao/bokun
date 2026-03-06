@@ -1,5 +1,6 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import { Readable } from "node:stream";
 import { pathToFileURL } from "node:url";
 import { rootLogger, createRequestLogger } from "./lib/logger.ts";
 import { initSentry, captureError } from "./lib/sentry.ts";
@@ -1666,12 +1667,102 @@ async function handleOAuthCallbackRoute(req: IncomingMessage, res: ServerRespons
   }
 }
 
+function extractSetCookies(headers: Headers): string[] {
+  const typed = headers as Headers & {
+    getSetCookie?: () => string[];
+    raw?: () => Record<string, string[]>;
+  };
+  if (typeof typed.getSetCookie === "function") {
+    return typed.getSetCookie();
+  }
+  if (typeof typed.raw === "function") {
+    return typed.raw()["set-cookie"] ?? [];
+  }
+  const single = headers.get("set-cookie");
+  return single ? [single] : [];
+}
+
+async function proxyConvexAuthRoute(
+  req: IncomingMessage,
+  res: ServerResponse,
+  url: URL,
+): Promise<void> {
+  const convexSiteUrl = process.env.CONVEX_SITE_URL?.trim().replace(/\/$/, "");
+  if (!convexSiteUrl) {
+    sendJson(res, 500, { ok: false, error: "Missing CONVEX_SITE_URL for auth proxy." });
+    return;
+  }
+
+  const upstreamUrl = new URL(`${url.pathname}${url.search}`, convexSiteUrl);
+  const method = req.method ?? "GET";
+  const hasBody = method !== "GET" && method !== "HEAD";
+
+  const headers = new Headers();
+  const hopByHop = new Set([
+    "host",
+    "connection",
+    "keep-alive",
+    "proxy-authenticate",
+    "proxy-authorization",
+    "te",
+    "trailers",
+    "transfer-encoding",
+    "upgrade",
+    "content-length",
+  ]);
+
+  for (const [key, value] of Object.entries(req.headers)) {
+    if (!value || hopByHop.has(key.toLowerCase())) continue;
+    if (Array.isArray(value)) {
+      for (const item of value) headers.append(key, item);
+    } else {
+      headers.set(key, value);
+    }
+  }
+
+  const init: RequestInit & { duplex?: "half" } = {
+    method,
+    headers,
+    redirect: "manual",
+  };
+  if (hasBody) {
+    init.body = Readable.toWeb(req as unknown as Readable) as unknown as BodyInit;
+    init.duplex = "half";
+  }
+
+  const upstreamRes = await fetch(upstreamUrl, init);
+  res.statusCode = upstreamRes.status;
+
+  upstreamRes.headers.forEach((value, key) => {
+    const lower = key.toLowerCase();
+    if (lower === "set-cookie" || lower === "transfer-encoding") return;
+    res.setHeader(key, value);
+  });
+
+  const setCookies = extractSetCookies(upstreamRes.headers);
+  if (setCookies.length > 0) {
+    res.setHeader("set-cookie", setCookies);
+  }
+
+  if (!upstreamRes.body) {
+    res.end();
+    return;
+  }
+  Readable.fromWeb(upstreamRes.body as unknown as ReadableStream).pipe(res);
+}
+
 export function createAppServer() {
   return createServer(async (req, res) => {
     try {
       const method = req.method ?? "GET";
       const url = new URL(req.url ?? "/", "http://localhost");
       const pathname = url.pathname;
+
+      // Convex Auth proxy (required when using CUSTOM_AUTH_SITE_URL on a custom domain).
+      if (pathname.startsWith("/api/auth/")) {
+        await proxyConvexAuthRoute(req, res, url);
+        return;
+      }
 
       if (pathname === "/" && method === "GET") {
         await handleRootRoute(req, res);
