@@ -221,7 +221,7 @@ export default function Auth() {
     setAwaitingSession(false);
 
     try {
-      const result = await signIn("google", { redirectTo: "/auth" });
+      const result = await signIn("google");
       if (result.signingIn) setAwaitingSession(true);
     } catch (err) {
       setAwaitingSession(false);
