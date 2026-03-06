@@ -11,7 +11,7 @@ const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 createRoot(document.getElementById("root")!).render(
   <ConvexAuthProvider
     client={convex}
-    storage={window.sessionStorage}
+    storage={window.localStorage}
     storageNamespace="bokun-frontend-auth-tab"
   >
     <I18nProvider>

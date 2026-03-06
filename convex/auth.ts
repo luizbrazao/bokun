@@ -16,6 +16,17 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
     Google,
   ],
   callbacks: {
+    async redirect({ redirectTo }) {
+      // SITE_URL = frontend URL (e.g. https://myapp.vercel.app ou http://localhost:5173).
+      // É diferente de CONVEX_SITE_URL (URL do backend Convex).
+      const siteUrl = (process.env.SITE_URL ?? process.env.CONVEX_SITE_URL ?? "").replace(/\/$/, "");
+      if (!redirectTo || redirectTo === "") return siteUrl;
+      if (redirectTo.startsWith("/") || redirectTo.startsWith("?")) {
+        return `${siteUrl}${redirectTo}`;
+      }
+      if (redirectTo.startsWith(siteUrl)) return redirectTo;
+      throw new Error(`redirectTo inválido: "${redirectTo}". Configure a variável SITE_URL com a URL do frontend.`);
+    },
     async createOrUpdateUser(ctx, args) {
       const { emailVerified, phoneVerified, ...rawProfile } = args.profile;
 
