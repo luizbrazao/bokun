@@ -177,7 +177,7 @@ const dictionaries: Record<Locale, Dictionary> = {
     conversations: {
       title: "Conversas",
       whatsAppTitle: "Conversas WhatsApp",
-      subtitle: "Visualize contexto, sinais recentes e histórico de interação para agir rápido na demanda ao vivo.",
+      subtitle: "Contexto, sinais recentes e histórico da conversa para agir rápido no atendimento.",
       channelWhatsApp: "WhatsApp",
       channelTelegram: "Telegram",
       searchPlaceholder: "Buscar por número do cliente...",

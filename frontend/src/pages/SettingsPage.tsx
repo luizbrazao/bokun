@@ -202,6 +202,7 @@ function TelegramTab({ tenantId }: { tenantId: string }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [form, setForm] = useState({
     botToken: "",
     botUsername: "",
@@ -218,6 +219,7 @@ function TelegramTab({ tenantId }: { tenantId: string }) {
     });
     setEditing(true);
     setSaved(false);
+    setErrorMessage(null);
   };
 
   const generateSecret = () => {
@@ -228,20 +230,34 @@ function TelegramTab({ tenantId }: { tenantId: string }) {
   };
 
   const handleSave = async () => {
-    if (!form.botToken.trim() || !form.botUsername.trim() || !form.webhookSecret.trim()) return;
+    const botUsername = form.botUsername.trim().replace(/^@/, "");
+    if (!botUsername) {
+      setErrorMessage("Bot Username é obrigatório.");
+      return;
+    }
+    const parsedGroupId = form.operatorGroupChatId.trim();
+    if (parsedGroupId.length > 0 && !/^-?\d+$/.test(parsedGroupId)) {
+      setErrorMessage("ID do Grupo de Operadores deve ser numérico (ex: -1001234567890).");
+      return;
+    }
+
+    setErrorMessage(null);
     setSaving(true);
     try {
-      const groupId = form.operatorGroupChatId.trim();
+      const groupId = parsedGroupId;
       await upsert({
         tenantId: tenantId as any,
-        botToken: form.botToken.trim(),
-        botUsername: form.botUsername.trim().replace(/^@/, ""),
-        webhookSecret: form.webhookSecret.trim(),
+        ...(form.botToken.trim().length > 0 ? { botToken: form.botToken.trim() } : {}),
+        botUsername,
+        ...(form.webhookSecret.trim().length > 0 ? { webhookSecret: form.webhookSecret.trim() } : {}),
         ...(groupId.length > 0 ? { operatorGroupChatId: Number(groupId) } : {}),
       });
       setEditing(false);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Não foi possível salvar agora.";
+      setErrorMessage(message);
     } finally {
       setSaving(false);
     }
@@ -283,7 +299,16 @@ function TelegramTab({ tenantId }: { tenantId: string }) {
             <div className="space-y-3">
               <div>
                 <Label htmlFor="tg-token">Bot Token</Label>
-                <Input id="tg-token" type="password" value={form.botToken} onChange={(e) => setForm((f) => ({ ...f, botToken: e.target.value }))} placeholder="Ex: 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11" />
+                <Input
+                  id="tg-token"
+                  type="password"
+                  value={form.botToken}
+                  onChange={(e) => setForm((f) => ({ ...f, botToken: e.target.value }))}
+                  placeholder={channel && editing ? "Deixe em branco para manter o token atual" : "Ex: 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Token privado do bot criado no @BotFather.
+                </p>
               </div>
               <div>
                 <Label htmlFor="tg-username">Bot Username (sem @)</Label>
@@ -297,15 +322,21 @@ function TelegramTab({ tenantId }: { tenantId: string }) {
                     Gerar
                   </Button>
                 </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Chave secreta usada para garantir que só o Telegram envie eventos para seu webhook.
+                </p>
               </div>
               <div>
                 <Label htmlFor="tg-operator-group">ID do Grupo de Operadores (opcional)</Label>
                 <Input id="tg-operator-group" value={form.operatorGroupChatId} onChange={(e) => setForm((f) => ({ ...f, operatorGroupChatId: e.target.value }))} placeholder="Ex: -1001234567890" />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Chat ID do grupo Telegram onde operadores recebem mensagens de handoff. Adicione o bot ao grupo e use /start para obter o ID.
+                  Chat ID do grupo Telegram onde os operadores recebem handoff humano.
                 </p>
               </div>
             </div>
+            {errorMessage && (
+              <p className="text-sm text-red-600">{errorMessage}</p>
+            )}
             <div className="flex gap-2">
               <Button onClick={handleSave} disabled={saving}>
                 <Save className="h-4 w-4 mr-1" />
@@ -316,10 +347,7 @@ function TelegramTab({ tenantId }: { tenantId: string }) {
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              Após salvar, registre o webhook executando:{" "}
-              <code className="bg-muted px-1 py-0.5 rounded text-xs">
-                node --experimental-strip-types --env-file=.env.local scripts/setupTelegramWebhook.ts
-              </code>
+              O webhook do Telegram é registrado automaticamente ao salvar.
             </p>
           </div>
         ) : (

@@ -52,9 +52,9 @@ export const getByOperatorGroupChatId = query({
 export const upsert = mutation({
   args: {
     tenantId: v.id("tenants"),
-    botToken: v.string(),
+    botToken: v.optional(v.string()),
     botUsername: v.string(),
-    webhookSecret: v.string(),
+    webhookSecret: v.optional(v.string()),
     operatorGroupChatId: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
@@ -67,11 +67,55 @@ export const upsert = mutation({
 
     const now = Date.now();
 
+    const incomingBotToken = args.botToken?.trim() ?? "";
+    const incomingWebhookSecret = args.webhookSecret?.trim() ?? "";
+    const normalizedBotUsername = args.botUsername.trim().replace(/^@/, "");
+    if (!normalizedBotUsername) {
+      throw new Error("Bot Username é obrigatório.");
+    }
+
+    const botToken = incomingBotToken || existing?.botToken || "";
+    const webhookSecret = incomingWebhookSecret || existing?.webhookSecret || "";
+
+    if (!botToken) {
+      throw new Error("Bot Token é obrigatório.");
+    }
+    if (!webhookSecret) {
+      throw new Error("Webhook Secret é obrigatório.");
+    }
+
+    // Auto-register Telegram webhook after save, so users don't need manual CLI steps.
+    const env = ((globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }).process?.env) ?? {};
+    const webhookBaseUrl = (
+      env.WEBHOOK_BASE_URL?.trim() ||
+      env.PUBLIC_API_BASE_URL?.trim() ||
+      "https://api.bokun.iaoperators.com"
+    ).replace(/\/$/, "");
+    const webhookUrl = `${webhookBaseUrl}/telegram/webhook/${encodeURIComponent(normalizedBotUsername)}`;
+
+    const setWebhookResponse = await fetch(`https://api.telegram.org/bot${botToken}/setWebhook`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url: webhookUrl,
+        secret_token: webhookSecret,
+        allowed_updates: ["message"],
+      }),
+    });
+    const webhookResult = (await setWebhookResponse.json().catch(() => null)) as
+      | { ok?: boolean; description?: string }
+      | null;
+
+    if (!setWebhookResponse.ok || !webhookResult?.ok) {
+      const description = webhookResult?.description ?? `HTTP ${setWebhookResponse.status}`;
+      throw new Error(`Falha ao registrar webhook no Telegram: ${description}`);
+    }
+
     if (existing) {
       await ctx.db.patch(existing._id, {
-        botToken: args.botToken,
-        botUsername: args.botUsername,
-        webhookSecret: args.webhookSecret,
+        botToken,
+        botUsername: normalizedBotUsername,
+        webhookSecret,
         operatorGroupChatId: args.operatorGroupChatId,
         updatedAt: now,
       });
@@ -80,9 +124,9 @@ export const upsert = mutation({
 
     return ctx.db.insert("telegram_channels", {
       tenantId: args.tenantId,
-      botToken: args.botToken,
-      botUsername: args.botUsername,
-      webhookSecret: args.webhookSecret,
+      botToken,
+      botUsername: normalizedBotUsername,
+      webhookSecret,
       operatorGroupChatId: args.operatorGroupChatId,
       status: "active",
       createdAt: now,
