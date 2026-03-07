@@ -46,8 +46,9 @@ export async function createCheckoutSession(args: CreateCheckoutSessionArgs): Pr
     mode: "subscription",
     payment_method_types: ["card"],
     line_items: [{ price: priceId, quantity: 1 }],
+    // Trial is app-managed (tenant.createdAt / status gating), so Stripe checkout
+    // should charge immediately when the customer decides to subscribe.
     subscription_data: {
-      trial_period_days: 7, // BILL-02: 7-day free trial per CONTEXT.md locked decision
       metadata: { tenantId: args.tenantId },
     },
     customer: tenant.stripeCustomerId ?? undefined,
