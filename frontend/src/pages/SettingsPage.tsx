@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@convex/api";
 import { useTenant } from "@/hooks/useTenant";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -197,7 +197,7 @@ function TelegramTab({ tenantId }: { tenantId: string }) {
     api.dashboard.getTelegramChannel,
     tenantId ? { tenantId: tenantId as any } : "skip",
   );
-  const upsert = useMutation(api.telegramChannels.upsert);
+  const upsertAndRegisterWebhook = useAction(api.telegramActions.upsertAndRegisterWebhook);
 
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -245,7 +245,7 @@ function TelegramTab({ tenantId }: { tenantId: string }) {
     setSaving(true);
     try {
       const groupId = parsedGroupId;
-      await upsert({
+      await upsertAndRegisterWebhook({
         tenantId: tenantId as any,
         ...(form.botToken.trim().length > 0 ? { botToken: form.botToken.trim() } : {}),
         botUsername,
