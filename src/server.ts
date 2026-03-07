@@ -1606,6 +1606,7 @@ async function handleRootRoute(_req: IncomingMessage, res: ServerResponse): Prom
       whatsappWebhook: "/whatsapp/webhook",
       bokunWebhook: "/bokun/webhook",
       oauthAuthorize: "/oauth/authorize",
+      oauthInstall: "/oauth/install",
       oauthCallback: "/oauth/callback",
       adminBootstrap: "/admin/bootstrap",
       adminWhatsappChannel: "/admin/whatsapp/channel",
@@ -1862,7 +1863,7 @@ export function createAppServer() {
       }
 
       // OAuth routes
-      if (pathname === "/oauth/authorize" && method === "GET") {
+      if ((pathname === "/oauth/authorize" || pathname === "/oauth/install") && method === "GET") {
         await handleOAuthAuthorizeRoute(req, res);
         return;
       }
