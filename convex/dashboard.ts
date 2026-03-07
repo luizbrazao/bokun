@@ -143,6 +143,23 @@ function asIsoDateString(value: unknown): string | undefined {
   return undefined;
 }
 
+function asDateOnlyString(value: unknown): string | undefined {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) return date.toISOString().slice(0, 10);
+    return undefined;
+  }
+
+  const str = asString(value);
+  if (!str) return undefined;
+  const isoDateMatch = str.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (isoDateMatch) return isoDateMatch[1];
+
+  const parsed = new Date(str);
+  if (!Number.isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 10);
+  return undefined;
+}
+
 function getFirstString(record: JsonRecord | null, keys: string[]): string | undefined {
   if (!record) return undefined;
   for (const key of keys) {
@@ -159,6 +176,40 @@ function getFirstDateString(record: JsonRecord | null, keys: string[]): string |
     if (value) return value;
   }
   return undefined;
+}
+
+function getFirstDateOnlyString(record: JsonRecord | null, keys: string[]): string | undefined {
+  if (!record) return undefined;
+  for (const key of keys) {
+    const value = asDateOnlyString(record[key]);
+    if (value) return value;
+  }
+  return undefined;
+}
+
+function normalizeDisplayStatus(rawStatus: string | undefined, paymentStatus: string | undefined): string {
+  const status = (rawStatus ?? "").toUpperCase();
+  const payment = (paymentStatus ?? "").toUpperCase();
+
+  if (status === "CANCELLED" || status === "ABORTED" || status === "NO_SHOW") {
+    return status;
+  }
+
+  if (status === "RESERVED" || status === "REQUESTED" || status === "DRAFT") {
+    return "PENDING";
+  }
+
+  if (
+    payment === "NOT_PAID" ||
+    payment === "PARTIALLY_PAID" ||
+    payment === "DEPOSIT_PAID" ||
+    payment === "DEPOSIT"
+  ) {
+    return "PENDING";
+  }
+
+  if (status) return status;
+  return "UNKNOWN";
 }
 
 function formatBokunDateUTC(date = new Date()): string {
@@ -318,7 +369,7 @@ export const listBokunBookingsByPeriod = action({
     const body: Record<string, unknown> = {
       page: Math.max(1, Math.floor(args.page ?? 1)),
       pageSize: Math.max(1, Math.min(100, Math.floor(args.pageSize ?? 50))),
-      startDateRange: {
+      creationDateRange: {
         from: toIsoRangeStart(args.fromDate),
         to: toIsoRangeEnd(args.toDate),
         includeLower: true,
@@ -361,16 +412,28 @@ export const listBokunBookingsByPeriod = action({
         const firstProductBooking = asRecord(productBookings[0]);
         const firstProductInfo = asRecord(firstProductBooking?.product);
         const firstStartDate =
-          getFirstDateString(firstProductBooking, ["startDate", "date", "activityDate", "startTime"]) ??
-          getFirstDateString(item, ["startDate", "date", "activityDate", "travelDate"]);
+          getFirstDateOnlyString(firstProductBooking, ["startDate", "date", "activityDate"]) ??
+          getFirstDateOnlyString(item, ["startDate", "date", "activityDate", "travelDate"]) ??
+          getFirstDateString(firstProductBooking, ["startDateTime", "endDateTime"]) ??
+          getFirstDateString(item, ["startDateTime", "endDateTime"]);
         const startDateFromAnyProduct = !firstStartDate
           ? productBookings
               .map((pb) =>
-                getFirstDateString(asRecord(pb), ["startDate", "date", "activityDate", "startTime"]),
+                getFirstDateOnlyString(asRecord(pb), ["startDate", "date", "activityDate"]) ??
+                getFirstDateString(asRecord(pb), ["startDateTime", "endDateTime"]),
               )
               .find((value): value is string => Boolean(value))
           : undefined;
         const firstStatus = asString(firstProductBooking?.status);
+        const itemStatus =
+          getFirstString(item, ["bookingStatus", "status"]) ??
+          firstStatus ??
+          undefined;
+        const paymentStatus =
+          getFirstString(item, ["paymentStatus", "paidType"]) ??
+          getFirstString(firstProductBooking, ["paymentStatus", "paidType"]) ??
+          undefined;
+        const displayStatus = normalizeDisplayStatus(itemStatus, paymentStatus);
 
         const firstName = asString(customer?.firstName) ?? "";
         const lastName = asString(customer?.lastName) ?? "";
@@ -379,8 +442,13 @@ export const listBokunBookingsByPeriod = action({
         return {
           id: item.id,
           confirmationCode: getFirstString(item, ["confirmationCode"]),
-          status: getFirstString(item, ["bookingStatus"]) ?? firstStatus ?? getFirstString(item, ["status"]) ?? "UNKNOWN",
-          creationDate: getFirstString(item, ["creationDate"]),
+          status: displayStatus,
+          rawStatus: itemStatus ?? null,
+          paymentStatus: paymentStatus ?? null,
+          creationDate:
+            getFirstDateString(item, ["creationDate", "bookingCreationDate"]) ??
+            getFirstDateString(firstProductBooking, ["creationDate", "bookingCreationDate"]) ??
+            null,
           startDate: firstStartDate ?? startDateFromAnyProduct ?? null,
           productTitle:
             getFirstString(firstProductInfo, ["title"]) ??
