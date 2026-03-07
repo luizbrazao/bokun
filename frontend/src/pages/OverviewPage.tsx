@@ -185,6 +185,12 @@ export default function OverviewPage() {
               </Badge>
             </div>
             <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">{t("overview.telegram")}</span>
+              <Badge variant={stats.telegramConnected ? "default" : "secondary"} className={stats.telegramConnected ? "bg-emerald-600" : ""}>
+                {stats.telegramConnected ? t("overview.connected") : t("overview.notConfigured")}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Bokun</span>
               <Badge variant={stats.bokunConnected ? "default" : "secondary"} className={stats.bokunConnected ? "bg-emerald-600" : ""}>
                 {stats.bokunConnected ? t("overview.connected") : t("overview.notConfigured")}

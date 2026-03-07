@@ -82,6 +82,11 @@ export const getDashboardStats = query({
       .withIndex("by_tenantId", (q) => q.eq("tenantId", args.tenantId))
       .first();
 
+    const telegramChannel = await ctx.db
+      .query("telegram_channels")
+      .withIndex("by_tenantId", (q) => q.eq("tenantId", args.tenantId))
+      .first();
+
     const recentBookings = bookings
       .sort((a, b) => b.updatedAt - a.updatedAt)
       .slice(0, 5)
@@ -102,6 +107,7 @@ export const getDashboardStats = query({
       totalConversations: conversationUsers.size,
       conversionRate,
       whatsappConnected: whatsappChannel !== null,
+      telegramConnected: telegramChannel !== null,
       bokunConnected: bokunInstallation !== null,
       recentBookings,
       messagesToday,
