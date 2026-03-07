@@ -63,6 +63,10 @@ export async function handleStripeEvent(
       const session = event.data.object as Stripe.Checkout.Session;
       const customerId = typeof session.customer === "string" ? session.customer : session.customer?.id;
       const subscriptionId = typeof session.subscription === "string" ? session.subscription : null;
+      const tenantIdFromMetadata =
+        typeof session.metadata?.tenantId === "string" && session.metadata.tenantId.trim().length > 0
+          ? session.metadata.tenantId.trim()
+          : null;
 
       if (!customerId || !subscriptionId) {
         rootLogger.warn(
@@ -75,6 +79,33 @@ export async function handleStripeEvent(
       // Retrieve full subscription to get accurate status at checkout completion time.
       // Pitfall #6: checkout.session.completed may arrive before subscription is "active".
       const subscription = await getStripeClient().subscriptions.retrieve(subscriptionId);
+
+      if (tenantIdFromMetadata) {
+        await convex.mutation(
+          "subscriptions:upsertTenantSubscription" as any,
+          {
+            tenantId: tenantIdFromMetadata,
+            stripeCustomerId: customerId,
+            stripeSubscriptionId: subscription.id,
+            stripeStatus: subscription.status,
+            stripeCurrentPeriodEnd: subscription.current_period_end,
+          } as any
+        );
+
+        rootLogger.info(
+          {
+            handler: "stripe_webhook",
+            tenantId: tenantIdFromMetadata,
+            customerId,
+            subscriptionId: subscription.id,
+            status: subscription.status,
+            source: "checkout.session.completed.metadata",
+          },
+          "stripe_subscription_persisted"
+        );
+        return { handled: true };
+      }
+
       await persistSubscription(convex, customerId, subscription);
       return { handled: true };
     }
