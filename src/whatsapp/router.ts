@@ -24,10 +24,11 @@ type ConversationHandoff = {
 } | null;
 
 const GRACE_PERIOD_DAYS = 7;
+const TRIAL_DAYS = 7;
 
 /**
  * Returns true if the bot should be blocked for this tenant based on subscription status.
- * - null/undefined stripeStatus → NOT gated (allows pre-Stripe tenants to continue working)
+ * - null/undefined stripeStatus → gated ONLY after app trial (TRIAL_DAYS) based on tenantCreatedAtMs
  * - "active" / "trialing" → NOT gated
  * - "past_due" within GRACE_PERIOD_DAYS of stripeCurrentPeriodEnd → NOT gated (grace period)
  * - "past_due" beyond grace period → gated
@@ -36,13 +37,20 @@ const GRACE_PERIOD_DAYS = 7;
 export function isSubscriptionGated(
   stripeStatus: string | undefined | null,
   stripeCurrentPeriodEnd: number | undefined | null,
+  tenantCreatedAtMs?: number | null,
   nowMs?: number
 ): boolean {
-  if (!stripeStatus) return false; // no subscription yet — allow (pre-billing tenants)
+  const now = nowMs ?? Date.now();
+  if (!stripeStatus) {
+    // App-managed pre-Stripe trial.
+    // If createdAt is missing/invalid, keep legacy permissive behavior to avoid accidental outages.
+    if (!tenantCreatedAtMs || tenantCreatedAtMs <= 0) return false;
+    const trialEndMs = tenantCreatedAtMs + TRIAL_DAYS * 24 * 60 * 60 * 1000;
+    return now > trialEndMs;
+  }
   if (stripeStatus === "active" || stripeStatus === "trialing") return false;
   if (stripeStatus === "past_due") {
     if (!stripeCurrentPeriodEnd) return true; // no period end known — block
-    const now = nowMs ?? Date.now();
     const graceCutoffMs = stripeCurrentPeriodEnd * 1000 + GRACE_PERIOD_DAYS * 24 * 60 * 60 * 1000;
     return now > graceCutoffMs;
   }
@@ -61,7 +69,7 @@ export async function routeWhatsAppMessage(
   const tenant = await convex.query(
     "tenants:getTenantByIdForService" as any,
     { tenantId: args.tenantId, serviceToken } as any
-  ) as { status: string; stripeStatus?: string; stripeCurrentPeriodEnd?: number; language?: string } | null;
+  ) as { status: string; stripeStatus?: string; stripeCurrentPeriodEnd?: number; language?: string; createdAt?: number } | null;
   const language = normalizeLanguage(tenant?.language);
   if (tenant?.status === "disabled") {
     return {
@@ -79,7 +87,7 @@ export async function routeWhatsAppMessage(
   // Grace period: past_due within 7 days of stripeCurrentPeriodEnd
   // Blocked: canceled, unpaid, incomplete, incomplete_expired, paused, and past_due beyond 7-day grace
   if (tenant) {
-    const gated = isSubscriptionGated(tenant.stripeStatus, tenant.stripeCurrentPeriodEnd);
+    const gated = isSubscriptionGated(tenant.stripeStatus, tenant.stripeCurrentPeriodEnd, tenant.createdAt);
     if (gated) {
       return {
         handled: true,
