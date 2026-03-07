@@ -51,7 +51,6 @@ export async function createCheckoutSession(args: CreateCheckoutSessionArgs): Pr
       metadata: { tenantId: args.tenantId },
     },
     customer: tenant.stripeCustomerId ?? undefined,
-    customer_creation: tenant.stripeCustomerId ? undefined : "always",
     metadata: { tenantId: args.tenantId },
     success_url: args.successUrl,
     cancel_url: args.cancelUrl,
