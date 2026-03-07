@@ -38,6 +38,10 @@ expectNoThrow("allow GET /activity.json/123/pickup-places", () => {
   assertBokunEndpointAllowed("GET", "/activity.json/123/pickup-places");
 });
 
+expectNoThrow("allow POST /booking.json/booking-search", () => {
+  assertBokunEndpointAllowed("POST", "/booking.json/booking-search");
+});
+
 expectThrow("block GET /booking.json/product-list.json", () => {
   assertBokunEndpointAllowed("GET", "/booking.json/product-list.json");
 });

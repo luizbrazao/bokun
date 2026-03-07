@@ -9,8 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   CalendarCheck,
-  CheckCircle,
-  Clock,
   MessageSquare,
   TrendingUp,
   Wifi,
@@ -85,7 +83,7 @@ export default function OverviewPage() {
 
   if (!stats) {
     return (
-      <div className="dashboard-surface rounded-3xl p-6 md:p-8 space-y-6">
+      <div className="dashboard-surface min-h-full -m-8 p-6 md:p-8 space-y-6">
         <Skeleton className="h-10 w-72" />
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -104,7 +102,7 @@ export default function OverviewPage() {
   const botActive = stats.botStatus === "active";
 
   return (
-    <div className="dashboard-surface rounded-3xl p-6 md:p-8 space-y-6 md:space-y-8">
+    <div className="dashboard-surface min-h-full -m-8 p-6 md:p-8 space-y-6 md:space-y-8">
       <header className="space-y-3">
         <span className="dashboard-chip">Operational Intelligence</span>
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
@@ -112,31 +110,25 @@ export default function OverviewPage() {
             <h1 className="text-4xl md:text-5xl font-display leading-[1.02] text-deep-ink">
               {t("overview.title")}
             </h1>
-            <p className="text-sm md:text-base text-text-secondary mt-2 max-w-2xl">
-              KPIs estratégicos, táticos e operacionais em uma visão única para decisão diária.
-            </p>
           </div>
-          <div className="dashboard-card px-4 py-3 w-fit">
-            <p className="text-xs text-text-secondary uppercase tracking-[0.08em] mb-2">{t("overview.botStatus")}</p>
+          <div className="w-fit rounded-2xl border border-[#052A2E] bg-[#052A2E] px-4 py-3">
+            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-white/80">{t("overview.botStatus")}</p>
             <div className="flex items-center gap-3">
-              <Badge
-                variant={botActive ? "default" : "secondary"}
-                className={botActive ? "bg-emerald-600" : "bg-slate-200 text-slate-600"}
-              >
+              <span className={botActive ? "text-sm font-semibold text-[#CCF048]" : "text-sm font-semibold text-white/70"}>
                 {botActive ? t("overview.botActive") : t("overview.botDisabled")}
-              </Badge>
+              </span>
               <button
                 role="switch"
                 aria-checked={botActive}
                 aria-label={t("overview.toggleBot")}
                 disabled={isToggling}
                 onClick={handleBotToggle}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
-                  botActive ? "bg-emerald-500" : "bg-slate-300"
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#CCF048] focus:ring-offset-2 focus:ring-offset-[#052A2E] disabled:cursor-not-allowed disabled:opacity-50 ${
+                  botActive ? "bg-[#CCF048]" : "bg-white/25"
                 }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                  className={`inline-block h-4 w-4 transform rounded-full bg-[#052A2E] shadow transition-transform ${
                     botActive ? "translate-x-6" : "translate-x-1"
                   }`}
                 />
@@ -171,48 +163,6 @@ export default function OverviewPage() {
           value={`${stats.conversionRate}%`}
           accent="bg-lime-200"
         />
-      </section>
-
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="dashboard-card">
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-emerald-600 shrink-0" />
-              <div>
-                <p className="text-xl font-bold text-deep-ink">{stats.confirmedCount}</p>
-                <p className="text-xs text-text-secondary">{t("overview.confirmed")}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="dashboard-card">
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-amber-600 shrink-0" />
-              <div>
-                <p className="text-xl font-bold text-deep-ink">{stats.pendingCount}</p>
-                <p className="text-xs text-text-secondary">{t("overview.pending")}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="dashboard-card col-span-2">
-          <CardContent className="pt-4 h-full">
-            <div className="h-full flex flex-col justify-center">
-              <p className="text-xs text-text-secondary uppercase tracking-[0.08em]">Canal principal</p>
-              <div className="mt-2 flex items-center gap-2">
-                {stats.whatsappConnected ? (
-                  <Wifi className="h-4 w-4 text-emerald-600" />
-                ) : (
-                  <WifiOff className="h-4 w-4 text-slate-400" />
-                )}
-                <Badge variant={stats.whatsappConnected ? "default" : "secondary"} className={stats.whatsappConnected ? "bg-emerald-600" : ""}>
-                  {stats.whatsappConnected ? t("overview.connected") : t("overview.disconnected")}
-                </Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </section>
 
       <section className="grid grid-cols-1 xl:grid-cols-2 gap-4">

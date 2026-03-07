@@ -22,6 +22,7 @@ const BOKUN_ALLOWED_ENDPOINTS: AllowedEndpoint[] = [
   { method: "POST", pathPattern: "/booking.json/{confirmationCode}/confirm" },
   { method: "GET", pathPattern: "/booking.json/{confirmationCode}/abort-reserved" },
   { method: "GET", pathPattern: "/booking.json/booking/{confirmationCode}" },
+  { method: "POST", pathPattern: "/booking.json/booking-search" },
   // Cancel booking
   { method: "POST", pathPattern: "/booking.json/cancel-booking/{confirmationCode}" },
 ];

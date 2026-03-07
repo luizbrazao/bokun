@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQuery } from "convex/react";
+import { useEffect, useState } from "react";
+import { useAction, useQuery } from "convex/react";
 import { api } from "@convex/api";
 import { useTenant } from "@/hooks/useTenant";
 import {
@@ -83,11 +83,49 @@ const BookingsPage = () => {
     api.dashboard.listBookingDrafts,
     tenantId ? { tenantId } : "skip",
   );
+  const searchBokunBookings = useAction((api as any).dashboard.listBokunBookingsByPeriod);
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [search, setSearch] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [bokunBookings, setBokunBookings] = useState<any[] | null>(null);
+  const [bokunTotalHits, setBokunTotalHits] = useState(0);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [bokunStatus, setBokunStatus] = useState("ALL");
+  const [bokunFromDate, setBokunFromDate] = useState(() => {
+    const now = new Date();
+    const start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    return start.toISOString().slice(0, 10);
+  });
+  const [bokunToDate, setBokunToDate] = useState(() => new Date().toISOString().slice(0, 10));
+
+  const runSync = async () => {
+    if (!tenantId) return;
+    setIsSyncing(true);
+    try {
+      const result = (await searchBokunBookings({
+        tenantId,
+        fromDate: bokunFromDate,
+        toDate: bokunToDate,
+        statuses: bokunStatus === "ALL" ? [] : [bokunStatus],
+        page: 1,
+        pageSize: 50,
+      })) as { items?: any[]; totalHits?: number };
+      setBokunBookings(Array.isArray(result?.items) ? result.items : []);
+      setBokunTotalHits(typeof result?.totalHits === "number" ? result.totalHits : 0);
+    } catch {
+      setBokunBookings([]);
+      setBokunTotalHits(0);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  useEffect(() => {
+    void runSync();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenantId, bokunFromDate, bokunToDate, bokunStatus]);
 
   const filtered = bookings?.filter((b) => {
     if (statusFilter !== "all" && b.status !== statusFilter) return false;
@@ -135,6 +173,95 @@ const BookingsPage = () => {
           </Tabs>
         </CardHeader>
         <CardContent>
+          <div className="mb-6">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h3 className="text-base font-semibold">Reservas Bokun (período/status)</h3>
+              <button
+                type="button"
+                onClick={() => void runSync()}
+                disabled={isSyncing}
+                className="rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-60"
+              >
+                {isSyncing ? "Sincronizando..." : "Sincronizar"}
+              </button>
+            </div>
+            <div className="mb-3 grid grid-cols-1 gap-2 md:grid-cols-3">
+              <Input
+                type="date"
+                value={bokunFromDate}
+                onChange={(e) => setBokunFromDate(e.target.value)}
+              />
+              <Input
+                type="date"
+                value={bokunToDate}
+                onChange={(e) => setBokunToDate(e.target.value)}
+              />
+              <select
+                value={bokunStatus}
+                onChange={(e) => setBokunStatus(e.target.value)}
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="ALL">Todos os status</option>
+                <option value="CONFIRMED">CONFIRMED</option>
+                <option value="RESERVED">RESERVED</option>
+                <option value="CANCELLED">CANCELLED</option>
+                <option value="REQUESTED">REQUESTED</option>
+                <option value="ABORTED">ABORTED</option>
+                <option value="NO_SHOW">NO_SHOW</option>
+              </select>
+            </div>
+            {bokunBookings === null || isSyncing ? (
+              <div className="space-y-2">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={`bokun-sync-${i}`} className="h-8 w-full" />
+                ))}
+              </div>
+            ) : bokunBookings.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Sem reservas sincronizadas da Bokun.</p>
+            ) : (
+              <>
+                <p className="mb-2 text-xs text-muted-foreground">Total Bokun: {bokunTotalHits}</p>
+                <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("bookings.code")}</TableHead>
+                    <TableHead>{t("bookings.client")}</TableHead>
+                    <TableHead>{t("bookings.activity")}</TableHead>
+                    <TableHead>{t("bookings.date")}</TableHead>
+                    <TableHead>{t("bookings.status")}</TableHead>
+                    <TableHead>{t("bookings.updated")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {bokunBookings.map((b, idx) => (
+                    <TableRow key={`${b.confirmationCode ?? "code"}-${idx}`}>
+                      <TableCell className="font-mono text-xs">
+                        {b.confirmationCode ?? "-"}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {b.customerName ?? "-"}
+                      </TableCell>
+                      <TableCell className="max-w-[220px] truncate">
+                        {b.productTitle ?? "-"}
+                      </TableCell>
+                      <TableCell>{b.startDate ? formatDateTime(locale, Date.parse(b.startDate)) : "-"}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{b.status ?? "-"}</Badge>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {b.creationDate ? formatDateTime(locale, Date.parse(b.creationDate)) : "-"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              </>
+            )}
+          </div>
+
+          <div className="mb-3">
+            <h3 className="text-base font-semibold">Drafts do Bot</h3>
+          </div>
           {bookings === undefined ? (
             <div className="space-y-3">
               {Array.from({ length: 5 }).map((_, i) => (
