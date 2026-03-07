@@ -13,6 +13,32 @@ import { Search, MessageSquareText, Bot, UserRound } from "lucide-react";
 import { formatTimeAgo, useI18n } from "@/i18n";
 
 const PAGE_SIZE = 50;
+type ChannelFilter = "wa" | "tg";
+
+function resolveChannel(waUserId: string, handoffChannel?: string): ChannelFilter {
+  if (handoffChannel === "tg" || waUserId.startsWith("tg:")) return "tg";
+  return "wa";
+}
+
+function formatPhoneDisplay(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return raw;
+  return `+${digits}`;
+}
+
+function getClientLabel(c: any): string {
+  if (typeof c?.customerName === "string" && c.customerName.trim().length > 0) {
+    return c.customerName.trim();
+  }
+  if (typeof c?.clientName === "string" && c.clientName.trim().length > 0) {
+    return c.clientName.trim();
+  }
+  if (typeof c?.waUserId === "string" && c.waUserId.startsWith("tg:")) {
+    const tgId = c.waUserId.replace(/^tg:/, "");
+    return `Telegram ${tgId}`;
+  }
+  return formatPhoneDisplay(c?.waUserId ?? "-");
+}
 
 const ConversationsPage = () => {
   const { tenantId } = useTenant();
@@ -22,11 +48,19 @@ const ConversationsPage = () => {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(0);
+  const [channel, setChannel] = useState<ChannelFilter>("wa");
 
   const conversations = useQuery(api.dashboard.listConversations, tenantId ? { tenantId } : "skip");
 
   const filtered = conversations?.filter((c) => {
-    if (search && !c.waUserId.toLowerCase().includes(search.toLowerCase())) return false;
+    const currentChannel = resolveChannel(c.waUserId, c.handoffChannel);
+    if (currentChannel !== channel) return false;
+
+    if (search) {
+      const q = search.toLowerCase();
+      const clientLabel = getClientLabel(c).toLowerCase();
+      if (!c.waUserId.toLowerCase().includes(q) && !clientLabel.includes(q)) return false;
+    }
     if (dateFrom && c.updatedAt < new Date(dateFrom).getTime()) return false;
     if (dateTo && c.updatedAt > new Date(dateTo + "T23:59:59").getTime()) return false;
     return true;
@@ -43,19 +77,46 @@ const ConversationsPage = () => {
   };
 
   return (
-    <div className="dashboard-surface rounded-3xl p-6 md:p-8 space-y-6">
+    <div className="dashboard-surface min-h-full -m-8 p-6 md:p-8 space-y-6 md:space-y-8">
       <header className="space-y-3">
         <span className="dashboard-chip">Customer Thread Intelligence</span>
         <h1 className="text-4xl md:text-5xl font-display leading-[1.02] text-deep-ink">{t("conversations.title")}</h1>
         <p className="text-sm md:text-base text-text-secondary max-w-2xl">
-          Visualize context, latest signals and interaction history to act fast on live demand.
+          {t("conversations.subtitle")}
         </p>
       </header>
 
       <Card className="dashboard-card">
         <CardHeader className="pb-3">
           <div className="flex flex-col gap-4">
-            <CardTitle className="text-xl font-display text-deep-ink">{t("conversations.whatsAppTitle")}</CardTitle>
+            <CardTitle className="text-xl font-display text-deep-ink">
+              <div className="inline-flex rounded-lg border border-border-subtle bg-white p-1 gap-1">
+                <button
+                  type="button"
+                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                    channel === "wa" ? "bg-[#052A2E] text-[#CCF048]" : "text-text-secondary hover:bg-muted"
+                  }`}
+                  onClick={() => {
+                    setChannel("wa");
+                    setPage(0);
+                  }}
+                >
+                  {t("conversations.channelWhatsApp")}
+                </button>
+                <button
+                  type="button"
+                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                    channel === "tg" ? "bg-[#052A2E] text-[#CCF048]" : "text-text-secondary hover:bg-muted"
+                  }`}
+                  onClick={() => {
+                    setChannel("tg");
+                    setPage(0);
+                  }}
+                >
+                  {t("conversations.channelTelegram")}
+                </button>
+              </div>
+            </CardTitle>
             <div className="flex flex-wrap gap-3 items-end">
               <div className="relative flex-1 min-w-[200px] max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -121,7 +182,6 @@ const ConversationsPage = () => {
                     <TableRow>
                       <TableHead>{t("conversations.client")}</TableHead>
                       <TableHead>{t("conversations.lastMessage")}</TableHead>
-                      <TableHead>{t("conversations.lastActivity")}</TableHead>
                       <TableHead>{t("conversations.updated")}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -135,7 +195,7 @@ const ConversationsPage = () => {
                         <TableCell className="font-mono text-xs">
                           <span className="inline-flex items-center gap-2">
                             <UserRound className="h-3.5 w-3.5 text-text-secondary" />
-                            ...{c.waUserId.slice(-8)}
+                            {getClientLabel(c)}
                           </span>
                         </TableCell>
                         <TableCell className="max-w-[340px]">
@@ -153,7 +213,6 @@ const ConversationsPage = () => {
                             <span className="text-xs text-muted-foreground">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-sm">{c.lastActivityId ?? "-"}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">{formatTimeAgo(t, c.updatedAt)}</TableCell>
                       </TableRow>
                     ))}

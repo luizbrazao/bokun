@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAction, useQuery } from "convex/react";
+import { useAction } from "convex/react";
 import { api } from "@convex/api";
 import { useTenant } from "@/hooks/useTenant";
 import {
@@ -19,28 +19,10 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { Search } from "lucide-react";
-import { formatDateByLocale, formatDateTimeByLocale, formatTimeAgo, useI18n } from "@/i18n";
+import { formatDateByLocale, formatDateTimeByLocale, useI18n } from "@/i18n";
 
 type StatusFilter = "all" | "confirmed" | "pending" | "abandoned";
-
-function statusBadge(status: string, t: (key: string) => string) {
-  switch (status) {
-    case "confirmed":
-      return <Badge variant="success">{t("overview.statusConfirmed")}</Badge>;
-    case "abandoned":
-      return <Badge variant="warning">{t("overview.statusAbandoned")}</Badge>;
-    default:
-      return <Badge variant="secondary">{t("overview.statusDraft")}</Badge>;
-  }
-}
 
 function bokunStatusBadge(status: string | undefined) {
   const normalized = (status ?? "").toUpperCase();
@@ -113,42 +95,13 @@ function hasExplicitTime(rawDate: string): boolean {
   return value.includes("T") || /\s\d{2}:\d{2}/.test(value);
 }
 
-function nextStepLabel(step: string | undefined, t: (key: string) => string) {
-  const labels: Record<string, string> = {
-    select_time: t("bookings.stepSelectTime"),
-    select_pickup: t("bookings.stepSelectPickup"),
-    ask_participants: t("bookings.stepAskParticipants"),
-    ask_booking_questions: t("bookings.stepAskBookingQuestions"),
-    collect_booking_answers: t("bookings.stepCollectBookingAnswers"),
-    confirm: t("bookings.stepConfirm"),
-  };
-  return step ? labels[step] ?? step : "-";
-}
-
-function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex justify-between py-1.5 border-b last:border-0">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-sm font-medium text-right max-w-[60%] break-all">
-        {value ?? "-"}
-      </span>
-    </div>
-  );
-}
-
 const BookingsPage = () => {
   const { tenantId } = useTenant();
   const { locale, t } = useI18n();
-  const bookings = useQuery(
-    api.dashboard.listBookingDrafts,
-    tenantId ? { tenantId } : "skip",
-  );
   const searchBokunBookings = useAction((api as any).dashboard.listBokunBookingsByPeriod);
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [search, setSearch] = useState("");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [bokunBookings, setBokunBookings] = useState<any[] | null>(null);
   const [bokunTotalHits, setBokunTotalHits] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -188,18 +141,6 @@ const BookingsPage = () => {
     void runSync();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantId, bokunFromDate, bokunToDate, bokunStatus]);
-
-  const filteredDrafts = bookings?.filter((b) => {
-    if (!matchesTopStatus(statusFilter, b.status)) return false;
-    if (search) {
-      const q = search.toLowerCase();
-      const matchesClient = b.waUserId.toLowerCase().includes(q);
-      const matchesCode = b.bokunConfirmationCode?.toLowerCase().includes(q);
-      const matchesActivity = b.activityId?.toLowerCase().includes(q);
-      if (!matchesClient && !matchesCode && !matchesActivity) return false;
-    }
-    return true;
-  });
 
   const filteredBokun = (bokunBookings ?? []).filter((b) => {
     if (!matchesTopStatus(statusFilter, b.status)) return false;
@@ -365,97 +306,8 @@ const BookingsPage = () => {
               </>
             )}
           </div>
-
-          <div className="mb-3">
-            <h3 className="text-base font-semibold">Drafts do Bot</h3>
-          </div>
-          {bookings === undefined ? (
-            <div className="space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-10 w-full" />
-              ))}
-            </div>
-          ) : filteredDrafts && filteredDrafts.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
-              {t("bookings.none")}
-            </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("bookings.client")}</TableHead>
-                  <TableHead>{t("bookings.activity")}</TableHead>
-                  <TableHead>{t("bookings.date")}</TableHead>
-                  <TableHead>{t("bookings.participants")}</TableHead>
-                  <TableHead>{t("bookings.status")}</TableHead>
-                  <TableHead>{t("bookings.code")}</TableHead>
-                  <TableHead>{t("bookings.updated")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredDrafts?.map((b) => (
-                  <TableRow
-                    key={b._id}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => setSelectedBooking(b)}
-                  >
-                    <TableCell className="font-mono text-xs">
-                      ...{b.waUserId.slice(-8)}
-                    </TableCell>
-                    <TableCell className="max-w-[120px] truncate">
-                      {b.activityId}
-                    </TableCell>
-                    <TableCell>{b.date}</TableCell>
-                    <TableCell>{b.participants ?? "-"}</TableCell>
-                    <TableCell>{statusBadge(b.status, t)}</TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {b.bokunConfirmationCode ?? "-"}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {formatTimeAgo(t, b.updatedAt)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
         </CardContent>
       </Card>
-
-      <Dialog
-        open={selectedBooking !== null}
-        onOpenChange={(open) => !open && setSelectedBooking(null)}
-      >
-        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{t("bookings.detailsTitle")}</DialogTitle>
-            <DialogDescription>
-              {selectedBooking?.bokunConfirmationCode
-                ? `Código: ${selectedBooking.bokunConfirmationCode}`
-                : t("bookings.reservationInProgress")}
-            </DialogDescription>
-          </DialogHeader>
-          {selectedBooking && (
-            <div className="space-y-1">
-              <InfoRow label={t("bookings.client")} value={`...${selectedBooking.waUserId.slice(-8)}`} />
-              <InfoRow label={t("bookings.activity")} value={selectedBooking.activityId} />
-              <InfoRow label={t("bookings.date")} value={selectedBooking.date} />
-              <InfoRow label={t("bookings.participants")} value={selectedBooking.participants} />
-              <InfoRow label={t("bookings.status")} value={statusBadge(selectedBooking.status, t)} />
-              <InfoRow label={t("bookings.currentStep")} value={nextStepLabel(selectedBooking.nextStep, t)} />
-              <InfoRow label={t("bookings.bokunCode")} value={selectedBooking.bokunConfirmationCode} />
-              <InfoRow label={t("bookings.bookingId")} value={selectedBooking.bokunBookingId} />
-              <InfoRow label={t("bookings.pickup")} value={selectedBooking.pickupPlaceId} />
-              <InfoRow
-                label={t("bookings.confirmedAt")}
-                value={selectedBooking.confirmedAt ? formatDateTime(locale, selectedBooking.confirmedAt) : null}
-              />
-              <InfoRow label={t("bookings.createdAt")} value={formatDateTime(locale, selectedBooking.createdAt)} />
-              <InfoRow label={t("bookings.updatedAt")} value={formatDateTime(locale, selectedBooking.updatedAt)} />
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

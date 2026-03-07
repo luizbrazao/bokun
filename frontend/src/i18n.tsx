@@ -177,6 +177,9 @@ const dictionaries: Record<Locale, Dictionary> = {
     conversations: {
       title: "Conversas",
       whatsAppTitle: "Conversas WhatsApp",
+      subtitle: "Visualize contexto, sinais recentes e histórico de interação para agir rápido na demanda ao vivo.",
+      channelWhatsApp: "WhatsApp",
+      channelTelegram: "Telegram",
       searchPlaceholder: "Buscar por número do cliente...",
       from: "De:",
       to: "Até:",
@@ -416,6 +419,9 @@ const dictionaries: Record<Locale, Dictionary> = {
     conversations: {
       title: "Conversations",
       whatsAppTitle: "WhatsApp Conversations",
+      subtitle: "Visualize context, latest signals and interaction history to act fast on live demand.",
+      channelWhatsApp: "WhatsApp",
+      channelTelegram: "Telegram",
       searchPlaceholder: "Search by client number...",
       from: "From:",
       to: "To:",
@@ -655,6 +661,9 @@ const dictionaries: Record<Locale, Dictionary> = {
     conversations: {
       title: "Conversaciones",
       whatsAppTitle: "Conversaciones de WhatsApp",
+      subtitle: "Visualiza contexto, señales recientes e historial de interacción para actuar rápido en la demanda en vivo.",
+      channelWhatsApp: "WhatsApp",
+      channelTelegram: "Telegram",
       searchPlaceholder: "Buscar por número del cliente...",
       from: "Desde:",
       to: "Hasta:",
