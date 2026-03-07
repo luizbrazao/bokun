@@ -24,7 +24,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Copy, RefreshCw, UserMinus, Pencil, Save, Globe } from "lucide-react";
+import { Copy, RefreshCw, UserMinus, Pencil, Save, Globe, Check } from "lucide-react";
 import { type Locale, useI18n } from "@/i18n";
 
 function formatDate(ts?: number | null) {
@@ -1090,55 +1090,79 @@ function AssinaturaTab({ tenantId }: { tenantId: string }) {
         </CardContent>
       </Card>
 
-      {/* Plan selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Escolher Plano</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
-            Todos os planos incluem 7 dias de teste grátis. Cancele a qualquer momento.
+      {/* Plan selection (same visual language as Landing pricing block) */}
+      <section className="glass-card rounded-3xl p-6 sm:p-8">
+        <div className="text-center">
+          <h2 className="font-display text-4xl sm:text-5xl text-slate-900">Planos</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-sm text-text-secondary">
+            Comece com flexibilidade no mensal ou maximize eficiência no anual com 2 meses grátis.
           </p>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {/* Monthly plan */}
-            <div className="rounded-lg border p-4 space-y-3">
-              <div>
-                <p className="font-semibold text-lg">Mensal</p>
-                <p className="text-2xl font-bold mt-1">€29<span className="text-sm font-normal text-muted-foreground">/mês</span></p>
-              </div>
-              <Button
-                className="w-full"
-                variant="outline"
-                onClick={() => handleCheckout("monthly")}
-                disabled={loadingCheckout}
-              >
-                Começar teste grátis (7 dias)
-              </Button>
-            </div>
+        </div>
 
-            {/* Annual plan */}
-            <div className="rounded-lg border border-primary p-4 space-y-3 relative">
-              <Badge className="absolute -top-2 right-4 bg-primary text-primary-foreground">Recomendado</Badge>
-              <div>
-                <p className="font-semibold text-lg">Anual</p>
-                <p className="text-2xl font-bold mt-1">€290<span className="text-sm font-normal text-muted-foreground">/ano</span></p>
-                <p className="text-xs text-green-600 mt-1">Poupa ~2 meses vs. mensal</p>
-              </div>
-              <Button
-                className="w-full"
-                onClick={() => handleCheckout("annual")}
-                disabled={loadingCheckout}
-              >
-                Começar teste grátis (7 dias)
-              </Button>
+        <div className="mt-8 grid gap-4 md:grid-cols-2">
+          <article className="rounded-2xl border border-border-subtle bg-surface p-6">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-3xl font-semibold text-slate-900">Mensal</h3>
+              <span className="rounded-full bg-accent-cream px-2 py-0.5 text-[10px] font-semibold uppercase text-text-secondary">
+                Flexível
+              </span>
             </div>
-          </div>
+            <p className="mb-5 text-sm text-text-secondary">
+              Para operações que querem começar rápido.
+            </p>
+            <ul className="space-y-2 text-sm text-text-secondary">
+              <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-600" />Mensagens e fluxos automáticos</li>
+              <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-600" />Integração Bokun + canais de chat</li>
+              <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-600" />Suporte por email</li>
+              <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-600" />7 dias de teste grátis</li>
+            </ul>
+            <p className="font-display mt-7 text-5xl text-slate-900">€29</p>
+            <p className="mt-1 text-xs text-text-secondary">/mês</p>
+            <button
+              type="button"
+              className="mt-4 inline-flex w-full justify-center rounded-full bg-black px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-black/90 disabled:opacity-60"
+              onClick={() => handleCheckout("monthly")}
+              disabled={loadingCheckout}
+            >
+              Iniciar teste grátis
+            </button>
+            <p className="mt-2 text-center text-xs text-text-secondary">Sem cartão de crédito</p>
+          </article>
 
-          {checkoutError && (
-            <p className="mt-3 text-sm text-destructive">{checkoutError}</p>
-          )}
-        </CardContent>
-      </Card>
+          <article className="rounded-2xl border border-black bg-black p-6 text-white shadow-xl">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-3xl font-semibold">Anual</h3>
+              <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-semibold uppercase">
+                2 meses grátis
+              </span>
+            </div>
+            <p className="mb-5 text-sm text-white/70">
+              Para quem quer reduzir custo total e escalar com previsibilidade.
+            </p>
+            <ul className="space-y-2 text-sm text-white/80">
+              <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-cyan-300" />Tudo do plano mensal</li>
+              <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-cyan-300" />Melhor custo-benefício anual</li>
+              <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-cyan-300" />Prioridade de suporte</li>
+              <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-cyan-300" />7 dias de teste grátis</li>
+            </ul>
+            <p className="font-display mt-7 text-5xl">€290</p>
+            <p className="mt-1 text-xs text-white/70">/ano</p>
+            <button
+              type="button"
+              className="mt-4 inline-flex w-full justify-center rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-white/90 disabled:opacity-60"
+              onClick={() => handleCheckout("annual")}
+              disabled={loadingCheckout}
+            >
+              Iniciar teste grátis
+            </button>
+            <p className="mt-2 text-center text-xs text-white/70">Sem cartão de crédito</p>
+          </article>
+        </div>
+
+        {checkoutError && (
+          <p className="mt-4 text-sm text-destructive">{checkoutError}</p>
+        )}
+      </section>
     </div>
   );
 }
