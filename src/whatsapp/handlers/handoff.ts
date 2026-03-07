@@ -131,6 +131,17 @@ export async function handleStartHandoff(
     } as any
   );
 
+  // Persist user message in chat history so the operator inbox stays complete.
+  await convex.mutation(
+    "chatMessages:addMessage" as any,
+    {
+      tenantId: args.tenantId,
+      waUserId: args.waUserId,
+      role: "user",
+      content: args.text,
+    } as any
+  );
+
   return {
     text: byLanguage(args.language, {
       pt: "Transferindo para um atendente. Aguarde, em breve alguém vai responder.",
@@ -154,6 +165,17 @@ export async function handleHandoffUserMessage(
     "telegramChannels:getByTenantIdForService" as any,
     { tenantId: args.tenantId, serviceToken } as any
   )) as TelegramChannelRecord;
+
+  // Persist every inbound message during handoff so operators can see the full thread.
+  await convex.mutation(
+    "chatMessages:addMessage" as any,
+    {
+      tenantId: args.tenantId,
+      waUserId: args.waUserId,
+      role: "user",
+      content: args.text,
+    } as any
+  );
 
   if (!tgChannel?.operatorGroupChatId || !tgChannel.botToken) {
     return { text: "", handled: true };
