@@ -33,6 +33,10 @@ const dictionaries: Record<Locale, Dictionary> = {
       support: "Atendimento",
       settings: "Configurações",
       appName: "Bokun WhatsApp Bot",
+      trialActive: "Trial ativo",
+      trialDaysLeft: "{days}d restantes",
+      trialEnded: "Trial ended",
+      choosePlan: "Escolher plano",
     },
     dashboardLayout: {
       loadingOrg: "Carregando organização...",
@@ -264,6 +268,10 @@ const dictionaries: Record<Locale, Dictionary> = {
       support: "Support",
       settings: "Settings",
       appName: "Bokun WhatsApp Bot",
+      trialActive: "Trial active",
+      trialDaysLeft: "{days}d left",
+      trialEnded: "Trial ended",
+      choosePlan: "Choose a plan",
     },
     dashboardLayout: {
       loadingOrg: "Loading organization...",
@@ -495,6 +503,10 @@ const dictionaries: Record<Locale, Dictionary> = {
       support: "Atención",
       settings: "Configuración",
       appName: "Bokun WhatsApp Bot",
+      trialActive: "Trial activo",
+      trialDaysLeft: "{days}d restantes",
+      trialEnded: "Trial ended",
+      choosePlan: "Elegir plan",
     },
     dashboardLayout: {
       loadingOrg: "Cargando organización...",

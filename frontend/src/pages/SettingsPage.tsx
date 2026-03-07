@@ -24,8 +24,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Copy, RefreshCw, UserMinus, Pencil, Save } from "lucide-react";
-import { useI18n } from "@/i18n";
+import { Copy, RefreshCw, UserMinus, Pencil, Save, Globe } from "lucide-react";
+import { type Locale, useI18n } from "@/i18n";
 
 function formatDate(ts: number) {
   return new Date(ts).toLocaleDateString("pt-BR", {
@@ -1084,12 +1084,60 @@ function AssinaturaTab({ tenantId }: { tenantId: string }) {
 
 const SettingsPage = () => {
   const { tenantId } = useTenant();
-  const { t } = useI18n();
+  const { t, locale, setLocale } = useI18n();
   const [tab, setTab] = useState("whatsapp");
+  const [showLocaleMenu, setShowLocaleMenu] = useState(false);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const tabParam = searchParams.get("tab");
+    const allowedTabs = new Set(["whatsapp", "telegram", "bokun", "ia", "equipe", "perfil", "assinatura"]);
+    if (tabParam && allowedTabs.has(tabParam)) {
+      setTab(tabParam);
+    }
+  }, []);
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">{t("settings.title")}</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">{t("settings.title")}</h1>
+        <div className="relative">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => setShowLocaleMenu((v) => !v)}
+            aria-label={t("common.language")}
+          >
+            <Globe className="h-4 w-4" />
+            <span className="uppercase">{locale}</span>
+          </Button>
+          {showLocaleMenu && (
+            <div className="absolute right-0 z-20 mt-2 min-w-40 rounded-md border bg-white shadow-lg p-1">
+              {[
+                { value: "pt", label: "Português" },
+                { value: "en", label: "English" },
+                { value: "es", label: "Español" },
+              ].map((item) => (
+                <button
+                  key={item.value}
+                  type="button"
+                  onClick={() => {
+                    setLocale(item.value as Locale);
+                    setShowLocaleMenu(false);
+                  }}
+                  className={`w-full rounded px-3 py-2 text-left text-sm hover:bg-muted ${
+                    locale === item.value ? "bg-muted font-medium" : ""
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>

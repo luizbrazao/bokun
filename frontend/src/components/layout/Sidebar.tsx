@@ -4,17 +4,70 @@ import { useQuery } from "convex/react";
 import { api } from "@convex/api";
 import { LayoutDashboard, BookOpen, MessageSquare, Headset, Settings, LogOut, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { type Locale, useI18n } from "@/i18n";
+import { useI18n } from "@/i18n";
 
 interface SidebarProps {
-  tenantName: string;
   tenantId?: string;
 }
 
-export function Sidebar({ tenantName, tenantId }: SidebarProps) {
+const CHATPLUG_LOGO_SRC = "/chatplug-newlogo.svg";
+const TRIAL_DAYS = 7;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+type TenantForTrial = {
+  stripeStatus?: string;
+  stripeCurrentPeriodEnd?: number;
+  createdAt?: number;
+} | null;
+
+function resolveTrialState(tenant: TenantForTrial): { state: "active"; daysLeft: number } | { state: "ended" } | null {
+  if (!tenant) return null;
+
+  const status = tenant.stripeStatus ?? null;
+  if (status === "active") {
+    return null;
+  }
+
+  const now = Date.now();
+
+  // Stripe trial is authoritative only when status is explicitly "trialing".
+  if (
+    status === "trialing" &&
+    typeof tenant.stripeCurrentPeriodEnd === "number" &&
+    tenant.stripeCurrentPeriodEnd > 0
+  ) {
+    const stripeTrialEndMs = tenant.stripeCurrentPeriodEnd * 1000;
+    if (now >= stripeTrialEndMs) {
+      return { state: "ended" };
+    }
+    const daysLeft = Math.max(1, Math.ceil((stripeTrialEndMs - now) / DAY_MS));
+    return { state: "active", daysLeft };
+  }
+
+  // Non-trialing Stripe states are not trial-active.
+  if (status && status !== "trialing") {
+    return { state: "ended" };
+  }
+
+  // Pre-Stripe/new tenant fallback: 7-day trial since tenant creation.
+  const createdAtMs =
+    typeof tenant.createdAt === "number" && tenant.createdAt > 0 ? tenant.createdAt : now;
+  const trialEndMs = createdAtMs + TRIAL_DAYS * DAY_MS;
+
+  if (now >= trialEndMs) {
+    return { state: "ended" };
+  }
+
+  const daysLeft = Math.max(1, Math.ceil((trialEndMs - now) / DAY_MS));
+  return { state: "active", daysLeft };
+}
+
+export function Sidebar({ tenantId }: SidebarProps) {
   const { signOut } = useAuthActions();
-  const { t, locale, setLocale } = useI18n();
+  const { t } = useI18n();
+  const tenant = useQuery(api.userTenants.getMyTenant, {});
 
   const navItems = [
     { to: "/overview", label: t("sidebar.overview"), icon: LayoutDashboard },
@@ -29,12 +82,16 @@ export function Sidebar({ tenantName, tenantId }: SidebarProps) {
     api.dashboard.countActiveHandoffs,
     tenantId ? { tenantId: tenantId as any } : "skip",
   );
+  const trial = resolveTrialState(tenant);
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r bg-card">
-      <div className="border-b p-4">
-        <h2 className="text-lg font-semibold truncate">{tenantName}</h2>
-        <p className="text-xs text-muted-foreground">{t("sidebar.appName")}</p>
+      <div className="border-b p-4 flex justify-center">
+        <img
+          src={CHATPLUG_LOGO_SRC}
+          alt="ChatPlug"
+          className="h-9 w-auto object-contain"
+        />
       </div>
 
       <nav className="flex-1 space-y-1 p-3">
@@ -62,19 +119,28 @@ export function Sidebar({ tenantName, tenantId }: SidebarProps) {
         ))}
       </nav>
 
-      <div className="border-t p-3">
-        <label className="mb-2 block text-xs text-muted-foreground">
-          {t("common.language")}
-        </label>
-        <select
-          value={locale}
-          onChange={(e) => setLocale(e.target.value as Locale)}
-          className="mb-3 h-8 w-full rounded-md border border-input bg-background px-2 text-xs"
-        >
-          <option value="pt">Português</option>
-          <option value="en">English</option>
-          <option value="es">Español</option>
-        </select>
+      <div className="border-t p-3 space-y-3">
+        {trial?.state === "active" && (
+          <div className="rounded-lg border border-[#052A2E] bg-[#052A2E] p-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-medium text-white">{t("sidebar.trialActive")}</span>
+              <Badge variant="secondary" className="border-0 bg-[#CCF048] text-[#052A2E]">
+                {t("sidebar.trialDaysLeft", { days: trial.daysLeft })}
+              </Badge>
+            </div>
+          </div>
+        )}
+        {trial?.state === "ended" && (
+          <div className="rounded-lg border border-[#052A2E] bg-[#052A2E] p-3 space-y-2">
+            <p className="text-xs font-semibold text-white">{t("sidebar.trialEnded")}</p>
+            <NavLink
+              to="/configuracoes?tab=assinatura"
+              className="inline-flex w-full items-center justify-center rounded-md bg-[#CCF048] px-3 py-2 text-xs font-medium text-[#052A2E] transition-colors hover:opacity-90"
+            >
+              {t("sidebar.choosePlan")}
+            </NavLink>
+          </div>
+        )}
         <Button
           variant="ghost"
           className="w-full justify-start gap-3 text-muted-foreground"
