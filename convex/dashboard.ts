@@ -2,7 +2,6 @@ import { action, query } from "./_generated/server";
 import { v } from "convex/values";
 import { requireTenantMembership } from "./userTenants";
 import { api } from "./_generated/api";
-import { createHmac } from "node:crypto";
 
 export const listBookingDrafts = query({
   args: { tenantId: v.id("tenants") },
@@ -160,17 +159,42 @@ function formatBokunDateUTC(date = new Date()): string {
   ].join("");
 }
 
-function makeBokunSignature(args: {
+function bytesToBase64(bytes: Uint8Array): string {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  let output = "";
+  for (let i = 0; i < bytes.length; i += 3) {
+    const a = bytes[i]!;
+    const b = i + 1 < bytes.length ? bytes[i + 1]! : 0;
+    const c = i + 2 < bytes.length ? bytes[i + 2]! : 0;
+    const triplet = (a << 16) | (b << 8) | c;
+    output += alphabet[(triplet >> 18) & 0x3f];
+    output += alphabet[(triplet >> 12) & 0x3f];
+    output += i + 1 < bytes.length ? alphabet[(triplet >> 6) & 0x3f] : "=";
+    output += i + 2 < bytes.length ? alphabet[triplet & 0x3f] : "=";
+  }
+  return output;
+}
+
+async function makeBokunSignature(args: {
   date: string;
   accessKey: string;
   secretKey: string;
   method: string;
   pathWithQuery: string;
-}): string {
+}): Promise<string> {
   const input = `${args.date}${args.accessKey}${args.method.toUpperCase()}${args.pathWithQuery}`;
-  const hmac = createHmac("sha1", args.secretKey);
-  hmac.update(input, "utf8");
-  return hmac.digest("base64");
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(args.secretKey);
+  const payload = encoder.encode(input);
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    keyData,
+    { name: "HMAC", hash: "SHA-1" },
+    false,
+    ["sign"],
+  );
+  const signatureBuffer = await crypto.subtle.sign("HMAC", cryptoKey, payload);
+  return bytesToBase64(new Uint8Array(signatureBuffer));
 }
 
 function getHeaderValue(headers: Record<string, string>, name: string): string | undefined {
@@ -181,11 +205,11 @@ function getHeaderValue(headers: Record<string, string>, name: string): string |
   return undefined;
 }
 
-function buildBokunHeaders(
+async function buildBokunHeaders(
   baseHeaders: Record<string, string>,
   method: string,
   pathWithQuery: string,
-): Record<string, string> {
+): Promise<Record<string, string>> {
   const accessKey = getHeaderValue(baseHeaders, "x-bokun-accesskey")?.trim();
   const secretKey = getHeaderValue(baseHeaders, "x-bokun-secretkey")?.trim();
   if (!accessKey || !secretKey) {
@@ -193,7 +217,7 @@ function buildBokunHeaders(
   }
 
   const date = formatBokunDateUTC(new Date());
-  const signature = makeBokunSignature({
+  const signature = await makeBokunSignature({
     date,
     accessKey,
     secretKey,
@@ -290,7 +314,7 @@ export const listBokunBookingsByPeriod = action({
 
     const path = "/booking.json/booking-search";
     const url = new URL(path, context.baseUrl);
-    const headers = buildBokunHeaders(context.headers ?? {}, "POST", path);
+    const headers = await buildBokunHeaders(context.headers ?? {}, "POST", path);
     headers["Content-Type"] = "application/json";
 
     const response = await fetch(url.toString(), {
