@@ -97,25 +97,7 @@ export default function OverviewPage() {
     }
   };
 
-  if (!stats) {
-    return (
-      <div className="dashboard-surface min-h-full -m-8 p-6 md:p-8 space-y-6">
-        <Skeleton className="h-10 w-72" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i} className="dashboard-card">
-              <CardContent className="pt-6">
-                <Skeleton className="h-8 w-20 mb-3" />
-                <Skeleton className="h-4 w-32" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  const botActive = stats.botStatus === "active";
+  const botActive = stats?.botStatus === "active";
 
   useEffect(() => {
     let cancelled = false;
@@ -152,6 +134,24 @@ export default function OverviewPage() {
       cancelled = true;
     };
   }, [tenantId, stats?.bokunConnected, stats?.recentBookings, listBokunBookingsByPeriod]);
+
+  if (!stats) {
+    return (
+      <div className="dashboard-surface min-h-full -m-8 p-6 md:p-8 space-y-6">
+        <Skeleton className="h-10 w-72" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="dashboard-card">
+              <CardContent className="pt-6">
+                <Skeleton className="h-8 w-20 mb-3" />
+                <Skeleton className="h-4 w-32" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   const hasLocalRecent = stats.recentBookings.length > 0;
   const hasFallbackRecent = bokunRecentFallback.length > 0;
