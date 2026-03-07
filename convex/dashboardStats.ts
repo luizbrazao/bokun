@@ -68,6 +68,9 @@ export const getDashboardStats = query({
     const messagesToday = tenantMessages.filter(
       (m) => m.createdAt >= startOfTodayMs,
     ).length;
+    const conversationUsers = new Set<string>();
+    for (const c of conversations) conversationUsers.add(c.waUserId);
+    for (const m of tenantMessages) conversationUsers.add(m.waUserId);
 
     const whatsappChannel = await ctx.db
       .query("whatsapp_channels")
@@ -96,7 +99,7 @@ export const getDashboardStats = query({
       confirmedCount,
       pendingCount,
       abandonedCount,
-      totalConversations: conversations.length,
+      totalConversations: conversationUsers.size,
       conversionRate,
       whatsappConnected: whatsappChannel !== null,
       bokunConnected: bokunInstallation !== null,

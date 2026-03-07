@@ -28,8 +28,34 @@ export const listConversations = query({
       .order("desc")
       .take(100);
 
+    const recentMessages = await ctx.db
+      .query("chat_messages")
+      .withIndex("by_tenantId_waUserId", (q) => q.eq("tenantId", args.tenantId))
+      .order("desc")
+      .take(500);
+
+    const conversationMap = new Map<string, (typeof conversations)[number]>();
+    for (const conv of conversations) {
+      conversationMap.set(conv.waUserId, conv);
+    }
+    for (const msg of recentMessages) {
+      if (!conversationMap.has(msg.waUserId)) {
+        conversationMap.set(msg.waUserId, {
+          _id: `synthetic_${msg.waUserId}` as any,
+          tenantId: args.tenantId,
+          waUserId: msg.waUserId,
+          createdAt: msg.createdAt,
+          updatedAt: msg.createdAt,
+        } as any);
+      }
+    }
+
+    const merged = Array.from(conversationMap.values())
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .slice(0, 100);
+
     const enriched = await Promise.all(
-      conversations.map(async (conv) => {
+      merged.map(async (conv) => {
         const lastMsg = await ctx.db
           .query("chat_messages")
           .withIndex("by_tenantId_waUserId", (q) =>

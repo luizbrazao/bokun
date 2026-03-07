@@ -22,6 +22,36 @@ export const getConversationByWaUserId = query({
   },
 });
 
+export const touchConversation = mutation({
+  args: {
+    tenantId: v.id("tenants"),
+    waUserId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    assertNonEmptyString(args.waUserId, "waUserId");
+
+    const now = Date.now();
+    const existing = await ctx.db
+      .query("conversations")
+      .withIndex("by_tenantId_waUserId", (q) =>
+        q.eq("tenantId", args.tenantId).eq("waUserId", args.waUserId)
+      )
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, { updatedAt: now });
+      return existing._id;
+    }
+
+    return ctx.db.insert("conversations", {
+      tenantId: args.tenantId,
+      waUserId: args.waUserId,
+      createdAt: now,
+      updatedAt: now,
+    });
+  },
+});
+
 export const upsertConversationOptionMap = mutation({
   args: {
     tenantId: v.id("tenants"),

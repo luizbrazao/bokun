@@ -36,15 +36,36 @@ export const addMessage = mutation({
         toolCallId: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
-        return ctx.db.insert("chat_messages", {
+        const now = Date.now();
+        const insertedId = await ctx.db.insert("chat_messages", {
             tenantId: args.tenantId,
             waUserId: args.waUserId,
             role: args.role,
             content: args.content,
             toolCalls: args.toolCalls,
             toolCallId: args.toolCallId,
-            createdAt: Date.now(),
+            createdAt: now,
         });
+
+        const conversation = await ctx.db
+            .query("conversations")
+            .withIndex("by_tenantId_waUserId", (q) =>
+                q.eq("tenantId", args.tenantId).eq("waUserId", args.waUserId)
+            )
+            .first();
+
+        if (conversation) {
+            await ctx.db.patch(conversation._id, { updatedAt: now });
+        } else {
+            await ctx.db.insert("conversations", {
+                tenantId: args.tenantId,
+                waUserId: args.waUserId,
+                createdAt: now,
+                updatedAt: now,
+            });
+        }
+
+        return insertedId;
     },
 });
 
@@ -82,6 +103,25 @@ export const addMessages = mutation({
                 createdAt: now + i, // Ensure ordering within batch
             });
             ids.push(id);
+        }
+
+        const conversation = await ctx.db
+            .query("conversations")
+            .withIndex("by_tenantId_waUserId", (q) =>
+                q.eq("tenantId", args.tenantId).eq("waUserId", args.waUserId)
+            )
+            .first();
+
+        const updatedAt = now + Math.max(args.messages.length - 1, 0);
+        if (conversation) {
+            await ctx.db.patch(conversation._id, { updatedAt });
+        } else {
+            await ctx.db.insert("conversations", {
+                tenantId: args.tenantId,
+                waUserId: args.waUserId,
+                createdAt: now,
+                updatedAt,
+            });
         }
 
         return ids;
