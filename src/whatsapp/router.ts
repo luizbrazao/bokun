@@ -131,6 +131,7 @@ export async function routeWhatsAppMessage(
     tenantId: args.tenantId,
     waUserId: args.waUserId,
     userMessage: args.text,
+    channel,
     language,
   });
 }

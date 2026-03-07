@@ -83,8 +83,11 @@ export async function handleStartHandoff(
     { tenantId: args.tenantId, waUserId: args.waUserId } as any
   )) as ConversationRecord;
 
+  // Guard against channel drift from upstream callers.
+  const effectiveChannel: "wa" | "tg" = args.waUserId.startsWith("tg:") ? "tg" : args.channel;
+
   // Build context message for operator group
-  const channelLabel = args.channel === "wa" ? "WhatsApp" : "Telegram";
+  const channelLabel = effectiveChannel === "wa" ? "WhatsApp" : "Telegram";
   const contextParts = [
     `📩 *Novo atendimento*`,
     `Canal: ${channelLabel}`,
@@ -124,7 +127,7 @@ export async function handleStartHandoff(
       waUserId: args.waUserId,
       handoffState: "active",
       handoffOperatorMessageId: sendResult.messageId,
-      handoffChannel: args.channel,
+      handoffChannel: effectiveChannel,
     } as any
   );
 
@@ -156,7 +159,8 @@ export async function handleHandoffUserMessage(
     return { text: "", handled: true };
   }
 
-  const channelLabel = args.channel === "wa" ? "WhatsApp" : "Telegram";
+  const effectiveChannel: "wa" | "tg" = args.waUserId.startsWith("tg:") ? "tg" : args.channel;
+  const channelLabel = effectiveChannel === "wa" ? "WhatsApp" : "Telegram";
   const forwardText = `[${channelLabel} | ${args.waUserId}]\n${args.text}`;
 
   await sendTelegramMessage({

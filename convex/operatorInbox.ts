@@ -31,9 +31,11 @@ export const sendOperatorMessage = action({
       throw new Error("Conversa não está em atendimento humano ativo.");
     }
 
-    const channel = conversation.handoffChannel ?? "wa";
+    const conversationChannel = conversation.handoffChannel ?? "wa";
+    const effectiveChannel =
+      args.waUserId.startsWith("tg:") ? "tg" : conversationChannel;
 
-    if (channel === "tg") {
+    if (effectiveChannel === "tg") {
       // Send via Telegram Bot API
       const tgChannel = await ctx.runQuery(
         api.telegramChannels.getByTenantId,
@@ -130,9 +132,11 @@ export const resolveHandoff = action({
 
     const closeMessage =
       "Atendimento encerrado. Posso ajudar com mais alguma coisa?";
-    const channel = conversation.handoffChannel ?? "wa";
+    const conversationChannel = conversation.handoffChannel ?? "wa";
+    const effectiveChannel =
+      args.waUserId.startsWith("tg:") ? "tg" : conversationChannel;
 
-    if (channel === "tg") {
+    if (effectiveChannel === "tg") {
       const tgChannel = await ctx.runQuery(
         api.telegramChannels.getByTenantId,
         { tenantId: args.tenantId },
