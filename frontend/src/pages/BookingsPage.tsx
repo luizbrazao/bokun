@@ -27,7 +27,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Search } from "lucide-react";
-import { formatDateTimeByLocale, formatTimeAgo, useI18n } from "@/i18n";
+import { formatDateByLocale, formatDateTimeByLocale, formatTimeAgo, useI18n } from "@/i18n";
 
 type StatusFilter = "all" | "confirmed" | "pending" | "abandoned";
 
@@ -49,6 +49,14 @@ function formatDateTime(locale: "pt" | "en" | "es", ts: number) {
     year: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+  });
+}
+
+function formatDateOnly(locale: "pt" | "en" | "es", ts: number) {
+  return formatDateByLocale(locale, ts, {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
   });
 }
 
@@ -81,10 +89,13 @@ function resolveBookingDateISO(entry: unknown): string | null {
     }
   }
 
-  if (typeof safeEntry?.creationDate === "string" && safeEntry.creationDate.trim().length > 0) {
-    return safeEntry.creationDate;
-  }
   return null;
+}
+
+function hasExplicitTime(rawDate: string): boolean {
+  const value = rawDate.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  return value.includes("T") || /\s\d{2}:\d{2}/.test(value);
 }
 
 function nextStepLabel(step: string | undefined, t: (key: string) => string) {
@@ -318,7 +329,10 @@ const BookingsPage = () => {
                           const rawDate = resolveBookingDateISO(b);
                           if (!rawDate) return "-";
                           const parsed = Date.parse(rawDate);
-                          return Number.isNaN(parsed) ? rawDate : formatDateTime(locale, parsed);
+                          if (Number.isNaN(parsed)) return rawDate;
+                          return hasExplicitTime(rawDate)
+                            ? formatDateTime(locale, parsed)
+                            : formatDateOnly(locale, parsed);
                         })()}
                       </TableCell>
                       <TableCell>
