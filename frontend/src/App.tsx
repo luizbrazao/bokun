@@ -10,7 +10,6 @@ import ConversationsPage from "./pages/ConversationsPage";
 import ConversationDetailPage from "./pages/ConversationDetailPage";
 import SettingsPage from "./pages/SettingsPage";
 import OperatorInboxPage from "./pages/OperatorInboxPage";
-import FailedWebhooksPage from "./pages/FailedWebhooksPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import TermsOfUsePage from "./pages/TermsOfUsePage";
 import { useTenant } from "./hooks/useTenant";
@@ -94,7 +93,6 @@ function App() {
               path="/conversas/:waUserId"
               element={<ConversationDetailPage />}
             />
-            <Route path="/webhooks" element={<FailedWebhooksPage />} />
             <Route path="/atendimento" element={<OperatorInboxPage />} />
             <Route path="/configuracoes" element={<SettingsPage />} />
           </Route>

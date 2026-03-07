@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery } from "convex/react";
 import { api } from "@convex/api";
-import { LayoutDashboard, BookOpen, MessageSquare, Headset, Settings, LogOut, AlertTriangle } from "lucide-react";
+import { LayoutDashboard, BookOpen, MessageSquare, Headset, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -73,7 +73,6 @@ export function Sidebar({ tenantId }: SidebarProps) {
     { to: "/overview", label: t("sidebar.overview"), icon: LayoutDashboard },
     { to: "/reservas", label: t("sidebar.bookings"), icon: BookOpen },
     { to: "/conversas", label: t("sidebar.conversations"), icon: MessageSquare },
-    { to: "/webhooks", label: t("sidebar.webhooks"), icon: AlertTriangle },
     { to: "/atendimento", label: t("sidebar.support"), icon: Headset, showBadge: true },
     { to: "/configuracoes", label: t("sidebar.settings"), icon: Settings },
   ];
