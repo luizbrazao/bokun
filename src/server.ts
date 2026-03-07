@@ -1641,8 +1641,25 @@ async function handleHealthRoute(_req: IncomingMessage, res: ServerResponse): Pr
 
 async function handleOAuthAuthorizeRoute(_req: IncomingMessage, res: ServerResponse): Promise<void> {
   const url = new URL(_req.url ?? "/", "http://localhost");
-  const bokunDomain = url.searchParams.get("domain");
-  const env = url.searchParams.get("env") as "test" | "production" | null;
+  let bokunDomain =
+    url.searchParams.get("domain") ??
+    url.searchParams.get("bokunDomain") ??
+    url.searchParams.get("vendorDomain");
+  const envRaw = url.searchParams.get("env");
+  const env = (envRaw === "test" || envRaw === "production" ? envRaw : null) as
+    | "test"
+    | "production"
+    | null;
+
+  // Tolerate malformed install URLs like:
+  // /oauth/install?env=production?domain=demo&hmac=...
+  // (double "?" causes `domain` to be swallowed into `env`)
+  if (!bokunDomain && envRaw && envRaw.includes("?domain=")) {
+    const maybeDomain = envRaw.split("?domain=")[1]?.split("&")[0]?.trim();
+    if (maybeDomain) {
+      bokunDomain = maybeDomain;
+    }
+  }
 
   if (!bokunDomain) {
     sendJson(res, 400, { ok: false, error: "Missing 'domain' query parameter (e.g., ?domain=yourcompany)." });
