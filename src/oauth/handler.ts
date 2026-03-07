@@ -14,7 +14,13 @@ function getOAuthConfig(): OAuthConfig {
   const clientSecret = process.env.BOKUN_APP_CLIENT_SECRET?.trim();
   const redirectUri = process.env.BOKUN_OAUTH_REDIRECT_URI?.trim();
   const rawScopes = process.env.BOKUN_OAUTH_SCOPES;
-  const scopes = rawScopes !== undefined ? rawScopes.trim() : "bookings activities";
+  const scopes = rawScopes !== undefined
+    ? rawScopes
+        .split(/[,\s]+/)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0)
+        .join(" ")
+    : "bookings activities";
 
   if (!clientId || !clientSecret || !redirectUri) {
     throw new Error("Missing OAuth config: BOKUN_APP_CLIENT_ID, BOKUN_APP_CLIENT_SECRET, BOKUN_OAUTH_REDIRECT_URI");
@@ -145,7 +151,12 @@ export async function handleOAuthCallback(params: {
   const oauthHeaders = {
     Authorization: `Bearer ${tokenData.access_token}`,
   };
-  const scopes = tokenData.scope ? tokenData.scope.split(" ") : [];
+  const scopes = tokenData.scope
+    ? tokenData.scope
+        .split(/[,\s]+/)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0)
+    : [];
 
   // New multi-provider installation record
   await convex.mutation(
