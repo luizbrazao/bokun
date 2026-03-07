@@ -1,8 +1,8 @@
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@convex/api";
 import { useTenant } from "@/hooks/useTenant";
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +35,20 @@ function statusLabel(status: string, t: (key: string) => string) {
   }
 }
 
+function bokunStatusBadge(status: string | undefined) {
+  const normalized = (status ?? "").toUpperCase();
+  if (normalized === "CONFIRMED") return <Badge variant="success">{normalized}</Badge>;
+  if (normalized === "PENDING") return <Badge variant="warning">{normalized}</Badge>;
+  if (normalized === "CANCELLED") return <Badge variant="destructive">{normalized}</Badge>;
+  return <Badge variant="secondary">{normalized || "-"}</Badge>;
+}
+
+function parseBookingDate(raw: unknown): number | null {
+  if (typeof raw !== "string" || raw.trim().length === 0) return null;
+  const ms = Date.parse(raw);
+  return Number.isNaN(ms) ? null : ms;
+}
+
 function MetricCard({
   icon,
   label,
@@ -65,8 +79,10 @@ export default function OverviewPage() {
   const { tenantId } = useTenant();
   const { t } = useI18n();
   const stats = useQuery(api.dashboardStats.getDashboardStats, tenantId ? { tenantId } : "skip");
+  const listBokunBookingsByPeriod = useAction((api as any).dashboard.listBokunBookingsByPeriod);
   const toggleBot = useMutation(api.tenants.updateTenantStatus);
   const [isToggling, setIsToggling] = useState(false);
+  const [bokunRecentFallback, setBokunRecentFallback] = useState<any[]>([]);
 
   const handleBotToggle = async () => {
     if (!tenantId || !stats || isToggling) return;
@@ -100,6 +116,45 @@ export default function OverviewPage() {
   }
 
   const botActive = stats.botStatus === "active";
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadFallback() {
+      if (!tenantId || !stats?.bokunConnected || (stats.recentBookings?.length ?? 0) > 0) {
+        setBokunRecentFallback([]);
+        return;
+      }
+      const now = new Date();
+      const year = now.getFullYear();
+      try {
+        const result = (await listBokunBookingsByPeriod({
+          tenantId,
+          fromDate: `${year}-01-01`,
+          toDate: `${year}-12-31`,
+          statuses: [],
+          page: 1,
+          pageSize: 10,
+        })) as { items?: any[] };
+        if (cancelled) return;
+        const items = Array.isArray(result?.items) ? result.items : [];
+        const sorted = [...items].sort((a, b) => {
+          const da = parseBookingDate(a?.startDateTime ?? a?.startDate) ?? 0;
+          const db = parseBookingDate(b?.startDateTime ?? b?.startDate) ?? 0;
+          return db - da;
+        });
+        setBokunRecentFallback(sorted.slice(0, 5));
+      } catch {
+        if (!cancelled) setBokunRecentFallback([]);
+      }
+    }
+    void loadFallback();
+    return () => {
+      cancelled = true;
+    };
+  }, [tenantId, stats?.bokunConnected, stats?.recentBookings, listBokunBookingsByPeriod]);
+
+  const hasLocalRecent = stats.recentBookings.length > 0;
+  const hasFallbackRecent = bokunRecentFallback.length > 0;
 
   return (
     <div className="dashboard-surface min-h-full -m-8 p-6 md:p-8 space-y-6 md:space-y-8">
@@ -209,9 +264,7 @@ export default function OverviewPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {stats.recentBookings.length === 0 ? (
-              <p className="text-sm text-text-secondary py-4 text-center">{t("overview.noneYet")}</p>
-            ) : (
+            {hasLocalRecent ? (
               <div className="space-y-3">
                 {stats.recentBookings.map((b) => (
                   <div key={b._id} className="flex items-center justify-between text-sm">
@@ -225,6 +278,27 @@ export default function OverviewPage() {
                   </div>
                 ))}
               </div>
+            ) : hasFallbackRecent ? (
+              <div className="space-y-3">
+                {bokunRecentFallback.map((b, i) => {
+                  const whenRaw = b.startDateTime ?? b.startDate ?? "";
+                  const whenMs = parseBookingDate(whenRaw);
+                  const whenLabel = whenMs ? new Date(whenMs).toLocaleDateString() : "-";
+                  return (
+                    <div key={b.id ?? b.confirmationCode ?? i} className="flex items-center justify-between text-sm">
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-medium truncate">{b.confirmationCode ?? b.id ?? "-"}</span>
+                        <span className="text-xs text-text-secondary truncate">
+                          {b.productTitle ?? "-"} · {whenLabel}
+                        </span>
+                      </div>
+                      {bokunStatusBadge(b.status)}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-text-secondary py-4 text-center">{t("overview.noneYet")}</p>
             )}
           </CardContent>
         </Card>
