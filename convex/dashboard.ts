@@ -416,11 +416,21 @@ export const listBokunBookingsByPeriod = action({
           getFirstDateOnlyString(item, ["startDate", "date", "activityDate", "travelDate"]) ??
           getFirstDateString(firstProductBooking, ["startDateTime", "endDateTime"]) ??
           getFirstDateString(item, ["startDateTime", "endDateTime"]);
+        const firstStartDateTime =
+          getFirstDateString(firstProductBooking, ["startDateTime", "startDate", "date", "activityDate"]) ??
+          getFirstDateString(item, ["startDateTime", "startDate", "date", "activityDate", "travelDate"]);
         const startDateFromAnyProduct = !firstStartDate
           ? productBookings
               .map((pb) =>
                 getFirstDateOnlyString(asRecord(pb), ["startDate", "date", "activityDate"]) ??
                 getFirstDateString(asRecord(pb), ["startDateTime", "endDateTime"]),
+              )
+              .find((value): value is string => Boolean(value))
+          : undefined;
+        const startDateTimeFromAnyProduct = !firstStartDateTime
+          ? productBookings
+              .map((pb) =>
+                getFirstDateString(asRecord(pb), ["startDateTime", "startDate", "date", "activityDate"]),
               )
               .find((value): value is string => Boolean(value))
           : undefined;
@@ -449,6 +459,7 @@ export const listBokunBookingsByPeriod = action({
             getFirstDateString(item, ["creationDate", "bookingCreationDate"]) ??
             getFirstDateString(firstProductBooking, ["creationDate", "bookingCreationDate"]) ??
             null,
+          startDateTime: firstStartDateTime ?? startDateTimeFromAnyProduct ?? null,
           startDate: firstStartDate ?? startDateFromAnyProduct ?? null,
           productTitle:
             getFirstString(firstProductInfo, ["title"]) ??

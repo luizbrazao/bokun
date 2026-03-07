@@ -71,6 +71,7 @@ function matchesTopStatus(statusFilter: StatusFilter, status: string | undefined
 function resolveBookingDateISO(entry: unknown): string | null {
   const safeEntry = entry as Record<string, unknown> | null;
   const direct = [
+    safeEntry?.startDateTime,
     safeEntry?.startDate,
     safeEntry?.activityDate,
     safeEntry?.date,
@@ -84,7 +85,7 @@ function resolveBookingDateISO(entry: unknown): string | null {
   for (const pb of productBookings) {
     if (pb && typeof pb === "object") {
       const record = pb as Record<string, unknown>;
-      const v = record.startDate ?? record.date ?? record.activityDate;
+      const v = record.startDateTime ?? record.startDate ?? record.date ?? record.activityDate;
       if (typeof v === "string" && v.trim().length > 0) return v;
     }
   }
