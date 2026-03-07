@@ -293,9 +293,11 @@ const OperatorInboxPage = () => {
   }, [handoffs, selectedUserId]);
 
   return (
-    <div className="space-y-6">
+    <div className="dashboard-surface min-h-full -m-8 p-6 md:p-8 space-y-6 md:space-y-8">
       <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-bold">{t("operatorInbox.title")}</h1>
+        <h1 className="text-4xl md:text-5xl font-display leading-[1.02] text-deep-ink">
+          {t("operatorInbox.title")}
+        </h1>
         {handoffs && handoffs.length > 0 && (
           <Badge variant="default">
             {t("operatorInbox.activeCount", {

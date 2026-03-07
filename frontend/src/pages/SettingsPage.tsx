@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@convex/api";
 import { useTenant } from "@/hooks/useTenant";
@@ -27,8 +27,19 @@ import {
 import { Copy, RefreshCw, UserMinus, Pencil, Save, Globe } from "lucide-react";
 import { type Locale, useI18n } from "@/i18n";
 
-function formatDate(ts: number) {
-  return new Date(ts).toLocaleDateString("pt-BR", {
+function formatDate(ts?: number | null) {
+  if (typeof ts !== "number" || !Number.isFinite(ts) || ts <= 0) {
+    return "—";
+  }
+
+  // Handle both milliseconds and legacy seconds timestamps.
+  const normalizedTs = ts < 1_000_000_000_000 ? ts * 1000 : ts;
+  const date = new Date(normalizedTs);
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+
+  return date.toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -41,6 +52,30 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
       <span className="text-sm text-muted-foreground">{label}</span>
       <span className="text-sm font-medium">{value}</span>
     </div>
+  );
+}
+
+function getAllTimezoneOptions(): string[] {
+  const intlWithSupportedValues = Intl as unknown as {
+    supportedValuesOf?: (key: string) => string[];
+  };
+
+  const fallback = [
+    "UTC",
+    "Europe/Lisbon",
+    "Europe/Madrid",
+    "Europe/London",
+    "America/Sao_Paulo",
+    "America/New_York",
+  ];
+
+  const discovered =
+    typeof intlWithSupportedValues.supportedValuesOf === "function"
+      ? intlWithSupportedValues.supportedValuesOf("timeZone")
+      : [];
+
+  return Array.from(new Set(["UTC", ...discovered, ...fallback])).sort((a, b) =>
+    a.localeCompare(b),
   );
 }
 
@@ -811,6 +846,7 @@ function PerfilTab({ tenantId }: { tenantId: string }) {
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const timezoneOptions = useMemo(() => getAllTimezoneOptions(), []);
   const [form, setForm] = useState({
     businessName: "",
     logoUrl: "",
@@ -883,7 +919,7 @@ function PerfilTab({ tenantId }: { tenantId: string }) {
                 id="perfil-name"
                 value={form.businessName}
                 onChange={(e) => setForm((f) => ({ ...f, businessName: e.target.value }))}
-                placeholder="Ex: Sondevela Barcelona"
+                placeholder="Es: IA Operators"
               />
             </div>
             <div>
@@ -913,12 +949,11 @@ function PerfilTab({ tenantId }: { tenantId: string }) {
                 onChange={(e) => setForm((f) => ({ ...f, timezone: e.target.value }))}
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
-                <option value="Europe/Lisbon">Europe/Lisbon (Portugal)</option>
-                <option value="Europe/Madrid">Europe/Madrid (Espanha)</option>
-                <option value="America/Sao_Paulo">America/Sao_Paulo (Brasil)</option>
-                <option value="America/New_York">America/New_York (EUA - Leste)</option>
-                <option value="Europe/London">Europe/London (Reino Unido)</option>
-                <option value="UTC">UTC</option>
+                {timezoneOptions.map((tz) => (
+                  <option key={tz} value={tz}>
+                    {tz}
+                  </option>
+                ))}
               </select>
               <p className="text-xs text-muted-foreground mt-1">
                 Usado para formatar horários de disponibilidade nas mensagens WhatsApp.
@@ -1126,9 +1161,11 @@ const SettingsPage = () => {
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="dashboard-surface min-h-full -m-8 p-6 md:p-8 space-y-6 md:space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{t("settings.title")}</h1>
+        <h1 className="text-4xl md:text-5xl font-display leading-[1.02] text-deep-ink">
+          {t("settings.title")}
+        </h1>
         <div className="relative">
           <Button
             type="button"
