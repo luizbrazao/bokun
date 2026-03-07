@@ -6,7 +6,6 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Table,
@@ -30,7 +29,7 @@ import {
 import { Search } from "lucide-react";
 import { formatDateTimeByLocale, formatTimeAgo, useI18n } from "@/i18n";
 
-type StatusFilter = "all" | "confirmed" | "draft" | "abandoned";
+type StatusFilter = "all" | "confirmed" | "pending" | "abandoned";
 
 function statusBadge(status: string, t: (key: string) => string) {
   switch (status) {
@@ -51,6 +50,41 @@ function formatDateTime(locale: "pt" | "en" | "es", ts: number) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function matchesTopStatus(statusFilter: StatusFilter, status: string | undefined): boolean {
+  const normalized = (status ?? "").toLowerCase();
+  if (statusFilter === "all") return true;
+  if (statusFilter === "confirmed") return normalized === "confirmed";
+  if (statusFilter === "pending") return normalized === "pending" || normalized === "draft" || normalized === "reserved" || normalized === "requested";
+  return normalized === "abandoned" || normalized === "cancelled" || normalized === "aborted" || normalized === "no_show";
+}
+
+function resolveBookingDateISO(entry: unknown): string | null {
+  const safeEntry = entry as Record<string, unknown> | null;
+  const direct = [
+    safeEntry?.startDate,
+    safeEntry?.activityDate,
+    safeEntry?.date,
+    safeEntry?.travelDate,
+  ];
+  for (const value of direct) {
+    if (typeof value === "string" && value.trim().length > 0) return value;
+  }
+
+  const productBookings = Array.isArray(safeEntry?.productBookings) ? safeEntry.productBookings : [];
+  for (const pb of productBookings) {
+    if (pb && typeof pb === "object") {
+      const record = pb as Record<string, unknown>;
+      const v = record.startDate ?? record.date ?? record.activityDate;
+      if (typeof v === "string" && v.trim().length > 0) return v;
+    }
+  }
+
+  if (typeof safeEntry?.creationDate === "string" && safeEntry.creationDate.trim().length > 0) {
+    return safeEntry.creationDate;
+  }
+  return null;
 }
 
 function nextStepLabel(step: string | undefined, t: (key: string) => string) {
@@ -127,8 +161,8 @@ const BookingsPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantId, bokunFromDate, bokunToDate, bokunStatus]);
 
-  const filtered = bookings?.filter((b) => {
-    if (statusFilter !== "all" && b.status !== statusFilter) return false;
+  const filteredDrafts = bookings?.filter((b) => {
+    if (!matchesTopStatus(statusFilter, b.status)) return false;
     if (search) {
       const q = search.toLowerCase();
       const matchesClient = b.waUserId.toLowerCase().includes(q);
@@ -139,14 +173,41 @@ const BookingsPage = () => {
     return true;
   });
 
-  return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">{t("bookings.title")}</h1>
+  const filteredBokun = (bokunBookings ?? []).filter((b) => {
+    if (!matchesTopStatus(statusFilter, b.status)) return false;
+    if (!search) return true;
+    const q = search.toLowerCase();
+    const haystack = [
+      b.confirmationCode,
+      b.customerName,
+      b.customerEmail,
+      b.productTitle,
+      b.status,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(q);
+  });
 
-      <Card>
+  const bokunCounters = (bokunBookings ?? []).reduce(
+    (acc, item) => {
+      acc.all += 1;
+      if (matchesTopStatus("confirmed", item.status)) acc.confirmed += 1;
+      if (matchesTopStatus("pending", item.status)) acc.pending += 1;
+      if (matchesTopStatus("abandoned", item.status)) acc.abandoned += 1;
+      return acc;
+    },
+    { all: 0, confirmed: 0, pending: 0, abandoned: 0 },
+  );
+
+  return (
+    <div className="dashboard-surface min-h-full -m-8 p-6 md:p-8 space-y-6 md:space-y-8">
+      <h1 className="text-4xl md:text-5xl font-display leading-[1.02] text-deep-ink">{t("bookings.title")}</h1>
+
+      <Card className="dashboard-card">
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <CardTitle className="text-lg">{t("bookings.title")}</CardTitle>
             <div className="relative flex-1 max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -164,18 +225,18 @@ const BookingsPage = () => {
           >
             <TabsList>
               <TabsTrigger value="all">
-                {t("common.all")}{bookings ? ` (${bookings.length})` : ""}
+                {t("common.all")} ({bokunCounters.all})
               </TabsTrigger>
-              <TabsTrigger value="confirmed">{t("bookings.confirmed")}</TabsTrigger>
-              <TabsTrigger value="draft">{t("bookings.pending")}</TabsTrigger>
-              <TabsTrigger value="abandoned">{t("bookings.abandoned")}</TabsTrigger>
+              <TabsTrigger value="confirmed">{t("bookings.confirmed")} ({bokunCounters.confirmed})</TabsTrigger>
+              <TabsTrigger value="pending">{t("bookings.pending")} ({bokunCounters.pending})</TabsTrigger>
+              <TabsTrigger value="abandoned">{t("bookings.abandoned")} ({bokunCounters.abandoned})</TabsTrigger>
             </TabsList>
           </Tabs>
         </CardHeader>
         <CardContent>
           <div className="mb-6">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <h3 className="text-base font-semibold">Reservas Bokun (período/status)</h3>
+              <h3 className="text-base font-semibold">{t("bookings.bokunBookingsTitle")}</h3>
               <button
                 type="button"
                 onClick={() => void runSync()}
@@ -186,16 +247,22 @@ const BookingsPage = () => {
               </button>
             </div>
             <div className="mb-3 grid grid-cols-1 gap-2 md:grid-cols-3">
-              <Input
-                type="date"
-                value={bokunFromDate}
-                onChange={(e) => setBokunFromDate(e.target.value)}
-              />
-              <Input
-                type="date"
-                value={bokunToDate}
-                onChange={(e) => setBokunToDate(e.target.value)}
-              />
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">{t("bookings.startDate")}</label>
+                <Input
+                  type="date"
+                  value={bokunFromDate}
+                  onChange={(e) => setBokunFromDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">{t("bookings.endDate")}</label>
+                <Input
+                  type="date"
+                  value={bokunToDate}
+                  onChange={(e) => setBokunToDate(e.target.value)}
+                />
+              </div>
               <select
                 value={bokunStatus}
                 onChange={(e) => setBokunStatus(e.target.value)}
@@ -216,11 +283,13 @@ const BookingsPage = () => {
                   <Skeleton key={`bokun-sync-${i}`} className="h-8 w-full" />
                 ))}
               </div>
-            ) : bokunBookings.length === 0 ? (
+            ) : filteredBokun.length === 0 ? (
               <p className="text-sm text-muted-foreground">Sem reservas sincronizadas da Bokun.</p>
             ) : (
               <>
-                <p className="mb-2 text-xs text-muted-foreground">Total Bokun: {bokunTotalHits}</p>
+                <p className="mb-2 text-xs text-muted-foreground">
+                  {t("bookings.bokunTotal", { total: bokunTotalHits })}
+                </p>
                 <Table>
                 <TableHeader>
                   <TableRow>
@@ -233,7 +302,7 @@ const BookingsPage = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {bokunBookings.map((b, idx) => (
+                  {filteredBokun.map((b, idx) => (
                     <TableRow key={`${b.confirmationCode ?? "code"}-${idx}`}>
                       <TableCell className="font-mono text-xs">
                         {b.confirmationCode ?? "-"}
@@ -244,7 +313,14 @@ const BookingsPage = () => {
                       <TableCell className="max-w-[220px] truncate">
                         {b.productTitle ?? "-"}
                       </TableCell>
-                      <TableCell>{b.startDate ? formatDateTime(locale, Date.parse(b.startDate)) : "-"}</TableCell>
+                      <TableCell>
+                        {(() => {
+                          const rawDate = resolveBookingDateISO(b);
+                          if (!rawDate) return "-";
+                          const parsed = Date.parse(rawDate);
+                          return Number.isNaN(parsed) ? rawDate : formatDateTime(locale, parsed);
+                        })()}
+                      </TableCell>
                       <TableCell>
                         <Badge variant="secondary">{b.status ?? "-"}</Badge>
                       </TableCell>
@@ -268,7 +344,7 @@ const BookingsPage = () => {
                 <Skeleton key={i} className="h-10 w-full" />
               ))}
             </div>
-          ) : filtered && filtered.length === 0 ? (
+          ) : filteredDrafts && filteredDrafts.length === 0 ? (
             <p className="text-muted-foreground text-center py-8">
               {t("bookings.none")}
             </p>
@@ -286,7 +362,7 @@ const BookingsPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered?.map((b) => (
+                {filteredDrafts?.map((b) => (
                   <TableRow
                     key={b._id}
                     className="cursor-pointer hover:bg-muted/50"

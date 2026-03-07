@@ -133,10 +133,29 @@ function asString(value: unknown): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
+function asIsoDateString(value: unknown): string | undefined {
+  const str = asString(value);
+  if (str) return str;
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) return date.toISOString();
+  }
+  return undefined;
+}
+
 function getFirstString(record: JsonRecord | null, keys: string[]): string | undefined {
   if (!record) return undefined;
   for (const key of keys) {
     const value = asString(record[key]);
+    if (value) return value;
+  }
+  return undefined;
+}
+
+function getFirstDateString(record: JsonRecord | null, keys: string[]): string | undefined {
+  if (!record) return undefined;
+  for (const key of keys) {
+    const value = asIsoDateString(record[key]);
     if (value) return value;
   }
   return undefined;
@@ -341,7 +360,16 @@ export const listBokunBookingsByPeriod = action({
         const productBookings = Array.isArray(item.productBookings) ? item.productBookings : [];
         const firstProductBooking = asRecord(productBookings[0]);
         const firstProductInfo = asRecord(firstProductBooking?.product);
-        const firstStartDate = asString(firstProductBooking?.startDate);
+        const firstStartDate =
+          getFirstDateString(firstProductBooking, ["startDate", "date", "activityDate", "startTime"]) ??
+          getFirstDateString(item, ["startDate", "date", "activityDate", "travelDate"]);
+        const startDateFromAnyProduct = !firstStartDate
+          ? productBookings
+              .map((pb) =>
+                getFirstDateString(asRecord(pb), ["startDate", "date", "activityDate", "startTime"]),
+              )
+              .find((value): value is string => Boolean(value))
+          : undefined;
         const firstStatus = asString(firstProductBooking?.status);
 
         const firstName = asString(customer?.firstName) ?? "";
@@ -353,7 +381,7 @@ export const listBokunBookingsByPeriod = action({
           confirmationCode: getFirstString(item, ["confirmationCode"]),
           status: getFirstString(item, ["bookingStatus"]) ?? firstStatus ?? getFirstString(item, ["status"]) ?? "UNKNOWN",
           creationDate: getFirstString(item, ["creationDate"]),
-          startDate: firstStartDate,
+          startDate: firstStartDate ?? startDateFromAnyProduct ?? null,
           productTitle:
             getFirstString(firstProductInfo, ["title"]) ??
             getFirstString(firstProductBooking, ["title", "productType"]) ??
