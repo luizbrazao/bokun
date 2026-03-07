@@ -42,6 +42,20 @@ function statusBadge(status: string, t: (key: string) => string) {
   }
 }
 
+function bokunStatusBadge(status: string | undefined) {
+  const normalized = (status ?? "").toUpperCase();
+  if (normalized === "CONFIRMED") {
+    return <Badge variant="success">{normalized}</Badge>;
+  }
+  if (normalized === "PENDING") {
+    return <Badge variant="warning">{normalized}</Badge>;
+  }
+  if (normalized === "CANCELLED") {
+    return <Badge variant="destructive">{normalized}</Badge>;
+  }
+  return <Badge variant="secondary">{normalized || "-"}</Badge>;
+}
+
 function formatDateTime(locale: "pt" | "en" | "es", ts: number) {
   return formatDateTimeByLocale(locale, ts, {
     day: "2-digit",
@@ -339,7 +353,7 @@ const BookingsPage = () => {
                         })()}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary">{b.status ?? "-"}</Badge>
+                        {bokunStatusBadge(b.status)}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {b.creationDate ? formatDateTime(locale, Date.parse(b.creationDate)) : "-"}
