@@ -286,6 +286,30 @@ function sendJson(res: ServerResponse, statusCode: number, payload: Record<strin
   res.end(body);
 }
 
+function setCheckoutCorsHeaders(req: IncomingMessage, res: ServerResponse): void {
+  const origin = getHeaderValue(req, "origin");
+  const frontendUrl = process.env.FRONTEND_URL?.trim();
+  const allowedOrigins = new Set<string>([
+    "https://bokun.iaoperators.com",
+    "http://localhost:5173",
+  ]);
+  if (frontendUrl) {
+    try {
+      allowedOrigins.add(new URL(frontendUrl).origin);
+    } catch {
+      // Ignore invalid FRONTEND_URL and keep static allowlist.
+    }
+  }
+
+  if (origin && allowedOrigins.has(origin)) {
+    res.setHeader("access-control-allow-origin", origin);
+    res.setHeader("vary", "Origin");
+    res.setHeader("access-control-allow-methods", "POST, OPTIONS");
+    res.setHeader("access-control-allow-headers", "content-type");
+    res.setHeader("access-control-max-age", "86400");
+  }
+}
+
 type RunBookingFlowResult = {
   handled: boolean;
 };
@@ -1818,7 +1842,15 @@ export function createAppServer() {
       }
 
       // Stripe Checkout session creation (frontend -> backend -> Stripe)
+      if (pathname === "/api/create-checkout-session" && method === "OPTIONS") {
+        setCheckoutCorsHeaders(req, res);
+        res.statusCode = 204;
+        res.end();
+        return;
+      }
+
       if (pathname === "/api/create-checkout-session" && method === "POST") {
+        setCheckoutCorsHeaders(req, res);
         await handleCreateCheckoutSessionRoute(req, res);
         return;
       }

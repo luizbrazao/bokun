@@ -1130,7 +1130,6 @@ function AssinaturaTab({ tenantId }: { tenantId: string }) {
             >
               Assinar plano mensal
             </button>
-            <p className="mt-2 text-center text-xs text-text-secondary">Cobrança imediata após checkout</p>
           </article>
 
           <article className="rounded-2xl border border-black bg-black p-6 text-white shadow-xl">
@@ -1159,7 +1158,6 @@ function AssinaturaTab({ tenantId }: { tenantId: string }) {
             >
               Assinar plano anual
             </button>
-            <p className="mt-2 text-center text-xs text-white/70">Cobrança imediata após checkout</p>
           </article>
         </div>
 
