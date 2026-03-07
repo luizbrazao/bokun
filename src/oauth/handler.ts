@@ -24,8 +24,10 @@ function getOAuthConfig(): OAuthConfig {
         .join(",")
     : "";
 
-  if (!clientId || !clientSecret || !redirectUri) {
-    throw new Error("Missing OAuth config: BOKUN_APP_CLIENT_ID, BOKUN_APP_CLIENT_SECRET, BOKUN_OAUTH_REDIRECT_URI");
+  if (!clientId || !clientSecret || !redirectUri || !scopes) {
+    throw new Error(
+      "Missing OAuth config: BOKUN_APP_CLIENT_ID, BOKUN_APP_CLIENT_SECRET, BOKUN_OAUTH_REDIRECT_URI, BOKUN_OAUTH_SCOPES",
+    );
   }
 
   return { clientId, clientSecret, redirectUri, scopes };
