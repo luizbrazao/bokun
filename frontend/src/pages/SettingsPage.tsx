@@ -1003,7 +1003,11 @@ function AssinaturaTab({ tenantId }: { tenantId: string }) {
     setLoadingCheckout(true);
     setCheckoutError(null);
     try {
-      const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
+      const inferredApiBase =
+        window.location.hostname === "bokun.iaoperators.com"
+          ? "https://api.bokun.iaoperators.com"
+          : window.location.origin;
+      const apiBase = import.meta.env.VITE_API_BASE_URL ?? inferredApiBase;
       const res = await fetch(`${apiBase}/api/create-checkout-session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1124,9 +1128,9 @@ function AssinaturaTab({ tenantId }: { tenantId: string }) {
               onClick={() => handleCheckout("monthly")}
               disabled={loadingCheckout}
             >
-              Iniciar teste grátis
+              Assinar plano mensal
             </button>
-            <p className="mt-2 text-center text-xs text-text-secondary">Sem cartão de crédito</p>
+            <p className="mt-2 text-center text-xs text-text-secondary">Cobrança imediata após checkout</p>
           </article>
 
           <article className="rounded-2xl border border-black bg-black p-6 text-white shadow-xl">
@@ -1153,9 +1157,9 @@ function AssinaturaTab({ tenantId }: { tenantId: string }) {
               onClick={() => handleCheckout("annual")}
               disabled={loadingCheckout}
             >
-              Iniciar teste grátis
+              Assinar plano anual
             </button>
-            <p className="mt-2 text-center text-xs text-white/70">Sem cartão de crédito</p>
+            <p className="mt-2 text-center text-xs text-white/70">Cobrança imediata após checkout</p>
           </article>
         </div>
 
