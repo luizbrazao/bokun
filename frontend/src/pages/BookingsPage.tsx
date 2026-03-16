@@ -212,7 +212,7 @@ const BookingsPage = () => {
                 disabled={isSyncing}
                 className="rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-60"
               >
-                {isSyncing ? "Sincronizando..." : "Sincronizar"}
+                {isSyncing ? t("common.loadingSync") : t("common.sync")}
               </button>
             </div>
             <div className="mb-3 grid grid-cols-1 gap-2 md:grid-cols-3">
@@ -237,7 +237,7 @@ const BookingsPage = () => {
                 onChange={(e) => setBokunStatus(e.target.value)}
                 className="h-9 rounded-md border border-input bg-background px-3 text-sm"
               >
-                <option value="ALL">Todos os status</option>
+                <option value="ALL">{t("bookings.allStatuses")}</option>
                 <option value="CONFIRMED">CONFIRMED</option>
                 <option value="RESERVED">RESERVED</option>
                 <option value="CANCELLED">CANCELLED</option>
@@ -253,7 +253,7 @@ const BookingsPage = () => {
                 ))}
               </div>
             ) : filteredBokun.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Sem reservas sincronizadas da Bokun.</p>
+              <p className="text-sm text-muted-foreground">{t("bookings.noBokunBookings")}</p>
             ) : (
               <>
                 <p className="mb-2 text-xs text-muted-foreground">

@@ -23,9 +23,11 @@ type LandingCopy = {
     title: string;
     subtitle: string;
     monthlyTitle: string;
+    monthlyPeriod: string;
     monthlyTag: string;
     monthlyDesc: string;
     annualTitle: string;
+    annualPeriod: string;
     annualTag: string;
     annualDesc: string;
     cta: string;
@@ -70,9 +72,11 @@ const copyByLocale: Record<Locale, LandingCopy> = {
       title: "Planos",
       subtitle: "Comece com flexibilidade no mensal ou maximize eficiência no anual com 2 meses grátis.",
       monthlyTitle: "Mensal",
+      monthlyPeriod: "/mês",
       monthlyTag: "Flexível",
       monthlyDesc: "Para operações que querem começar rápido.",
       annualTitle: "Anual",
+      annualPeriod: "/ano",
       annualTag: "2 meses grátis",
       annualDesc: "Para quem quer reduzir custo total e escalar com previsibilidade.",
       cta: "Iniciar teste grátis",
@@ -137,9 +141,11 @@ const copyByLocale: Record<Locale, LandingCopy> = {
       title: "Pricing",
       subtitle: "Start flexible monthly or maximize annual efficiency with 2 months free.",
       monthlyTitle: "Monthly",
+      monthlyPeriod: "/month",
       monthlyTag: "Flexible",
       monthlyDesc: "For teams that want to launch fast.",
       annualTitle: "Annual",
+      annualPeriod: "/year",
       annualTag: "2 months free",
       annualDesc: "For teams that want lower total cost and predictable scale.",
       cta: "Start free trial",
@@ -204,9 +210,11 @@ const copyByLocale: Record<Locale, LandingCopy> = {
       title: "Planes",
       subtitle: "Empieza flexible con mensual o maximiza eficiencia anual con 2 meses gratis.",
       monthlyTitle: "Mensual",
+      monthlyPeriod: "/mes",
       monthlyTag: "Flexible",
       monthlyDesc: "Para equipos que quieren empezar rápido.",
       annualTitle: "Anual",
+      annualPeriod: "/año",
       annualTag: "2 meses gratis",
       annualDesc: "Para equipos que buscan menor costo total y escalabilidad predecible.",
       cta: "Iniciar prueba gratis",
@@ -567,7 +575,7 @@ export default function LandingPage() {
                     <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-600" />{copy.checklist.m4}</li>
                   </ul>
                   <p className="font-display mt-7 text-5xl text-slate-900">€29</p>
-                  <p className="mt-1 text-xs text-text-secondary">/month</p>
+                  <p className="mt-1 text-xs text-text-secondary">{copy.pricing.monthlyPeriod}</p>
                   <Link to="/auth?mode=signup&plan=monthly" className="mt-4 inline-flex w-full justify-center rounded-full bg-black px-4 py-2.5 text-sm font-semibold text-white">
                     {copy.pricing.cta}
                   </Link>
@@ -587,7 +595,7 @@ export default function LandingPage() {
                     <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-cyan-300" />{copy.checklist.a4}</li>
                   </ul>
                   <p className="font-display mt-7 text-5xl">€290</p>
-                  <p className="mt-1 text-xs text-white/70">/year</p>
+                  <p className="mt-1 text-xs text-white/70">{copy.pricing.annualPeriod}</p>
                   <Link to="/auth?mode=signup&plan=annual" className="mt-4 inline-flex w-full justify-center rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-black">
                     {copy.pricing.cta}
                   </Link>

@@ -79,12 +79,12 @@ function getAllTimezoneOptions(): string[] {
   );
 }
 
-function roleLabel(role: string) {
+function roleLabel(role: string, t: (key: string) => string) {
   switch (role) {
     case "owner":
-      return <Badge variant="default">Dono</Badge>;
+      return <Badge variant="default">{t("settings.team.roleOwner")}</Badge>;
     case "admin":
-      return <Badge variant="secondary">Admin</Badge>;
+      return <Badge variant="secondary">{t("settings.team.roleAdmin")}</Badge>;
     default:
       return <Badge variant="outline">{role}</Badge>;
   }
@@ -96,6 +96,7 @@ const WHATSAPP_WEBHOOK_URL = "https://api.bokun.iaoperators.com/whatsapp/webhook
 const WHATSAPP_VERIFY_TOKEN = "chatplug";
 
 function WhatsAppTab({ tenantId }: { tenantId: string }) {
+  const { t } = useI18n();
   const channel = useQuery(
     api.dashboard.getWhatsAppChannel,
     tenantId ? { tenantId: tenantId as any } : "skip",
@@ -143,7 +144,7 @@ function WhatsAppTab({ tenantId }: { tenantId: string }) {
   if (channel === undefined) {
     return (
       <Card>
-        <CardHeader><CardTitle className="text-lg">Canal WhatsApp</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-lg">{t("settings.whatsapp.cardTitle")}</CardTitle></CardHeader>
         <CardContent>
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
@@ -159,26 +160,26 @@ function WhatsAppTab({ tenantId }: { tenantId: string }) {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Canal WhatsApp</CardTitle>
-          {saved && <Badge variant="success">Salvo</Badge>}
+          <CardTitle className="text-lg">{t("settings.whatsapp.cardTitle")}</CardTitle>
+          {saved && <Badge variant="success">{t("settings.saved")}</Badge>}
         </div>
       </CardHeader>
       <CardContent>
         {showForm ? (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Configure os dados da Meta Cloud API. Obtenha-os no{" "}
+              {t("settings.whatsapp.metaInstructions")}{" "}
               <a href="https://developers.facebook.com" target="_blank" rel="noopener noreferrer" className="underline">
                 Meta Developer Portal
               </a>.
             </p>
             <div className="space-y-3">
               <div>
-                <Label htmlFor="wa-webhook-url">Webhook URL (copiar na Meta)</Label>
+                <Label htmlFor="wa-webhook-url">{t("settings.whatsapp.webhookUrlLabel")}</Label>
                 <Input id="wa-webhook-url" value={WHATSAPP_WEBHOOK_URL} readOnly className="font-mono text-xs" />
               </div>
               <div>
-                <Label htmlFor="wa-verify-fixed">Verify Token (copiar na Meta)</Label>
+                <Label htmlFor="wa-verify-fixed">{t("settings.whatsapp.verifyTokenLabel")}</Label>
                 <Input id="wa-verify-fixed" value={WHATSAPP_VERIFY_TOKEN} readOnly className="font-mono text-xs" />
               </div>
               <div>
@@ -197,25 +198,25 @@ function WhatsAppTab({ tenantId }: { tenantId: string }) {
             <div className="flex gap-2">
               <Button onClick={handleSave} disabled={saving}>
                 <Save className="h-4 w-4 mr-1" />
-                {saving ? "Salvando..." : "Salvar"}
+                {saving ? t("settings.saving") : t("common.save")}
               </Button>
               {editing && (
-                <Button variant="outline" onClick={() => setEditing(false)}>Cancelar</Button>
+                <Button variant="outline" onClick={() => setEditing(false)}>{t("common.cancel")}</Button>
               )}
             </div>
           </div>
         ) : (
           <div>
-            <InfoRow label="Status" value={channel.status === "active" ? <Badge variant="success">Ativo</Badge> : <Badge variant="warning">Desativado</Badge>} />
+            <InfoRow label="Status" value={channel.status === "active" ? <Badge variant="success">{t("settings.statusActive")}</Badge> : <Badge variant="warning">{t("settings.statusInactive")}</Badge>} />
             <InfoRow label="Webhook URL" value={<span className="font-mono text-xs">{WHATSAPP_WEBHOOK_URL}</span>} />
             <InfoRow label="Verify Token" value={<span className="font-mono text-xs">{WHATSAPP_VERIFY_TOKEN}</span>} />
             <InfoRow label="Phone Number ID" value={<span className="font-mono text-xs">{channel.phoneNumberId}</span>} />
             <InfoRow label="WABA ID" value={<span className="font-mono text-xs">{channel.wabaId}</span>} />
-            <InfoRow label="Configurado em" value={formatDate(channel.createdAt)} />
+            <InfoRow label={t("settings.configuredAt")} value={formatDate(channel.createdAt)} />
             <div className="mt-4">
               <Button variant="outline" size="sm" onClick={startEdit}>
                 <Pencil className="h-4 w-4 mr-1" />
-                Editar
+                {t("common.edit")}
               </Button>
             </div>
           </div>
@@ -228,6 +229,7 @@ function WhatsAppTab({ tenantId }: { tenantId: string }) {
 /* ─── Telegram Tab ─── */
 
 function TelegramTab({ tenantId }: { tenantId: string }) {
+  const { t } = useI18n();
   const channel = useQuery(
     api.dashboard.getTelegramChannel,
     tenantId ? { tenantId: tenantId as any } : "skip",
@@ -267,12 +269,12 @@ function TelegramTab({ tenantId }: { tenantId: string }) {
   const handleSave = async () => {
     const botUsername = form.botUsername.trim().replace(/^@/, "");
     if (!botUsername) {
-      setErrorMessage("Bot Username é obrigatório.");
+      setErrorMessage(t("settings.telegram.errorBotUsernameRequired"));
       return;
     }
     const parsedGroupId = form.operatorGroupChatId.trim();
     if (parsedGroupId.length > 0 && !/^-?\d+$/.test(parsedGroupId)) {
-      setErrorMessage("ID do Grupo de Operadores deve ser numérico (ex: -1001234567890).");
+      setErrorMessage(t("settings.telegram.errorGroupIdNumeric"));
       return;
     }
 
@@ -291,7 +293,7 @@ function TelegramTab({ tenantId }: { tenantId: string }) {
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Não foi possível salvar agora.";
+      const message = error instanceof Error ? error.message : t("settings.telegram.saveError");
       setErrorMessage(message);
     } finally {
       setSaving(false);
@@ -301,7 +303,7 @@ function TelegramTab({ tenantId }: { tenantId: string }) {
   if (channel === undefined) {
     return (
       <Card>
-        <CardHeader><CardTitle className="text-lg">Canal Telegram</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-lg">{t("settings.telegram.cardTitle")}</CardTitle></CardHeader>
         <CardContent>
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
@@ -317,19 +319,19 @@ function TelegramTab({ tenantId }: { tenantId: string }) {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Canal Telegram</CardTitle>
-          {saved && <Badge variant="success">Salvo</Badge>}
+          <CardTitle className="text-lg">{t("settings.telegram.cardTitle")}</CardTitle>
+          {saved && <Badge variant="success">{t("settings.saved")}</Badge>}
         </div>
       </CardHeader>
       <CardContent>
         {showForm ? (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Crie um bot no{" "}
+              {t("settings.telegram.instructions").split("@BotFather")[0]}
               <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer" className="underline">
                 @BotFather
-              </a>{" "}
-              do Telegram e preencha os dados abaixo.
+              </a>
+              {t("settings.telegram.instructions").split("@BotFather")[1]}
             </p>
             <div className="space-y-3">
               <div>
@@ -339,33 +341,33 @@ function TelegramTab({ tenantId }: { tenantId: string }) {
                   type="password"
                   value={form.botToken}
                   onChange={(e) => setForm((f) => ({ ...f, botToken: e.target.value }))}
-                  placeholder={channel && editing ? "Deixe em branco para manter o token atual" : "Ex: 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"}
+                  placeholder={channel && editing ? t("settings.telegram.keepTokenPlaceholder") : "Ex: 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Token privado do bot criado no @BotFather.
+                  {t("settings.telegram.tokenHelp")}
                 </p>
               </div>
               <div>
-                <Label htmlFor="tg-username">Bot Username (sem @)</Label>
+                <Label htmlFor="tg-username">{t("settings.telegram.botUsernameLabel")}</Label>
                 <Input id="tg-username" value={form.botUsername} onChange={(e) => setForm((f) => ({ ...f, botUsername: e.target.value }))} placeholder="Ex: meu_bot" />
               </div>
               <div>
-                <Label htmlFor="tg-secret">Webhook Secret</Label>
+                <Label htmlFor="tg-secret">{t("settings.telegram.webhookSecretLabel")}</Label>
                 <div className="flex gap-2">
-                  <Input id="tg-secret" value={form.webhookSecret} onChange={(e) => setForm((f) => ({ ...f, webhookSecret: e.target.value }))} placeholder="Token secreto para validar webhooks" className="flex-1" />
+                  <Input id="tg-secret" value={form.webhookSecret} onChange={(e) => setForm((f) => ({ ...f, webhookSecret: e.target.value }))} placeholder={t("settings.telegram.webhookSecretPlaceholder")} className="flex-1" />
                   <Button variant="outline" size="sm" onClick={generateSecret} type="button">
-                    Gerar
+                    {t("settings.telegram.generate")}
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Chave secreta usada para garantir que só o Telegram envie eventos para seu webhook.
+                  {t("settings.telegram.webhookSecretHelp")}
                 </p>
               </div>
               <div>
-                <Label htmlFor="tg-operator-group">ID do Grupo de Operadores (opcional)</Label>
+                <Label htmlFor="tg-operator-group">{t("settings.telegram.operatorGroupLabel")}</Label>
                 <Input id="tg-operator-group" value={form.operatorGroupChatId} onChange={(e) => setForm((f) => ({ ...f, operatorGroupChatId: e.target.value }))} placeholder="Ex: -1001234567890" />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Chat ID do grupo Telegram onde os operadores recebem handoff humano.
+                  {t("settings.telegram.operatorGroupHelp")}
                 </p>
               </div>
             </div>
@@ -375,31 +377,31 @@ function TelegramTab({ tenantId }: { tenantId: string }) {
             <div className="flex gap-2">
               <Button onClick={handleSave} disabled={saving}>
                 <Save className="h-4 w-4 mr-1" />
-                {saving ? "Salvando..." : "Salvar"}
+                {saving ? t("settings.saving") : t("common.save")}
               </Button>
               {editing && (
-                <Button variant="outline" onClick={() => setEditing(false)}>Cancelar</Button>
+                <Button variant="outline" onClick={() => setEditing(false)}>{t("common.cancel")}</Button>
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              O webhook do Telegram é registrado automaticamente ao salvar.
+              {t("settings.telegram.webhookAutoRegistered")}
             </p>
           </div>
         ) : (
           <div>
-            <InfoRow label="Status" value={channel.status === "active" ? <Badge variant="success">Ativo</Badge> : <Badge variant="warning">Desativado</Badge>} />
+            <InfoRow label="Status" value={channel.status === "active" ? <Badge variant="success">{t("settings.statusActive")}</Badge> : <Badge variant="warning">{t("settings.statusInactive")}</Badge>} />
             <InfoRow label="Bot" value={<span className="font-mono text-xs">@{channel.botUsername}</span>} />
             {channel.operatorGroupChatId && (
-              <InfoRow label="Grupo Operadores" value={<span className="font-mono text-xs">{channel.operatorGroupChatId}</span>} />
+              <InfoRow label={t("settings.telegram.operatorGroup")} value={<span className="font-mono text-xs">{channel.operatorGroupChatId}</span>} />
             )}
-            <InfoRow label="Configurado em" value={formatDate(channel.createdAt)} />
+            <InfoRow label={t("settings.configuredAt")} value={formatDate(channel.createdAt)} />
             {channel.updatedAt !== channel.createdAt && (
-              <InfoRow label="Atualizado em" value={formatDate(channel.updatedAt)} />
+              <InfoRow label={t("settings.updatedAt")} value={formatDate(channel.updatedAt)} />
             )}
             <div className="mt-4">
               <Button variant="outline" size="sm" onClick={startEdit}>
                 <Pencil className="h-4 w-4 mr-1" />
-                Editar
+                {t("common.edit")}
               </Button>
             </div>
           </div>
@@ -412,6 +414,7 @@ function TelegramTab({ tenantId }: { tenantId: string }) {
 /* ─── Bokun Tab ─── */
 
 function BokunTab({ tenantId }: { tenantId: string }) {
+  const { t } = useI18n();
   const installation = useQuery(
     api.dashboard.getBokunInstallation,
     tenantId ? { tenantId: tenantId as any } : "skip",
@@ -461,7 +464,7 @@ function BokunTab({ tenantId }: { tenantId: string }) {
   if (installation === undefined) {
     return (
       <Card>
-        <CardHeader><CardTitle className="text-lg">Integração Bokun</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-lg">{t("settings.bokun.cardTitle")}</CardTitle></CardHeader>
         <CardContent>
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
@@ -477,15 +480,15 @@ function BokunTab({ tenantId }: { tenantId: string }) {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Integração Bokun</CardTitle>
-          {saved && <Badge variant="success">Salvo</Badge>}
+          <CardTitle className="text-lg">{t("settings.bokun.cardTitle")}</CardTitle>
+          {saved && <Badge variant="success">{t("settings.saved")}</Badge>}
         </div>
       </CardHeader>
       <CardContent>
         {showForm ? (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Configure as credenciais da API Bokun. Para marketplace, use o fluxo OAuth abaixo. Para desenvolvimento, insira as chaves manualmente.
+              {t("settings.bokun.instructions")}
             </p>
 
             {/* Manual config form */}
@@ -496,33 +499,33 @@ function BokunTab({ tenantId }: { tenantId: string }) {
               </div>
               <div>
                 <Label htmlFor="bokun-access">Access Key</Label>
-                <Input id="bokun-access" type="password" value={form.accessKey} onChange={(e) => setForm((f) => ({ ...f, accessKey: e.target.value }))} placeholder="Chave de acesso da API Bokun" />
+                <Input id="bokun-access" type="password" value={form.accessKey} onChange={(e) => setForm((f) => ({ ...f, accessKey: e.target.value }))} placeholder={t("settings.bokun.accessKeyPlaceholder")} />
               </div>
               <div>
                 <Label htmlFor="bokun-secret">Secret Key</Label>
-                <Input id="bokun-secret" type="password" value={form.secretKey} onChange={(e) => setForm((f) => ({ ...f, secretKey: e.target.value }))} placeholder="Chave secreta da API Bokun" />
+                <Input id="bokun-secret" type="password" value={form.secretKey} onChange={(e) => setForm((f) => ({ ...f, secretKey: e.target.value }))} placeholder={t("settings.bokun.secretKeyPlaceholder")} />
               </div>
             </div>
             <div className="flex gap-2">
               <Button onClick={handleSave} disabled={saving}>
                 <Save className="h-4 w-4 mr-1" />
-                {saving ? "Salvando..." : "Salvar"}
+                {saving ? t("settings.saving") : t("common.save")}
               </Button>
               {editing && (
-                <Button variant="outline" onClick={() => setEditing(false)}>Cancelar</Button>
+                <Button variant="outline" onClick={() => setEditing(false)}>{t("common.cancel")}</Button>
               )}
             </div>
           </div>
         ) : (
           <div>
-            <InfoRow label="Status" value={<Badge variant="success">Conectado</Badge>} />
+            <InfoRow label="Status" value={<Badge variant="success">{t("settings.statusConnected")}</Badge>} />
             <InfoRow label="Base URL" value={<span className="font-mono text-xs">{installation.baseUrl}</span>} />
-            <InfoRow label="Escopos" value={installation.scopes?.join(", ") ?? "-"} />
-            <InfoRow label="Conectado em" value={formatDate(installation.createdAt)} />
+            <InfoRow label={t("settings.scopes")} value={installation.scopes?.join(", ") ?? "-"} />
+            <InfoRow label={t("settings.connectedAt")} value={formatDate(installation.createdAt)} />
             <div className="mt-4">
               <Button variant="outline" size="sm" onClick={startEdit}>
                 <Pencil className="h-4 w-4 mr-1" />
-                Reconectar
+                {t("settings.bokun.reconnect")}
               </Button>
             </div>
           </div>
@@ -535,6 +538,7 @@ function BokunTab({ tenantId }: { tenantId: string }) {
 /* ─── Team Tab ─── */
 
 function TeamTab({ tenantId }: { tenantId: string }) {
+  const { t } = useI18n();
   const tenantInfo = useQuery(
     api.dashboard.getTenantInfo,
     tenantId ? { tenantId: tenantId as any } : "skip",
@@ -585,11 +589,11 @@ function TeamTab({ tenantId }: { tenantId: string }) {
         {/* Invite Code */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Código de Convite</CardTitle>
+            <CardTitle className="text-lg">{t("settings.team.inviteCodeTitle")}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
-              Compartilhe este código para convidar membros da equipe.
+              {t("settings.team.inviteCodeDescription")}
             </p>
             {tenantInfo?.inviteCode ? (
               <div className="flex items-center gap-3">
@@ -598,16 +602,16 @@ function TeamTab({ tenantId }: { tenantId: string }) {
                 </code>
                 <Button variant="outline" size="sm" onClick={handleCopyCode}>
                   <Copy className="h-4 w-4 mr-1" />
-                  {copied ? "Copiado!" : "Copiar"}
+                  {copied ? t("settings.team.copied") : t("settings.team.copy")}
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleGenerateCode}>
                   <RefreshCw className="h-4 w-4 mr-1" />
-                  Regenerar
+                  {t("settings.team.regenerate")}
                 </Button>
               </div>
             ) : (
               <Button onClick={handleGenerateCode}>
-                Gerar código de convite
+                {t("settings.team.generateInviteCode")}
               </Button>
             )}
           </CardContent>
@@ -616,7 +620,7 @@ function TeamTab({ tenantId }: { tenantId: string }) {
         {/* Team Members */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Membros da Equipe</CardTitle>
+            <CardTitle className="text-lg">{t("settings.team.membersTitle")}</CardTitle>
           </CardHeader>
           <CardContent>
             {teamMembers === undefined ? (
@@ -627,16 +631,16 @@ function TeamTab({ tenantId }: { tenantId: string }) {
               </div>
             ) : teamMembers.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">
-                Nenhum membro encontrado.
+                {t("settings.team.noMembers")}
               </p>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Membro</TableHead>
-                    <TableHead>Função</TableHead>
-                    <TableHead>Desde</TableHead>
-                    <TableHead className="w-[80px]">Ações</TableHead>
+                    <TableHead>{t("settings.team.member")}</TableHead>
+                    <TableHead>{t("settings.team.role")}</TableHead>
+                    <TableHead>{t("settings.team.since")}</TableHead>
+                    <TableHead className="w-[80px]">{t("settings.team.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -645,7 +649,7 @@ function TeamTab({ tenantId }: { tenantId: string }) {
                       <TableCell>
                         <div>
                           <span className="text-sm font-medium">
-                            {m.name ?? "Sem nome"}
+                            {m.name ?? t("settings.team.noName")}
                           </span>
                           {m.email && (
                             <span className="block text-xs text-muted-foreground">
@@ -654,7 +658,7 @@ function TeamTab({ tenantId }: { tenantId: string }) {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>{roleLabel(m.role)}</TableCell>
+                      <TableCell>{roleLabel(m.role, t)}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {formatDate(m.createdAt)}
                       </TableCell>
@@ -691,19 +695,19 @@ function TeamTab({ tenantId }: { tenantId: string }) {
       >
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Remover membro</DialogTitle>
+            <DialogTitle>{t("settings.team.removeMemberTitle")}</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja remover{" "}
-              <strong>{confirmRemove?.email ?? "este membro"}</strong> da equipe?
-              Esta ação não pode ser desfeita.
+              {t("settings.team.confirmRemovePre")}{" "}
+              <strong>{confirmRemove?.email ?? t("settings.team.thisMember")}</strong>{" "}
+              {t("settings.team.confirmRemovePost")}
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="outline" onClick={() => setConfirmRemove(null)}>
-              Cancelar
+              {t("common.cancel")}
             </Button>
             <Button variant="destructive" onClick={handleRemoveMember}>
-              Remover
+              {t("settings.team.remove")}
             </Button>
           </div>
         </DialogContent>
@@ -715,6 +719,7 @@ function TeamTab({ tenantId }: { tenantId: string }) {
 /* ─── IA (OpenAI) Tab ─── */
 
 function IATab({ tenantId }: { tenantId: string }) {
+  const { t } = useI18n();
   const settings = useQuery(
     api.tenants.getOpenAISettings,
     tenantId ? { tenantId: tenantId as any } : "skip",
@@ -758,7 +763,7 @@ function IATab({ tenantId }: { tenantId: string }) {
   if (settings === undefined) {
     return (
       <Card>
-        <CardHeader><CardTitle className="text-lg">Inteligência Artificial</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-lg">{t("settings.ia.cardTitle")}</CardTitle></CardHeader>
         <CardContent>
           <div className="space-y-3">
             {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
@@ -774,16 +779,15 @@ function IATab({ tenantId }: { tenantId: string }) {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Inteligência Artificial</CardTitle>
-          {saved && <Badge variant="success">Salvo</Badge>}
+          <CardTitle className="text-lg">{t("settings.ia.cardTitle")}</CardTitle>
+          {saved && <Badge variant="success">{t("settings.saved")}</Badge>}
         </div>
       </CardHeader>
       <CardContent>
         {showForm ? (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Configure sua chave da API OpenAI para habilitar o assistente de IA.
-              Obtenha uma chave em{" "}
+              {t("settings.ia.instructions").split("platform.openai.com/api-keys")[0]}
               <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="underline">
                 platform.openai.com/api-keys
               </a>.
@@ -794,41 +798,41 @@ function IATab({ tenantId }: { tenantId: string }) {
                 <Input id="openai-key" type="password" value={form.openaiApiKey} onChange={(e) => setForm((f) => ({ ...f, openaiApiKey: e.target.value }))} placeholder="sk-..." />
               </div>
               <div>
-                <Label htmlFor="openai-model">Modelo</Label>
+                <Label htmlFor="openai-model">{t("settings.ia.modelLabel")}</Label>
                 <select
                   id="openai-model"
                   value={form.openaiModel}
                   onChange={(e) => setForm((f) => ({ ...f, openaiModel: e.target.value }))}
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
-                  <option value="gpt-4o-mini">GPT-4o Mini (recomendado)</option>
+                  <option value="gpt-4o-mini">{t("settings.ia.modelRecommended")}</option>
                   <option value="gpt-4o">GPT-4o</option>
                   <option value="gpt-4-turbo">GPT-4 Turbo</option>
                 </select>
                 <p className="text-xs text-muted-foreground mt-1">
-                  O GPT-4o Mini oferece o melhor custo-benefício. Modelos maiores são mais capazes mas custam mais.
+                  {t("settings.ia.modelHelp")}
                 </p>
               </div>
             </div>
             <div className="flex gap-2">
               <Button onClick={handleSave} disabled={saving}>
                 <Save className="h-4 w-4 mr-1" />
-                {saving ? "Salvando..." : "Salvar"}
+                {saving ? t("settings.saving") : t("common.save")}
               </Button>
               {editing && (
-                <Button variant="outline" onClick={() => setEditing(false)}>Cancelar</Button>
+                <Button variant="outline" onClick={() => setEditing(false)}>{t("common.cancel")}</Button>
               )}
             </div>
           </div>
         ) : (
           <div>
-            <InfoRow label="Status" value={<Badge variant="success">Configurado</Badge>} />
+            <InfoRow label="Status" value={<Badge variant="success">{t("settings.statusConfigured")}</Badge>} />
             <InfoRow label="API Key" value={<span className="font-mono text-xs">{settings.maskedKey}</span>} />
-            <InfoRow label="Modelo" value={settings.openaiModel ?? "gpt-4o-mini"} />
+            <InfoRow label={t("settings.ia.modelLabel")} value={settings.openaiModel ?? "gpt-4o-mini"} />
             <div className="mt-4">
               <Button variant="outline" size="sm" onClick={startEdit}>
                 <Pencil className="h-4 w-4 mr-1" />
-                Editar
+                {t("common.edit")}
               </Button>
             </div>
           </div>
@@ -841,6 +845,7 @@ function IATab({ tenantId }: { tenantId: string }) {
 /* ─── Perfil Tab ─── */
 
 function PerfilTab({ tenantId }: { tenantId: string }) {
+  const { t } = useI18n();
   const profile = useQuery(api.tenants.getTenantProfile, { tenantId: tenantId as any });
   const updateProfile = useMutation(api.tenants.updateTenantProfile);
 
@@ -889,7 +894,7 @@ function PerfilTab({ tenantId }: { tenantId: string }) {
   if (profile === undefined) {
     return (
       <Card>
-        <CardHeader><CardTitle className="text-lg">Perfil da Empresa</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-lg">{t("settings.profile.cardTitle")}</CardTitle></CardHeader>
         <CardContent>
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
@@ -903,18 +908,18 @@ function PerfilTab({ tenantId }: { tenantId: string }) {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Perfil da Empresa</CardTitle>
-          {saved && <Badge variant="success">Salvo</Badge>}
+          <CardTitle className="text-lg">{t("settings.profile.cardTitle")}</CardTitle>
+          {saved && <Badge variant="success">{t("settings.saved")}</Badge>}
         </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Configure as informações da sua empresa e preferências do bot.
+            {t("settings.profile.instructions")}
           </p>
           <div className="space-y-3">
             <div>
-              <Label htmlFor="perfil-name">Nome da Empresa</Label>
+              <Label htmlFor="perfil-name">{t("settings.profile.businessNameLabel")}</Label>
               <Input
                 id="perfil-name"
                 value={form.businessName}
@@ -923,7 +928,7 @@ function PerfilTab({ tenantId }: { tenantId: string }) {
               />
             </div>
             <div>
-              <Label htmlFor="perfil-logo">URL do Logotipo</Label>
+              <Label htmlFor="perfil-logo">{t("settings.profile.logoUrlLabel")}</Label>
               <Input
                 id="perfil-logo"
                 value={form.logoUrl}
@@ -932,7 +937,7 @@ function PerfilTab({ tenantId }: { tenantId: string }) {
               />
             </div>
             <div>
-              <Label htmlFor="perfil-email">Email de Contacto</Label>
+              <Label htmlFor="perfil-email">{t("settings.profile.contactEmailLabel")}</Label>
               <Input
                 id="perfil-email"
                 type="email"
@@ -942,7 +947,7 @@ function PerfilTab({ tenantId }: { tenantId: string }) {
               />
             </div>
             <div>
-              <Label htmlFor="perfil-tz">Fuso Horário</Label>
+              <Label htmlFor="perfil-tz">{t("settings.profile.timezoneLabel")}</Label>
               <select
                 id="perfil-tz"
                 value={form.timezone}
@@ -956,30 +961,30 @@ function PerfilTab({ tenantId }: { tenantId: string }) {
                 ))}
               </select>
               <p className="text-xs text-muted-foreground mt-1">
-                Usado para formatar horários de disponibilidade nas mensagens WhatsApp.
+                {t("settings.profile.timezoneHelp")}
               </p>
             </div>
             <div>
-              <Label htmlFor="perfil-lang">Idioma do Bot</Label>
+              <Label htmlFor="perfil-lang">{t("settings.profile.botLanguageLabel")}</Label>
               <select
                 id="perfil-lang"
                 value={form.language}
                 onChange={(e) => setForm((f) => ({ ...f, language: e.target.value }))}
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
-                <option value="pt">Português (PT)</option>
-                <option value="en">English (EN)</option>
-                <option value="es">Español (ES)</option>
+                <option value="pt">{t("settings.profile.langPt")}</option>
+                <option value="en">{t("settings.profile.langEn")}</option>
+                <option value="es">{t("settings.profile.langEs")}</option>
               </select>
               <p className="text-xs text-muted-foreground mt-1">
-                Idioma padrão do assistente IA. O bot adapta-se ao idioma do cliente se for diferente.
+                {t("settings.profile.botLanguageHelp")}
               </p>
             </div>
           </div>
           <div className="flex gap-2">
             <Button onClick={handleSave} disabled={saving}>
               <Save className="h-4 w-4 mr-1" />
-              {saving ? "Salvando..." : "Salvar"}
+              {saving ? t("settings.saving") : t("common.save")}
             </Button>
           </div>
         </div>
@@ -991,6 +996,7 @@ function PerfilTab({ tenantId }: { tenantId: string }) {
 /* ─── Assinatura Tab ─── */
 
 function AssinaturaTab({ tenantId }: { tenantId: string }) {
+  const { t } = useI18n();
   const profile = useQuery(api.tenants.getTenantProfile, { tenantId: tenantId as any });
   const [loadingCheckout, setLoadingCheckout] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
@@ -1017,10 +1023,10 @@ function AssinaturaTab({ tenantId }: { tenantId: string }) {
       if (data.ok && data.url) {
         window.location.href = data.url;
       } else {
-        setCheckoutError(data.error ?? "Erro ao iniciar checkout");
+        setCheckoutError(data.error ?? t("settings.subscription.checkoutError"));
       }
     } catch {
-      setCheckoutError("Falha de rede. Tente novamente.");
+      setCheckoutError(t("settings.subscription.networkError"));
     } finally {
       setLoadingCheckout(false);
     }
@@ -1029,22 +1035,22 @@ function AssinaturaTab({ tenantId }: { tenantId: string }) {
   const statusLabel = (status: string | null) => {
     switch (status) {
       case "active":
-        return <Badge variant="success">Ativo</Badge>;
+        return <Badge variant="success">{t("settings.subscription.statusActive")}</Badge>;
       case "trialing":
-        return <Badge variant="default" className="bg-blue-500">Em teste</Badge>;
+        return <Badge variant="default" className="bg-blue-500">{t("settings.subscription.statusTrialing")}</Badge>;
       case "past_due":
-        return <Badge variant="warning">Pagamento pendente</Badge>;
+        return <Badge variant="warning">{t("settings.subscription.statusPastDue")}</Badge>;
       case "canceled":
-        return <Badge variant="destructive">Cancelado</Badge>;
+        return <Badge variant="destructive">{t("settings.subscription.statusCanceled")}</Badge>;
       default:
-        return <Badge variant="outline">Sem plano</Badge>;
+        return <Badge variant="outline">{t("settings.subscription.statusNoPlan")}</Badge>;
     }
   };
 
   if (profile === undefined) {
     return (
       <Card>
-        <CardHeader><CardTitle className="text-lg">Assinatura</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-lg">{t("settings.subscription.cardTitle")}</CardTitle></CardHeader>
         <CardContent>
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
@@ -1059,31 +1065,31 @@ function AssinaturaTab({ tenantId }: { tenantId: string }) {
       {/* Checkout result banners */}
       {checkoutState === "success" && (
         <div className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-          Assinatura ativada com sucesso! Obrigado por assinar o Bokun Bot.
+          {t("settings.subscription.checkoutSuccess")}
         </div>
       )}
       {checkoutState === "cancelled" && (
         <div className="rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
-          Checkout cancelado. Pode tentar novamente quando quiser.
+          {t("settings.subscription.checkoutCancelled")}
         </div>
       )}
 
       {/* Current plan status */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Plano Atual</CardTitle>
+          <CardTitle className="text-lg">{t("settings.subscription.currentPlanTitle")}</CardTitle>
         </CardHeader>
         <CardContent>
-          <InfoRow label="Estado" value={statusLabel(profile?.stripeStatus ?? null)} />
+          <InfoRow label={t("settings.subscription.state")} value={statusLabel(profile?.stripeStatus ?? null)} />
           {profile?.stripeCurrentPeriodEnd && (
             <InfoRow
-              label={profile?.stripeStatus === "trialing" ? "Fim do período de teste" : "Próxima fatura"}
+              label={profile?.stripeStatus === "trialing" ? t("settings.subscription.trialEnd") : t("settings.subscription.nextInvoice")}
               value={new Date(profile.stripeCurrentPeriodEnd * 1000).toLocaleDateString("pt-BR")}
             />
           )}
           {profile?.stripeSubscriptionId && (
             <InfoRow
-              label="ID da Assinatura"
+              label={t("settings.subscription.subscriptionId")}
               value={
                 <span className="font-mono text-xs">
                   ...{profile.stripeSubscriptionId.slice(-8)}
@@ -1097,66 +1103,66 @@ function AssinaturaTab({ tenantId }: { tenantId: string }) {
       {/* Plan selection (same visual language as Landing pricing block) */}
       <section className="glass-card rounded-3xl p-6 sm:p-8">
         <div className="text-center">
-          <h2 className="font-display text-4xl sm:text-5xl text-slate-900">Planos</h2>
+          <h2 className="font-display text-4xl sm:text-5xl text-slate-900">{t("settings.subscription.plansTitle")}</h2>
           <p className="mx-auto mt-3 max-w-2xl text-sm text-text-secondary">
-            Comece com flexibilidade no mensal ou maximize eficiência no anual com 2 meses grátis.
+            {t("settings.subscription.plansSubtitle")}
           </p>
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           <article className="rounded-2xl border border-border-subtle bg-surface p-6">
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-3xl font-semibold text-slate-900">Mensal</h3>
+              <h3 className="text-3xl font-semibold text-slate-900">{t("settings.subscription.monthly")}</h3>
               <span className="rounded-full bg-accent-cream px-2 py-0.5 text-[10px] font-semibold uppercase text-text-secondary">
-                Flexível
+                {t("settings.subscription.monthlyBadge")}
               </span>
             </div>
             <p className="mb-5 text-sm text-text-secondary">
-              Para operações que querem começar rápido.
+              {t("settings.subscription.monthlyDescription")}
             </p>
             <ul className="space-y-2 text-sm text-text-secondary">
-              <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-600" />Mensagens e fluxos automáticos</li>
-              <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-600" />Integração Bokun + canais de chat</li>
-              <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-600" />Suporte por email</li>
-              <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-600" />7 dias de teste grátis</li>
+              <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-600" />{t("settings.subscription.feature1")}</li>
+              <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-600" />{t("settings.subscription.feature2")}</li>
+              <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-600" />{t("settings.subscription.feature3")}</li>
+              <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-600" />{t("settings.subscription.feature4")}</li>
             </ul>
             <p className="font-display mt-7 text-5xl text-slate-900">€29</p>
-            <p className="mt-1 text-xs text-text-secondary">/mês</p>
+            <p className="mt-1 text-xs text-text-secondary">{t("settings.subscription.perMonth")}</p>
             <button
               type="button"
               className="mt-4 inline-flex w-full justify-center rounded-full bg-black px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-black/90 disabled:opacity-60"
               onClick={() => handleCheckout("monthly")}
               disabled={loadingCheckout}
             >
-              Assinar plano mensal
+              {t("settings.subscription.subscribeMonthly")}
             </button>
           </article>
 
           <article className="rounded-2xl border border-black bg-black p-6 text-white shadow-xl">
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-3xl font-semibold">Anual</h3>
+              <h3 className="text-3xl font-semibold">{t("settings.subscription.annual")}</h3>
               <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-semibold uppercase">
-                2 meses grátis
+                {t("settings.subscription.annualBadge")}
               </span>
             </div>
             <p className="mb-5 text-sm text-white/70">
-              Para quem quer reduzir custo total e escalar com previsibilidade.
+              {t("settings.subscription.annualDescription")}
             </p>
             <ul className="space-y-2 text-sm text-white/80">
-              <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-cyan-300" />Tudo do plano mensal</li>
-              <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-cyan-300" />Melhor custo-benefício anual</li>
-              <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-cyan-300" />Prioridade de suporte</li>
-              <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-cyan-300" />7 dias de teste grátis</li>
+              <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-cyan-300" />{t("settings.subscription.annualFeature1")}</li>
+              <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-cyan-300" />{t("settings.subscription.annualFeature2")}</li>
+              <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-cyan-300" />{t("settings.subscription.annualFeature3")}</li>
+              <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-cyan-300" />{t("settings.subscription.annualFeature4")}</li>
             </ul>
             <p className="font-display mt-7 text-5xl">€290</p>
-            <p className="mt-1 text-xs text-white/70">/ano</p>
+            <p className="mt-1 text-xs text-white/70">{t("settings.subscription.perYear")}</p>
             <button
               type="button"
               className="mt-4 inline-flex w-full justify-center rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-white/90 disabled:opacity-60"
               onClick={() => handleCheckout("annual")}
               disabled={loadingCheckout}
             >
-              Assinar plano anual
+              {t("settings.subscription.subscribeAnnual")}
             </button>
           </article>
         </div>
