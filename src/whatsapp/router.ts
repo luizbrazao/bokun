@@ -12,6 +12,7 @@ import {
 } from "./handlers/handoff.ts";
 import { getConvexServiceToken } from "../convex/client.ts";
 import { byLanguage, normalizeLanguage } from "../i18n.ts";
+import { detectReplyLanguageFromUserMessage } from "../llm/language.ts";
 
 export type RouteWhatsAppMessageArgs = OrchestrateBookingArgs & {
   channel?: "wa" | "tg";
@@ -70,7 +71,9 @@ export async function routeWhatsAppMessage(
     "tenants:getTenantByIdForService" as any,
     { tenantId: args.tenantId, serviceToken } as any
   ) as { status: string; stripeStatus?: string; stripeCurrentPeriodEnd?: number; language?: string; createdAt?: number } | null;
-  const language = normalizeLanguage(tenant?.language);
+  const tenantLanguage = normalizeLanguage(tenant?.language);
+  const detectedLanguage = detectReplyLanguageFromUserMessage(args.text);
+  const language = detectedLanguage ?? tenantLanguage;
   if (tenant?.status === "disabled") {
     return {
       handled: true,

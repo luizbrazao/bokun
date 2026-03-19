@@ -92,7 +92,8 @@ describe("handleCancelBooking", () => {
     });
 
     expect(result.handled).toBe(true);
-    expect(result.text).toContain("código");
+    // Default language is "en" — expects English cancel code prompt
+    expect(result.text).toContain("confirmation code");
   });
 
   it("cancels booking and returns success text containing confirmation code when draft is confirmed", async () => {

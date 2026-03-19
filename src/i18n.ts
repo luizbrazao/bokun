@@ -2,7 +2,7 @@ export type SupportedLanguage = "pt" | "en" | "es";
 
 export function normalizeLanguage(input: string | null | undefined): SupportedLanguage {
   if (input === "en" || input === "es" || input === "pt") return input;
-  return "pt";
+  return "en";
 }
 
 export function byLanguage(

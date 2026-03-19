@@ -21,4 +21,26 @@ describe("detectReplyLanguageFromUserMessage", () => {
     const lang = detectReplyLanguageFromUserMessage("12345 ???");
     expect(lang).toBeNull();
   });
+
+  it("detects 'Hi' greeting as English", () => {
+    const lang = detectReplyLanguageFromUserMessage("Hi");
+    expect(lang).toBe("en");
+  });
+
+  it("returns null for ambiguous short phrase without strong language signals", () => {
+    // "Id like to make an schedule" has no signals in the word list — detection returns null.
+    // The fallback to English is handled by normalizeLanguage defaulting to "en".
+    const lang = detectReplyLanguageFromUserMessage("Id like to make an schedule");
+    expect(lang).toBeNull();
+  });
+
+  it("detects booking intent from English user", () => {
+    const lang = detectReplyLanguageFromUserMessage("I want to book a tour please");
+    expect(lang).toBe("en");
+  });
+
+  it("detects Spanish prompt", () => {
+    const lang = detectReplyLanguageFromUserMessage("Hola, quiero reservar un tour para mañana");
+    expect(lang).toBe("es");
+  });
 });
