@@ -12,6 +12,11 @@ describe("detectReplyLanguageFromUserMessage", () => {
     expect(lang).toBe("pt");
   });
 
+  it("detects short English catalog intent", () => {
+    const lang = detectReplyLanguageFromUserMessage("list activities");
+    expect(lang).toBe("en");
+  });
+
   it("returns null when confidence is low", () => {
     const lang = detectReplyLanguageFromUserMessage("12345 ???");
     expect(lang).toBeNull();

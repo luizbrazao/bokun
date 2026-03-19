@@ -1,7 +1,7 @@
-import { mutation, query, type QueryCtx } from "./_generated/server";
+import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 
 async function requireAuth(ctx: QueryCtx): Promise<Id<"users">> {
   const userId = await getAuthUserId(ctx);
@@ -24,22 +24,60 @@ export async function requireTenantMembership(
   return membership;
 }
 
+type UserTenantMembership = {
+  _id: Id<"user_tenants">;
+  userId: Id<"users">;
+  tenantId: Id<"tenants">;
+  role: string;
+  createdAt: number;
+};
+
+async function getMembershipsByUserId(ctx: QueryCtx | MutationCtx, userId: Id<"users">): Promise<UserTenantMembership[]> {
+  const memberships = await ctx.db
+    .query("user_tenants")
+    .withIndex("by_userId", (q) => q.eq("userId", userId))
+    .collect();
+
+  return memberships.sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+}
+
+async function getValidTenantMembership(
+  ctx: QueryCtx | MutationCtx,
+  userId: Id<"users">,
+): Promise<{ membership: UserTenantMembership; tenant: Doc<"tenants"> } | null> {
+  const memberships = await getMembershipsByUserId(ctx, userId);
+
+  for (const membership of memberships) {
+    const tenant = await ctx.db.get(membership.tenantId);
+    if (tenant) {
+      return { membership, tenant };
+    }
+  }
+
+  return null;
+}
+
+async function cleanupOrphanMemberships(ctx: MutationCtx, userId: Id<"users">): Promise<void> {
+  const memberships = await getMembershipsByUserId(ctx, userId);
+
+  for (const membership of memberships) {
+    const tenant = await ctx.db.get(membership.tenantId);
+    if (!tenant) {
+      await ctx.db.delete(membership._id);
+    }
+  }
+}
+
 export const getMyTenant = query({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return null;
 
-    const membership = await ctx.db
-      .query("user_tenants")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .first();
-    if (!membership) return null;
+    const resolved = await getValidTenantMembership(ctx, userId);
+    if (!resolved) return null;
 
-    const tenant = await ctx.db.get(membership.tenantId);
-    if (!tenant) return null;
-
-    return { ...tenant, role: membership.role };
+    return { ...resolved.tenant, role: resolved.membership.role };
   },
 });
 
@@ -47,11 +85,9 @@ export const joinByInviteCode = mutation({
   args: { inviteCode: v.string() },
   handler: async (ctx, args) => {
     const userId = await requireAuth(ctx);
+    await cleanupOrphanMemberships(ctx, userId);
 
-    const existing = await ctx.db
-      .query("user_tenants")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .first();
+    const existing = await getValidTenantMembership(ctx, userId);
     if (existing) throw new Error("Você já está vinculado a uma empresa.");
 
     const tenants = await ctx.db.query("tenants").collect();
@@ -140,11 +176,9 @@ export const createAndJoinTenant = mutation({
   args: { name: v.string() },
   handler: async (ctx, args) => {
     const userId = await requireAuth(ctx);
+    await cleanupOrphanMemberships(ctx, userId);
 
-    const existing = await ctx.db
-      .query("user_tenants")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .first();
+    const existing = await getValidTenantMembership(ctx, userId);
     if (existing) throw new Error("Você já está vinculado a uma empresa.");
 
     const tenantId = await ctx.db.insert("tenants", {

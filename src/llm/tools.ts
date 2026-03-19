@@ -162,6 +162,18 @@ function toNumber(value: unknown): number | null {
     return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+function mapKnownToolError(message: string): { errorCode: string; message: string; action: string } | null {
+    if (message.includes("No permission to access web services")) {
+        return {
+            errorCode: "BOKUN_WEB_SERVICES_PERMISSION_DENIED",
+            message: "Bokun integration has no permission to access web services.",
+            action: "Reconnect Bokun app/credentials with Web Services API permission enabled.",
+        };
+    }
+
+    return null;
+}
+
 export async function executeTool(args: ToolExecutorArgs): Promise<string> {
     rootLogger.info({ handler: "llm_tools", tenantId: args.tenantId, waUserId: args.waUserId, toolName: args.toolName }, "llm_tool_executing");
     try {
@@ -215,6 +227,15 @@ export async function executeTool(args: ToolExecutorArgs): Promise<string> {
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         rootLogger.error({ handler: "llm_tools", tenantId: args.tenantId, toolName: args.toolName, err: message }, "llm_tool_error");
+        const knownError = mapKnownToolError(message);
+        if (knownError) {
+            return JSON.stringify({
+                error: knownError.message,
+                errorCode: knownError.errorCode,
+                action: knownError.action,
+                raw: message,
+            });
+        }
         return JSON.stringify({ error: `Tool execution failed: ${message}` });
     }
 }
