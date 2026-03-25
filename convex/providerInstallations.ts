@@ -1,6 +1,6 @@
 import { mutation, query, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
-import { requireTenantMembership } from "./userTenants";
+import { requireTenantMembership, requireTenantRole } from "./userTenants";
 import { requireServiceToken } from "./serviceAuth";
 
 function assertValidBaseUrl(baseUrl: string): void {
@@ -44,10 +44,7 @@ export const upsertInstallation = mutation({
     scopes: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
-    const membership = await requireTenantMembership(ctx, args.tenantId);
-    if (membership.role !== "owner" && membership.role !== "admin") {
-      throw new Error("Apenas donos ou admins podem alterar credenciais de provider.");
-    }
+    await requireTenantRole(ctx, args.tenantId, "admin");
     assertProviderName(args.provider);
     assertValidBaseUrl(args.baseUrl);
     assertStringRecord(args.authHeaders);

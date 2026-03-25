@@ -24,6 +24,27 @@ export async function requireTenantMembership(
   return membership;
 }
 
+type TenantRole = "owner" | "admin" | "viewer";
+const ROLE_HIERARCHY: Record<TenantRole, number> = { owner: 3, admin: 2, viewer: 1 };
+
+/**
+ * Requires authenticated user to be a member of the tenant with at least `minRole`.
+ * Role hierarchy: owner > admin > viewer.
+ */
+export async function requireTenantRole(
+  ctx: QueryCtx,
+  tenantId: Id<"tenants">,
+  minRole: TenantRole,
+) {
+  const membership = await requireTenantMembership(ctx, tenantId);
+  const userLevel = ROLE_HIERARCHY[membership.role as TenantRole] ?? 0;
+  const requiredLevel = ROLE_HIERARCHY[minRole];
+  if (userLevel < requiredLevel) {
+    throw new Error(`Permissão insuficiente. Requer role: ${minRole}.`);
+  }
+  return membership;
+}
+
 type UserTenantMembership = {
   _id: Id<"user_tenants">;
   userId: Id<"users">;
