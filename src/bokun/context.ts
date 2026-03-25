@@ -45,8 +45,8 @@ export async function getBokunContextOrThrow(args: { tenantId: string }): Promis
   }
 
   const legacyContext = (await convex.query(
-    "bokunInstallations:getBokunContext" as any,
-    { tenantId: args.tenantId } as any
+    "bokunInstallations:getBokunContextForService" as any,
+    { tenantId: args.tenantId, serviceToken } as any
   )) as BokunContextQueryResult;
 
   if (!legacyContext) {

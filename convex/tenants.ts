@@ -22,6 +22,40 @@ export const createTenant = mutation({
   },
 });
 
+/**
+ * Idempotent tenant creation for OAuth installs.
+ * If a tenant with the given externalVendorId already exists, returns it.
+ * Otherwise creates a new one.
+ */
+export const findOrCreateByVendorId = mutation({
+  args: {
+    externalVendorId: v.string(),
+    name: v.string(),
+    serviceToken: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await requireServiceToken(ctx, args.serviceToken);
+
+    const existing = await ctx.db
+      .query("tenants")
+      .withIndex("by_externalVendorId", (q) => q.eq("externalVendorId", args.externalVendorId))
+      .first();
+
+    if (existing) {
+      return { tenantId: existing._id, created: false };
+    }
+
+    const tenantId = await ctx.db.insert("tenants", {
+      name: args.name,
+      externalVendorId: args.externalVendorId,
+      status: "active",
+      createdAt: Date.now(),
+    });
+
+    return { tenantId, created: true };
+  },
+});
+
 export const getTenantById = query({
   args: { tenantId: v.id("tenants") },
   handler: async (ctx, args) => {

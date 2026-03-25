@@ -8,6 +8,7 @@ export default defineSchema({
   tenants: defineTable({
     name: v.string(),
     status: v.union(v.literal("active"), v.literal("disabled")),
+    externalVendorId: v.optional(v.string()), // Bokun vendor_id — used for idempotent re-installation
     inviteCode: v.optional(v.string()),
     openaiApiKey: v.optional(v.string()),
     openaiModel: v.optional(v.string()),
@@ -21,7 +22,8 @@ export default defineSchema({
     timezone: v.optional(v.string()), // IANA timezone e.g. "Europe/Lisbon"; defaults to "Europe/Madrid" at runtime
     language: v.optional(v.string()), // "pt" | "en" | "es"
     createdAt: v.number(),
-  }),
+  })
+    .index("by_externalVendorId", ["externalVendorId"]),
 
   user_tenants: defineTable({
     userId: v.id("users"),

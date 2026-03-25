@@ -155,11 +155,21 @@ export default function Auth() {
     setError(null);
   }, [initialIsSignUp]);
 
+  const inviteFromUrl = searchParams.get("invite") ?? "";
+
   useEffect(() => {
     if (!awaitingSession) return;
     if (authLoading || tenantLoading) return;
     if (!isAuthenticated) return;
-    navigate(hasTenant ? "/reservas" : "/onboarding", { replace: true });
+    if (hasTenant) {
+      navigate("/reservas", { replace: true });
+    } else {
+      // Pass invite code through to onboarding if present
+      const target = inviteFromUrl
+        ? `/onboarding?invite=${encodeURIComponent(inviteFromUrl)}`
+        : "/onboarding";
+      navigate(target, { replace: true });
+    }
   }, [
     awaitingSession,
     authLoading,
@@ -167,6 +177,7 @@ export default function Auth() {
     isAuthenticated,
     hasTenant,
     navigate,
+    inviteFromUrl,
   ]);
 
   useEffect(() => {

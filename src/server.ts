@@ -1695,12 +1695,26 @@ async function handleOAuthCallbackRoute(req: IncomingMessage, res: ServerRespons
 
   try {
     const result = await handleOAuthCallback({ accessCode, state, bokunDomain });
-    sendJson(res, 200, {
-      ok: true,
-      tenantId: result.tenantId,
-      vendorId: result.vendorId,
-      message: "Instalação concluída com sucesso! Configure o WhatsApp channel em seguida.",
-    });
+    const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, "") ?? "";
+
+    if (frontendUrl) {
+      // Redirect to frontend with invite code for auto-join
+      const redirectTarget = new URL("/auth", frontendUrl);
+      redirectTarget.searchParams.set("invite", result.inviteCode);
+      redirectTarget.searchParams.set("mode", "signup");
+      res.statusCode = 302;
+      res.setHeader("location", redirectTarget.toString());
+      res.end();
+    } else {
+      // Fallback JSON response when FRONTEND_URL not configured
+      sendJson(res, 200, {
+        ok: true,
+        tenantId: result.tenantId,
+        vendorId: result.vendorId,
+        inviteCode: result.inviteCode,
+        message: "Instalação concluída! Use o invite code para vincular sua conta.",
+      });
+    }
   } catch (error) {
     sendJson(res, 400, {
       ok: false,

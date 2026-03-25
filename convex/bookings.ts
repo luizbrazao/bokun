@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { action } from "./_generated/server";
 import { api } from "./_generated/api";
+import { internal } from "./_generated/api";
 
 type JsonRecord = Record<string, unknown>;
 type BookingQuestionScope = "main_contact" | "activity_booking" | "pickup" | "dropoff" | "passenger";
@@ -170,7 +171,7 @@ export const createFromDraft = action({
       );
     }
 
-    const bokunContext: any = await ctx.runQuery(api.bokunInstallations.getBokunContext, {
+    const bokunContext: any = await ctx.runQuery(internal.bokunInstallations.getBokunContext, {
       tenantId: draft.tenantId,
     });
     if (!bokunContext) {

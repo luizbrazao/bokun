@@ -1,4 +1,4 @@
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import { requireTenantMembership } from "./userTenants";
 import { requireServiceToken } from "./serviceAuth";
@@ -44,7 +44,10 @@ export const upsertInstallation = mutation({
     scopes: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
-    await requireTenantMembership(ctx, args.tenantId);
+    const membership = await requireTenantMembership(ctx, args.tenantId);
+    if (membership.role !== "owner" && membership.role !== "admin") {
+      throw new Error("Apenas donos ou admins podem alterar credenciais de provider.");
+    }
     assertProviderName(args.provider);
     assertValidBaseUrl(args.baseUrl);
     assertStringRecord(args.authHeaders);
@@ -89,13 +92,16 @@ export const upsertInstallation = mutation({
   },
 });
 
-export const getProviderContext = query({
+/**
+ * Internal-only query for Convex actions that need credentials (e.g., dashboard.ts).
+ * NOT callable from external clients.
+ */
+export const getProviderContext = internalQuery({
   args: {
     tenantId: v.id("tenants"),
     provider: v.string(),
   },
   handler: async (ctx, args) => {
-    await requireTenantMembership(ctx, args.tenantId);
     const provider = args.provider.trim().toLowerCase();
     const installation = await ctx.db
       .query("provider_installations")
@@ -185,10 +191,23 @@ export const listByTenant = query({
   },
   handler: async (ctx, args) => {
     await requireTenantMembership(ctx, args.tenantId);
-    return ctx.db
+    const installations = await ctx.db
       .query("provider_installations")
       .withIndex("by_tenantId", (q) => q.eq("tenantId", args.tenantId))
       .collect();
+
+    return installations.map((inst) => ({
+      _id: inst._id,
+      _creationTime: inst._creationTime,
+      tenantId: inst.tenantId,
+      provider: inst.provider,
+      status: inst.status,
+      baseUrl: inst.baseUrl,
+      scopes: inst.scopes,
+      hasCredentials: Object.keys(inst.authHeaders ?? {}).length > 0,
+      createdAt: inst.createdAt,
+      updatedAt: inst.updatedAt,
+    }));
   },
 });
 

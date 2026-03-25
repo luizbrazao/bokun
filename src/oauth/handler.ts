@@ -91,7 +91,7 @@ export async function handleOAuthCallback(params: {
   accessCode: string;
   state: string;
   bokunDomain: string;
-}): Promise<{ tenantId: string; vendorId: string }> {
+}): Promise<{ tenantId: string; vendorId: string; inviteCode: string }> {
   const config = getOAuthConfig();
   const convex = getConvexClient();
   const serviceToken = getConvexServiceToken();
@@ -141,17 +141,19 @@ export async function handleOAuthCallback(params: {
     throw new Error("Bokun token exchange returned incomplete data.");
   }
 
-  // Create tenant
-  const tenantId = (await convex.mutation(
-    "tenants:createTenant" as any,
+  // Find existing tenant by vendor_id or create new one (idempotent)
+  const tenantResult = (await convex.mutation(
+    "tenants:findOrCreateByVendorId" as any,
     {
+      externalVendorId: tokenData.vendor_id,
       name: `vendor-${tokenData.vendor_id}`,
-      status: "active",
       serviceToken,
     } as any
-  )) as string;
+  )) as { tenantId: string; created: boolean };
 
-  // Create bokun installation with OAuth token + correct baseUrl
+  const tenantId = tenantResult.tenantId;
+
+  // Create/update bokun installation with OAuth token + correct baseUrl
   const oauthHeaders = {
     Authorization: `Bearer ${tokenData.access_token}`,
   };
@@ -162,7 +164,7 @@ export async function handleOAuthCallback(params: {
         .filter((s) => s.length > 0)
     : [];
 
-  // New multi-provider installation record
+  // Multi-provider installation record (upserts — safe for re-installs)
   await convex.mutation(
     "providerInstallations:upsertInstallationForService" as any,
     {
@@ -176,27 +178,22 @@ export async function handleOAuthCallback(params: {
     } as any
   );
 
-  // Legacy compatibility record
-  await convex.mutation(
-    "bokunInstallations:upsertBokunInstallation" as any,
-    {
-      tenantId,
-      baseUrl: hosts.apiBaseUrl,
-      authHeaders: oauthHeaders,
-      scopes,
-    } as any
-  );
+  // Generate invite code so the vendor can auto-join from the frontend
+  const inviteCode = (await convex.mutation(
+    "tenants:generateInviteCodeForService" as any,
+    { tenantId, serviceToken } as any
+  )) as string;
 
-  // Write tenant_onboarded audit event — failure must never break OAuth flow
+  // Write audit event — failure must never break OAuth flow
   try {
     await convex.mutation("auditLog:insertAuditEvent" as any, {
       tenantId,
-      event: "tenant_onboarded",
+      event: tenantResult.created ? "tenant_onboarded" : "tenant_reinstalled",
       meta: JSON.stringify({ vendorId: tokenData.vendor_id }),
     } as any);
   } catch {
     // Audit log failure must not fail the OAuth callback
   }
 
-  return { tenantId, vendorId: tokenData.vendor_id };
+  return { tenantId, vendorId: tokenData.vendor_id, inviteCode };
 }

@@ -194,6 +194,10 @@ export async function bokunRequest<T = unknown>({
     !headerSignatureAuth &&
     envSignatureAuth
   ) {
+    console.warn(
+      `[bokun-client] Auth fallback triggered: ${normalizedMethod} ${normalizedPath} returned ${response.status}. ` +
+      `Retrying with HMAC signature auth. This may indicate an incorrect OAuth token header format.`
+    );
     const fallbackHeaders = { ...baseHeaders };
     deleteHeader(fallbackHeaders, "authorization");
     const signedFallbackHeaders = applySignatureAuth({

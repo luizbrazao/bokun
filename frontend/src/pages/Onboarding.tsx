@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useConvexAuth } from "convex/react";
 import { api } from "@convex/api";
 import { useAuthActions } from "@convex-dev/auth/react";
@@ -26,18 +26,39 @@ const Onboarding = () => {
   const joinByInviteCode = useMutation(api.userTenants.joinByInviteCode);
   const createAndJoinTenant = useMutation(api.userTenants.createAndJoinTenant);
 
-  const [mode, setMode] = useState<"select" | "create" | "join">("select");
-  const [inviteCode, setInviteCode] = useState("");
+  const [searchParams] = useSearchParams();
+  const inviteFromUrl = searchParams.get("invite") ?? "";
+
+  const [mode, setMode] = useState<"select" | "create" | "join">(inviteFromUrl ? "join" : "select");
+  const [inviteCode, setInviteCode] = useState(inviteFromUrl);
   const [tenantName, setTenantName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isSessionReady = !isAuthLoading && isAuthenticated;
+  const autoJoinAttempted = useRef(false);
 
   useEffect(() => {
     if (!isTenantLoading && hasTenant) {
       navigate("/reservas", { replace: true });
     }
   }, [isTenantLoading, hasTenant, navigate]);
+
+  // Auto-join when arriving with invite code from OAuth callback
+  useEffect(() => {
+    if (!inviteFromUrl || autoJoinAttempted.current) return;
+    if (!isSessionReady || isTenantLoading || hasTenant) return;
+    autoJoinAttempted.current = true;
+    setLoading(true);
+    joinByInviteCode({ inviteCode: inviteFromUrl }).catch((err) => {
+      const raw = err instanceof Error ? err.message : String(err);
+      setError(raw.includes("inválido") || raw.includes("invalid")
+        ? t("onboarding.errorInviteInvalid")
+        : raw.includes("já está vinculado")
+          ? t("onboarding.errorAlreadyLinked")
+          : t("onboarding.errorJoin"));
+      setLoading(false);
+    });
+  }, [inviteFromUrl, isSessionReady, isTenantLoading, hasTenant, joinByInviteCode, t]);
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
