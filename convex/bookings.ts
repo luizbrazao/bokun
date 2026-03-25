@@ -171,8 +171,9 @@ export const createFromDraft = action({
       );
     }
 
-    const bokunContext: any = await ctx.runQuery(internal.bokunInstallations.getBokunContext, {
+    const bokunContext: any = await ctx.runQuery(internal.providerInstallations.getProviderContext, {
       tenantId: draft.tenantId,
+      provider: "bokun",
     });
     if (!bokunContext) {
       throw new Error("Tenant sem instalação Bokun.");

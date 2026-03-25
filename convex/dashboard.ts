@@ -357,14 +357,10 @@ export const listBokunBookingsByPeriod = action({
       throw new Error("Acesso negado.");
     }
 
-    const providerContext = await ctx.runQuery(internal.providerInstallations.getProviderContext, {
+    const context = await ctx.runQuery(internal.providerInstallations.getProviderContext, {
       tenantId: args.tenantId,
       provider: "bokun",
     });
-    const legacyContext = providerContext
-      ? null
-      : await ctx.runQuery(internal.bokunInstallations.getBokunContext, { tenantId: args.tenantId });
-    const context = providerContext ?? legacyContext;
     if (!context) return { items: [], totalHits: 0, tookInMillis: 0 };
 
     const body: Record<string, unknown> = {

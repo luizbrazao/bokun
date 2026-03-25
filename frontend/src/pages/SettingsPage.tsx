@@ -419,7 +419,7 @@ function BokunTab({ tenantId }: { tenantId: string }) {
     api.dashboard.getBokunInstallation,
     tenantId ? { tenantId: tenantId as any } : "skip",
   );
-  const upsert = useMutation(api.bokunInstallations.upsertBokunInstallation);
+  const upsert = useMutation(api.providerInstallations.upsertInstallation);
 
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -446,6 +446,7 @@ function BokunTab({ tenantId }: { tenantId: string }) {
     try {
       await upsert({
         tenantId: tenantId as any,
+        provider: "bokun",
         baseUrl: form.baseUrl.trim(),
         authHeaders: {
           "X-Bokun-AccessKey": form.accessKey.trim(),

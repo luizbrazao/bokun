@@ -44,21 +44,9 @@ export async function getBokunContextOrThrow(args: { tenantId: string }): Promis
     };
   }
 
-  const legacyContext = (await convex.query(
-    "bokunInstallations:getBokunContextForService" as any,
-    { tenantId: args.tenantId, serviceToken } as any
-  )) as BokunContextQueryResult;
-
-  if (!legacyContext) {
-    const fallback = getEnvFallbackContext();
-    if (fallback) {
-      return fallback;
-    }
-    throw new Error(`Tenant sem instalação Bokun: ${args.tenantId}`);
+  const fallback = getEnvFallbackContext();
+  if (fallback) {
+    return fallback;
   }
-
-  return {
-    baseUrl: legacyContext.baseUrl,
-    headers: legacyContext.headers ?? {},
-  };
+  throw new Error(`Tenant sem instalação Bokun: ${args.tenantId}`);
 }
