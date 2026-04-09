@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { processWebhookWithDedup } from "./server.ts";
+import { processWebhookWithDedup, inferOAuthAuthorizeEnvironment } from "./server.ts";
 
 describe("processWebhookWithDedup", () => {
   it("uses explicit messageId to build dedup key", async () => {
@@ -44,5 +44,29 @@ describe("processWebhookWithDedup", () => {
     expect(first.duplicate).toBe(false);
     expect(second.duplicate).toBe(false);
     expect(claimedKeys).toEqual(["wa:msg_a", "wa:msg_b"]);
+  });
+});
+
+describe("inferOAuthAuthorizeEnvironment", () => {
+  it("detects sandbox installs from bokuntest referer", () => {
+    const req = {
+      headers: {
+        referer: "https://appstore.bokuntest.com/extranet/apps/abc/dashboard",
+      },
+    } as any;
+
+    expect(inferOAuthAuthorizeEnvironment({ req, bokunDomain: "arctic" })).toBe("test");
+  });
+
+  it("detects sandbox installs from a bokuntest domain hint", () => {
+    const req = { headers: {} } as any;
+
+    expect(inferOAuthAuthorizeEnvironment({ req, bokunDomain: "arctic.bokuntest.com" })).toBe("test");
+  });
+
+  it("returns undefined when there is no reliable environment hint", () => {
+    const req = { headers: {} } as any;
+
+    expect(inferOAuthAuthorizeEnvironment({ req, bokunDomain: "arctic" })).toBeUndefined();
   });
 });

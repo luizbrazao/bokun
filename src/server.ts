@@ -176,6 +176,41 @@ function getHeaderValue(req: IncomingMessage, headerName: string): string | unde
   return undefined;
 }
 
+function parseBokunEnvironment(value: string | undefined): "test" | "production" | undefined {
+  if (value === "test" || value === "production") {
+    return value;
+  }
+  return undefined;
+}
+
+export function inferOAuthAuthorizeEnvironment(args: {
+  req: IncomingMessage;
+  bokunDomain?: string;
+}): "test" | "production" | undefined {
+  const forcedEnv = parseBokunEnvironment(process.env.BOKUN_OAUTH_DEFAULT_ENV?.trim());
+  if (forcedEnv) {
+    return forcedEnv;
+  }
+
+  if (args.bokunDomain?.includes("bokuntest.com")) {
+    return "test";
+  }
+
+  const referer = getHeaderValue(args.req, "referer");
+  const origin = getHeaderValue(args.req, "origin");
+  const hint = `${referer ?? ""} ${origin ?? ""}`.toLowerCase();
+
+  if (hint.includes("bokuntest.com")) {
+    return "test";
+  }
+
+  if (hint.includes("bokun.io")) {
+    return "production";
+  }
+
+  return undefined;
+}
+
 function constantTimeEquals(left: string, right: string): boolean {
   const leftBuffer = Buffer.from(left);
   const rightBuffer = Buffer.from(right);
@@ -1646,10 +1681,9 @@ async function handleOAuthAuthorizeRoute(_req: IncomingMessage, res: ServerRespo
     url.searchParams.get("bokunDomain") ??
     url.searchParams.get("vendorDomain");
   const envRaw = url.searchParams.get("env");
-  const env = (envRaw === "test" || envRaw === "production" ? envRaw : null) as
-    | "test"
-    | "production"
-    | null;
+  const env =
+    parseBokunEnvironment(envRaw) ??
+    inferOAuthAuthorizeEnvironment({ req: _req, bokunDomain });
 
   // Tolerate malformed install URLs like:
   // /oauth/install?env=production?domain=demo&hmac=...
@@ -1669,7 +1703,7 @@ async function handleOAuthAuthorizeRoute(_req: IncomingMessage, res: ServerRespo
   try {
     const result = await handleOAuthAuthorize({
       bokunDomain,
-      env: env === "test" || env === "production" ? env : undefined,
+      env,
     });
     res.statusCode = 302;
     res.setHeader("location", result.redirectUrl);
