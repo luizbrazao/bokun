@@ -81,7 +81,7 @@ export function Sidebar({ tenantId }: SidebarProps) {
     api.dashboard.countActiveHandoffs,
     tenantId ? { tenantId: tenantId as any } : "skip",
   );
-  const trial = resolveTrialState(tenant);
+  const trial = resolveTrialState(tenant ?? null);
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r bg-card">
